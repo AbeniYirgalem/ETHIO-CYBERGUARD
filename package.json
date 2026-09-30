@@ -1,0 +1,22 @@
+{
+  "name": "ethio-cyberguard",
+  "version": "1.0.0",
+  "description": "AI-Assisted Cybersecurity Platform for Threat Detection, Investigation, and Incident Response",
+  "private": true,
+  "scripts": {
+    "dev:web": "npm run dev --prefix apps/web",
+    "build:web": "npm run build --prefix apps/web",
+    "preview:web": "npm run preview --prefix apps/web"
+  },
+  "keywords": [
+    "soc",
+    "siem",
+    "cybersecurity",
+    "ai",
+    "multi-agent",
+    "incident-response",
+    "ethiopia"
+  ],
+  "author": "ETHIO-CYBERGUARD Contributors",
+  "license": "Apache-2.0"
+}
