@@ -12,12 +12,14 @@ import {
   Mail,
   Globe,
   Radar,
-  GraduationCap
+  GraduationCap,
+  GitMerge
 } from 'lucide-react';
 
 export type TabId = 
   | 'overview' 
   | 'monitoring' 
+  | 'pipeline'
   | 'incidents' 
   | 'threat_intel' 
   | 'investigation' 
@@ -45,6 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const navItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'pipeline', label: 'Unified Pipeline', icon: GitMerge, badge: 'Common Graph' },
     { id: 'monitoring', label: 'Monitoring', icon: Activity, badge: 'Live' },
     { 
       id: 'incidents', 

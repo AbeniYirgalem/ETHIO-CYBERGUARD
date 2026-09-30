@@ -14,6 +14,7 @@ import { PhishingAnalyzerView } from './components/PhishingAnalyzerView';
 import { TyposquatView } from './components/TyposquatView';
 import { OSINTReconView } from './components/OSINTReconView';
 import { AwarenessSimulatorView } from './components/AwarenessSimulatorView';
+import { UnifiedPipelineView } from './components/UnifiedPipelineView';
 import { 
   INITIAL_INCIDENTS, 
   INITIAL_EVENTS, 
@@ -174,6 +175,10 @@ export const App: React.FC = () => {
                 </div>
               </div>
             </div>
+          )}
+
+          {activeTab === 'pipeline' && (
+            <UnifiedPipelineView />
           )}
 
           {activeTab === 'incidents' && (

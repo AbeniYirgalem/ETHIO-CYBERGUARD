@@ -23,6 +23,7 @@ from services.phishing.email_analyzer import PhishingAnalyzer
 from services.typosquat.domain_monitor import TyposquatMonitor
 from services.osint.surface_recon import AttackSurfaceRecon
 from services.awareness.simulator import AwarenessSimulator
+from services.pipeline.unified_engine import UnifiedPipelineEngine
 
 app = FastAPI(
     title="ETHIO-CYBERGUARD Central SOC API",
@@ -49,6 +50,7 @@ phishing_analyzer = PhishingAnalyzer()
 typosquat_monitor = TyposquatMonitor()
 osint_recon = AttackSurfaceRecon()
 awareness_simulator = AwarenessSimulator()
+unified_pipeline = UnifiedPipelineEngine()
 
 # In-Memory State for Demonstration & Local Running
 mock_incidents = [
@@ -151,6 +153,13 @@ class PhishingAnalyzeRequest(BaseModel):
 class AwarenessLaunchRequest(BaseModel):
     campaign_id: str
     department: Optional[str] = "All"
+
+class UnifiedPipelineRequest(BaseModel):
+    source_type: str = "email"
+    raw_payload: Optional[str] = None
+    recipient_user: Optional[str] = "dawit.mengistu@cbe.com.et"
+    recipient_host: Optional[str] = "SERVER-04"
+    recipient_ip: Optional[str] = "10.10.1.24"
 
 # REST Endpoints
 @app.get("/")
@@ -327,4 +336,28 @@ def get_awareness_metrics():
 @app.post("/api/v1/awareness/launch")
 def launch_awareness_simulation(payload: AwarenessLaunchRequest):
     return awareness_simulator.launch_simulation(campaign_id=payload.campaign_id, department=payload.department)
+
+# --- Common Security Graph Unified Pipeline Engine ---
+@app.post("/api/v1/pipeline/execute-slice")
+def execute_unified_pipeline_slice(payload: UnifiedPipelineRequest):
+    default_email = """From: "Telebirr Support" <support@telebirr-bonus.xyz>
+To: dawit.mengistu@cbe.com.et
+Reply-To: phisher-collector@gmail.com
+Subject: URGENT: ቴሌብር 10,000 ብር የሽልማት አሸናፊ - አሁኑኑ ያረጋግጡ
+Received-SPF: fail (domain telebirr-bonus.xyz does not match sender IP 196.188.99.12)
+Authentication-Results: mx.ethiotelecom.et; spf=fail; dkim=fail; dmarc=fail
+
+እንኳን ደስ አሎት! በብሔራዊ የዲጂታል ክፍያ ማበረታቻ ፕሮግራም የ10,000 ብር የቴሌብር ቦነስ አሸንፈዋል።
+ሽልማቱን በቀጥታ ወደ አካውንትዎ ለማስገባት በ24 ሰዓት ውስጥ ይህን ይጫኑና የቴሌብር ፒን (PIN / OTP) ቁጥርዎን ያረጋግጡ፡
+http://196.188.99.12/claim-prize/telebirr-login.php
+"""
+    raw_email = payload.raw_payload or default_email
+    result = unified_pipeline.process_phishing_event_to_incident(
+        raw_email=raw_email,
+        recipient_user=payload.recipient_user or "dawit.mengistu@cbe.com.et",
+        recipient_host=payload.recipient_host or "SERVER-04",
+        recipient_ip=payload.recipient_ip or "10.10.1.24"
+    )
+    return result
+
 
