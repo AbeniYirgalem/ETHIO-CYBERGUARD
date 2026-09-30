@@ -3,6 +3,9 @@ Unit Tests for ETHIO-CYBERGUARD Modular API Endpoints
 Verifies that all required /api/ endpoints respond with proper schema, status codes, and security.
 """
 
+import pytest
+pytest.importorskip("httpx")
+
 from fastapi.testclient import TestClient
 from apps.api.main import app
 
