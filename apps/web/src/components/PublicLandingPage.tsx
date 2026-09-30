@@ -145,6 +145,148 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({ onEnterSOC
                 </p>
               </div>
             </div>
+
+            {/* Comparative Matrix: ETHIO-CYBERGUARD vs Top GitHub Security Projects */}
+            <div className="bg-[#111923] border border-[#1E2A38] rounded-2xl p-6 sm:p-8 space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#1E2A38] pb-4">
+                <div>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#00D9FF]/20 text-[#00D9FF] uppercase tracking-wider">
+                    Open Source Synthesis
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-bold text-white mt-1">
+                    Comparative Matrix: ETHIO-CYBERGUARD vs Top GitHub Security Projects
+                  </h2>
+                  <p className="text-xs text-[#7D8A99] mt-0.5">
+                    We combined the best paradigms of the most-starred open-source cybersecurity repositories into a unified, coherent SOC workflow:
+                  </p>
+                </div>
+                <button
+                  onClick={onEnterSOC}
+                  className="px-4 py-2 bg-[#00D9FF] hover:bg-[#00B8D9] text-black font-bold text-xs rounded-lg transition shadow-md shadow-[#00D9FF]/10 shrink-0 cursor-pointer"
+                >
+                  Launch Live Unified SOC
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#1E2A38] text-[#7D8A99] font-mono">
+                      <th className="py-3 px-3">Feature / Capability</th>
+                      <th className="py-3 px-3 text-center">ThePhish</th>
+                      <th className="py-3 px-3 text-center">openSquat</th>
+                      <th className="py-3 px-3 text-center">CyberSatark</th>
+                      <th className="py-3 px-3 text-center">SpiderFoot / Sherlock</th>
+                      <th className="py-3 px-3 text-center text-[#00D9FF] bg-[#00D9FF]/10 rounded-t-lg font-bold">
+                        ETHIO-CYBERGUARD (This Repo)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#1E2A38] text-white">
+                    <tr className="hover:bg-[#0D131C] transition">
+                      <td className="py-3 px-3 font-bold">Primary Domain</td>
+                      <td className="py-3 px-3 text-center text-[#7D8A99]">Phishing Email Forensics</td>
+                      <td className="py-3 px-3 text-center text-[#7D8A99]">Look-Alike Domains</td>
+                      <td className="py-3 px-3 text-center text-[#7D8A99]">Awareness Simulation</td>
+                      <td className="py-3 px-3 text-center text-[#7D8A99]">OSINT & Attack Surface</td>
+                      <td className="py-3 px-3 text-center font-bold text-[#00D9FF] bg-[#00D9FF]/5">
+                        Unified SOC, SIEM & AI Platform
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-[#0D131C] transition">
+                      <td className="py-3 px-3 font-medium">Central SOC & SIEM Correlation</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center font-bold text-[#22C55E] bg-[#00D9FF]/5">
+                        ✅ Yes (ECS Normalizer + SIGMA Rules)
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-[#0D131C] transition">
+                      <td className="py-3 px-3 font-medium">Multi-Agent AI Investigation</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center font-bold text-[#22C55E] bg-[#00D9FF]/5">
+                        ✅ Yes (7 Specialized LLM Agents)
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-[#0D131C] transition">
+                      <td className="py-3 px-3 font-medium">Automated SPF / DKIM / DMARC Forensics</td>
+                      <td className="py-3 px-3 text-center text-[#22C55E]">✅ Yes</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center font-bold text-[#22C55E] bg-[#00D9FF]/5">
+                        ✅ Yes (RFC-822 Parser & Auth Audit)
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-[#0D131C] transition">
+                      <td className="py-3 px-3 font-medium">Typosquatting & Homoglyph Monitoring</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#22C55E]">✅ Yes</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center font-bold text-[#22C55E] bg-[#00D9FF]/5">
+                        ✅ Yes (openSquat Generator & Takedown)
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-[#0D131C] transition">
+                      <td className="py-3 px-3 font-medium">Phishing Awareness & Employee Training</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#22C55E]">✅ Yes</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center font-bold text-[#22C55E] bg-[#00D9FF]/5">
+                        ✅ Yes (CyberSatark Simulation Engine)
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-[#0D131C] transition">
+                      <td className="py-3 px-3 font-medium">Attack Surface & Subdomain OSINT</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#22C55E]">✅ Yes</td>
+                      <td className="py-3 px-3 text-center font-bold text-[#22C55E] bg-[#00D9FF]/5">
+                        ✅ Yes (DNS, SSL, Port Scanner, ASN)
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-[#0D131C] transition">
+                      <td className="py-3 px-3 font-medium">Amharic (አማርኛ) Threat Analysis</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center font-bold text-[#22C55E] bg-[#00D9FF]/5">
+                        ✅ Yes (Telebirr & CBE Fraud Heuristics)
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-[#0D131C] transition">
+                      <td className="py-3 px-3 font-medium">Human-Approved Incident Response (SOAR)</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
+                      <td className="py-3 px-3 text-center font-bold text-[#22C55E] bg-[#00D9FF]/5">
+                        ✅ Yes (Dual-Custody Playbooks)
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-[#0D131C] transition">
+                      <td className="py-3 px-3 font-medium">Zero-Install Interactive Web UI</td>
+                      <td className="py-3 px-3 text-center text-[#F59E0B]">⚠️ Complex</td>
+                      <td className="py-3 px-3 text-center text-[#FF1744]">❌ CLI Only</td>
+                      <td className="py-3 px-3 text-center text-[#F59E0B]">⚠️ Flask</td>
+                      <td className="py-3 px-3 text-center text-[#F59E0B]">⚠️ Complex Setup</td>
+                      <td className="py-3 px-3 text-center font-bold text-[#22C55E] bg-[#00D9FF]/10 rounded-b-lg">
+                        ✅ 1-Click React 19 + GitHub Pages
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 
