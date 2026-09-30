@@ -21,7 +21,7 @@
   <img src="https://img.shields.io/badge/Throughput-51k+_EPS-00D9FF?style=for-the-badge&logo=speedtest" alt="51k+ EPS" />
   <img src="https://img.shields.io/badge/Frontend-React_19_+_Tailwind-22C55E?style=for-the-badge&logo=react" alt="React 19" />
   <img src="https://img.shields.io/badge/Backend-FastAPI_Python_3.10+-F59E0B?style=for-the-badge&logo=fastapi" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/Tests-23%2F23_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
+  <img src="https://img.shields.io/badge/Tests-27%2F27_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
   <img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="License" />
 </p>
 
@@ -192,6 +192,22 @@ High-impact containment actions require explicit SOC human approval:
 Navigate to the hosted application without installing anything:
 👉 **[Launch Live Platform](https://AbeniYirgalem.github.io/ETHIO-CYBERGUARD/)**
 
+> [!NOTE]
+> **Demo Sandbox vs. Production Telemetry**: The GitHub Pages live deployment runs in client-side **Demo Sandbox Mode**, rendering high-fidelity simulated telemetry streams (4,200+ EPS), interactive scenario injection, and zero-latency client heuristics. For live ingestion of real Windows Event Logs, Linux Auditd streams, and UDP Syslog from perimeter firewalls, run the FastAPI backend (`apps/api`) with PostgreSQL.
+
+#### 🔑 Pre-Seeded RBAC Demo Accounts
+
+ETHIO-CYBERGUARD implements enterprise Role-Based Access Control (RBAC) with dual-custody verification for high-impact containment actions. When accessing the FastAPI gateway (`/api/v1/auth/login`) or the management portal, use the following pre-seeded credentials:
+
+| Role | Username / Email | Password | Allowed Capabilities |
+| :--- | :--- | :--- | :--- |
+| **Super Admin** | `admin@cbe.com.et` | `EthioCyber@2026!` | Full administrative rights, user provisioning, global policy override |
+| **Incident Commander** | `commander@cbe.com.et` | `Commander@2026!` | Incident state lifecycle transition, dual-custody playbook execution |
+| **Security Analyst (Tier 2)** | `analyst@cbe.com.et` | `Analyst@2026!` | IOC triage, email analysis, AI agent queries, containment requests |
+| **Compliance Auditor** | `auditor@cbe.com.et` | `Auditor@2026!` | Read-only chain of custody, evidence logs, compliance reports |
+
+*Automated credential lookup endpoint:* `GET /api/v1/auth/demo-credentials`
+
 ---
 
 ### Option B: Local Full-Stack Development
@@ -248,16 +264,22 @@ python -m pytest tests/ -v
 ```text
 tests/ai-evaluation/test_ai_grounding.py ....... PASSED
 tests/integration/test_pipeline.py ............ PASSED
+tests/integration/test_unified_pipeline.py .... PASSED
 tests/security/test_prompt_injection.py ....... PASSED
+tests/unit/test_alerting.py ................... PASSED
+tests/unit/test_auth.py ....................... PASSED
 tests/unit/test_awareness.py .................. PASSED
+tests/unit/test_benchmark.py .................. PASSED
+tests/unit/test_incident_lifecycle.py ......... PASSED
 tests/unit/test_normalizer.py ................. PASSED
 tests/unit/test_osint.py ...................... PASSED
 tests/unit/test_phishing.py ................... PASSED
+tests/unit/test_rbac.py ....................... PASSED
 tests/unit/test_risk.py ....................... PASSED
 tests/unit/test_rules.py ...................... PASSED
 tests/unit/test_typosquat.py .................. PASSED
 
-============================= 15 passed in 0.38s =============================
+============================= 27 passed in 0.55s =============================
 ```
 
 ---
@@ -267,10 +289,15 @@ tests/unit/test_typosquat.py .................. PASSED
 ```text
 ETHIO-CYBERGUARD/
 ├── apps/
-│   ├── api/                     # FastAPI backend gateway
-│   │   ├── main.py              # REST endpoints & CORS configuration
+│   ├── api/                     # FastAPI backend gateway (Port 8000)
+│   │   ├── config.py            # Environment, JWT Secret, Token Expiry
+│   │   ├── dependencies.py      # OAuth2 JWT verification & RBAC decorators
+│   │   ├── routers/
+│   │   │   └── auth.py          # /login, /me, /demo-credentials
+│   │   ├── main.py              # REST endpoints & CORS policy
 │   │   └── requirements.txt     # Python backend dependencies
 │   └── web/                     # React 19 + Tailwind v4 SOC interface
+│       ├── package.json         # @ethio-cyberguard/web v1.1.0
 │       ├── src/
 │       │   ├── components/      # Modular SOC views
 │       │   │   ├── PhishingAnalyzerView.tsx    # ThePhish & NLP engine
@@ -291,7 +318,7 @@ ETHIO-CYBERGUARD/
 │   ├── typosquat/               # openSquat homoglyph & domain permutator
 │   ├── osint/                   # SpiderFoot attack surface & ASN mapper
 │   ├── awareness/               # CyberSatark simulation campaigns
-│   ├── ingestion/               # ECS event normalizer
+│   ├── ingestion/               # ECS event normalizer (51k+ sustained EPS)
 │   ├── detection/               # SIGMA YAML rule engine
 │   ├── correlation/             # Alert correlation & attack graph builder
 │   ├── threat_intelligence/     # IOC reputation & lookup engine
@@ -306,24 +333,34 @@ ETHIO-CYBERGUARD/
 │   └── seeds/seeds.sql          # Realistic Ethiopian enterprise seeds
 ├── detection-rules/             # SIGMA YAML detection rules
 ├── playbooks/                   # Automated SOAR incident playbooks
-├── tests/                       # Automated Pytest suite (15 tests)
-├── .github/workflows/           # CI/CD pipelines
-│   ├── ci.yml                   # Automated compile, lint, and test
-│   └── deploy-pages.yml         # GitHub Pages automated deployment
+├── tests/                       # Automated Pytest suite (27 tests)
+│   ├── ai-evaluation/           # Grounding & citation faithfulness
+│   ├── integration/             # End-to-end event to incident pipelines
+│   ├── security/                # Prompt injection & jailbreak defenses
+│   └── unit/                    # Unit tests for all services & auth
+├── .github/
+│   ├── ISSUE_TEMPLATE/          # Bug report & feature request templates
+│   ├── PULL_REQUEST_TEMPLATE.md # Verification checklist for contributors
+│   ├── dependabot.yml           # Automated dependency update configuration
+│   └── workflows/               # CI/CD pipelines
+│       ├── ci.yml               # Automated compile, lint, and test
+│       └── deploy-pages.yml     # GitHub Pages automated deployment
+├── CODE_OF_CONDUCT.md           # Contributor Covenant v2.1
+├── CONTRIBUTING.md              # Contributor guide & branch workflows
+├── SECURITY.md                  # Security vulnerability reporting policy
+├── SUPPORT.md                   # Community channels & technical support
 ├── docker-compose.yml           # Multi-container orchestration
 └── LICENSE                      # Apache 2.0 License
 ```
 
 ---
 
-## 🤝 Contributing
+## 🤝 Community & Governance
 
-Contributions are welcome! Please follow these steps:
-1. Fork the repository.
-2. Create your feature branch (`git checkout -b feature/defense-enhancement`).
-3. Commit your changes (`git commit -m 'feat: add detection rule for mobile banking fraud'`).
-4. Push to the branch (`git push origin feature/defense-enhancement`).
-5. Open a Pull Request.
+- **Contributing Guide**: Please review [CONTRIBUTING.md](CONTRIBUTING.md) for branch workflows and commit conventions.
+- **Security Inquiries**: Follow our responsible disclosure guidelines in [SECURITY.md](SECURITY.md).
+- **Code of Conduct**: We adhere to the [Contributor Covenant](CODE_OF_CONDUCT.md).
+- **Support Channels**: Questions and feature requests can be directed through [SUPPORT.md](SUPPORT.md).
 
 ---
 

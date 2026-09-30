@@ -26,6 +26,7 @@ from services.awareness.simulator import AwarenessSimulator
 from services.pipeline.unified_engine import UnifiedPipelineEngine
 from services.alerting.notifier import AlertNotifier
 from scripts.benchmark_eps import run_benchmark
+from apps.api.routers.auth import router as auth_router
 
 app = FastAPI(
     title="ETHIO-CYBERGUARD Central SOC API",
@@ -33,13 +34,22 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Enable CORS for frontend web client
+# Register Authentication & RBAC Router
+app.include_router(auth_router)
+
+# Secure CORS configuration (strictly disallow insecure wildcard with credentials)
+allowed_origins_env = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000,https://AbeniYirgalem.github.io"
+)
+allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID", "Accept"],
 )
 
 # Initialize Core Services

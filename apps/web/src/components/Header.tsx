@@ -35,6 +35,12 @@ export const Header: React.FC<HeaderProps> = ({ liveCount }) => {
 
       {/* Right Controls & Profile */}
       <div className="flex items-center space-x-4">
+        {/* Demo Mode Notice */}
+        <div className="hidden xl:flex items-center space-x-1.5 px-2.5 py-1 rounded bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-[#F59E0B] text-[10px] font-mono">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] animate-pulse"></span>
+          <span>DEMO SANDBOX • SIMULATED TELEMETRY</span>
+        </div>
+
         {/* Live Stream Telemetry Indicator */}
         <div className="flex items-center space-x-2 px-3 py-1 bg-[#0D131C] border border-[#1E2A38] rounded-full text-xs">
           <span className="relative flex h-2 w-2">
