@@ -56,3 +56,18 @@ Open `http://localhost:5173` to explore the interactive SOC interface.
 - [ ] Configure persistent volume mounts for `/var/lib/postgresql/data`.
 - [ ] Establish automated hourly database backups.
 - [ ] Enable Syslog TLS (RFC 5425) for encrypted log transport across WAN links.
+
+---
+
+## 4. Live GitHub Pages Deployment (1-Time Setup for Repository Owner)
+
+The frontend SOC Dashboard is automatically built and committed to the `gh-pages` branch on every push by the `.github/workflows/deploy-pages.yml` GitHub Action.
+
+Because GitHub requires repository Owner/Admin permissions to activate GitHub Pages the very first time:
+1. Open the repository settings: [ETHIO-CYBERGUARD Settings > Pages](https://github.com/AbeniYirgalem/ETHIO-CYBERGUARD/settings/pages)
+2. Under **Build and deployment**:
+   - **Source**: Select `Deploy from a branch`
+   - **Branch**: Select `gh-pages` and folder `/(root)`
+3. Click **Save**.
+4. The live site will immediately be served at:
+   👉 **`https://AbeniYirgalem.github.io/ETHIO-CYBERGUARD/`**
