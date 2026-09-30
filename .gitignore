@@ -11,6 +11,7 @@ dist-ssr/
 __pycache__/
 *.py[cod]
 *$py.class
+.pytest_cache/
 *.so
 .Python
 build/
