@@ -34,3 +34,16 @@ def test_threat_intel_match_rule():
     ti_alert = next((a for a in alerts if "Threat_Intel_IP_Match" in a["rule_name"]), None)
     assert ti_alert is not None
     assert ti_alert["confidence"] >= 95
+
+def test_sigma_evaluator_all_categories():
+    from services.detection.evaluator import SigmaRuleEvaluator
+    evaluator = SigmaRuleEvaluator()
+    assert len(evaluator.rules) >= 15
+    
+    # Test Windows encoded powershell match
+    test_ev = {
+        "process": {"name": "powershell.exe", "command_line": "powershell.exe -enc AAAA"}
+    }
+    alerts = evaluator.evaluate(test_ev)
+    assert len(alerts) > 0
+    assert any("win-sigma-001" == a["rule_id"] for a in alerts)

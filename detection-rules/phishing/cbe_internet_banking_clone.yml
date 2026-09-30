@@ -1,0 +1,26 @@
+id: phi-sigma-002
+title: Commercial Bank of Ethiopia (CBE) Fake KYC Portal
+status: stable
+description: Detects communications mimicking CBE urgent account suspension directing
+  users to clone portals.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.0.0
+date: '2026-09-30'
+references:
+- https://attack.mitre.org/techniques/T1566/002/
+tags:
+- attack.initial_access
+- attack.t1566.002
+- sector.banking
+logsource:
+  category: email
+  product: mta
+detection:
+  selection:
+    email.sender_domain:
+    - '*cbe-ebanking-auth.net*'
+    - '*combanketh-portal.com*'
+  condition: selection
+falsepositives:
+- None - domains unassociated with Commercial Bank of Ethiopia
+severity: critical

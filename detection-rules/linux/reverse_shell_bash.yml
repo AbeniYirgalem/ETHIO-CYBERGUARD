@@ -1,0 +1,27 @@
+id: nix-sigma-003
+title: Interactive Bash Reverse Shell Connection
+status: stable
+description: Detects bash or sh executing redirected TCP sockets commonly used for
+  reverse shell access.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.0.0
+date: '2026-09-30'
+references:
+- https://attack.mitre.org/techniques/T1059/004/
+tags:
+- attack.execution
+- attack.t1059.004
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection:
+    process.command_line:
+    - '*/dev/tcp/*'
+    - '*bash -i*'
+    - '*nc -e /bin/sh*'
+    - '*python -c *pty.spawn*'
+  condition: selection
+falsepositives:
+- Legitimate penetration testing drills
+severity: critical

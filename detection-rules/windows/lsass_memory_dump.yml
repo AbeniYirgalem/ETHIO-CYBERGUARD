@@ -1,0 +1,28 @@
+id: win-sigma-002
+title: LSASS Memory Dump for Credential Harvesting
+status: stable
+description: Detects attempts to access or dump the Local Security Authority Subsystem
+  Service (LSASS) process memory.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.1.0
+date: '2026-09-30'
+references:
+- https://attack.mitre.org/techniques/T1003/001/
+tags:
+- attack.credential_access
+- attack.t1003.001
+logsource:
+  category: process_access
+  product: windows
+detection:
+  selection:
+    process.target: lsass.exe
+    process.name:
+    - procdump.exe
+    - mimikatz.exe
+    - rundll32.exe
+    - comsvcs.dll
+  condition: selection
+falsepositives:
+- AV/EDR products performing memory scans
+severity: critical

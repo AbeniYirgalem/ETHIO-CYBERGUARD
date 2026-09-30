@@ -1,0 +1,28 @@
+id: auth-sigma-002
+title: Unusual Off-Hours SWIFT Directory Access
+status: stable
+description: Detects interactive access to SWIFT financial transaction folders outside
+  designated banking operating hours.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.0.0
+date: '2026-09-30'
+references:
+- https://attack.mitre.org/techniques/T1078/002/
+tags:
+- attack.initial_access
+- attack.t1078.002
+- sector.banking
+logsource:
+  category: file_access
+  product: banking_core
+detection:
+  selection:
+    process.command_line:
+    - '*swift*'
+    - '*payment*'
+    - '*mt103*'
+    - '*transfer*'
+  condition: selection
+falsepositives:
+- Scheduled end-of-month reconciliation jobs
+severity: high

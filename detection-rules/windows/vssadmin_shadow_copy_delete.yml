@@ -1,0 +1,26 @@
+id: win-sigma-005
+title: Volume Shadow Copy Deletion via VSSAdmin
+status: stable
+description: Detects deletion of volume shadow copies commonly performed prior to
+  ransomware encryption.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.0.0
+date: '2026-09-30'
+references:
+- https://attack.mitre.org/techniques/T1490/
+tags:
+- attack.impact
+- attack.t1490
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    process.name: vssadmin.exe
+    process.command_line:
+    - '*delete shadows*'
+    - '*/quiet*'
+  condition: selection
+falsepositives:
+- Backup software routine cleanup jobs
+severity: critical

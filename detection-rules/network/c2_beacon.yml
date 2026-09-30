@@ -1,21 +1,25 @@
-id: ECG-RULE-NET-001
-name: Known Threat Actor C2 Beaconing Communication
-description: Detects outbound network traffic from internal assets to indicators flagged by Ethio-CERT or commercial threat intelligence feeds.
-status: enabled
-severity: CRITICAL
-author: ETHIO-CYBERGUARD Network Defense
+id: net-sigma-001
+title: Known Malicious Command & Control Beaconing
+status: stable
+description: Detects network egress connections matching known Cobalt Strike, Empire,
+  or Metasploit C2 IP addresses.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.1.0
+date: '2026-09-30'
+references:
+- https://attack.mitre.org/techniques/T1071/001/
 tags:
-  - attack.command_and_control
-  - attack.t1071.001
-
+- attack.command_and_control
+- attack.t1071.001
+logsource:
+  category: network_connection
+  product: firewall
 detection:
-  match_threat_intel:
-    field: destination_ip
-    feed: ethio_cert_blacklist
-    reputation: MALICIOUS
-  condition: match_threat_intel
-
-response:
-  create_alert: true
-  recommended_action: BLOCK_IP
-  firewall_direction: egress_and_ingress
+  selection:
+    destination.ip:
+    - 185.220.101.5
+    - 196.188.99.12
+  condition: selection
+falsepositives:
+- Threat research sandboxes
+severity: critical

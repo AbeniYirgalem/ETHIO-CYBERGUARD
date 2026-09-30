@@ -1,0 +1,23 @@
+id: net-sigma-002
+title: DNS Tunneling or Data Exfiltration
+status: stable
+description: Detects high-entropy, abnormally long subdomains queried via DNS indicating
+  iodine or dnscat2 tunneling.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.0.0
+date: '2026-09-30'
+references:
+- https://attack.mitre.org/techniques/T1071/004/
+tags:
+- attack.exfiltration
+- attack.t1071.004
+logsource:
+  category: dns_query
+  product: dns
+detection:
+  selection:
+    event_type: dns_tunnel_observed
+  condition: selection
+falsepositives:
+- Anti-virus cloud lookup signatures over DNS
+severity: high

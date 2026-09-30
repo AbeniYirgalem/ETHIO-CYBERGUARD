@@ -99,6 +99,10 @@ class ThreatIntelDatabase:
 
         return None
 
+    def lookup(self, value: str) -> Optional[Dict[str, Any]]:
+        """Alias for lookup_indicator."""
+        return self.lookup_indicator(value)
+
     def add_indicator(self, indicator: str, ioc_type: str, reputation: str, confidence: int, threat_actor: str, malware: str) -> None:
         self.iocs[indicator.strip().lower()] = {
             "indicator": indicator,

@@ -1,0 +1,26 @@
+id: eth-sigma-001
+title: Telebirr Brand Spoofing on External Domain
+status: stable
+description: Detects DNS, HTTP, or email communications utilizing the Telebirr brand
+  on non-official TLDs.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.0.0
+date: '2026-09-30'
+references:
+- https://insa.gov.et/cyber-alerts
+tags:
+- attack.reconnaissance
+- brand.telebirr
+- region.ethiopia
+logsource:
+  category: dns_query
+  product: perimeter
+detection:
+  selection:
+    destination.domain:
+    - '*telebirr*'
+    - '*tele-birr*'
+  condition: selection
+falsepositives:
+- Official telebirr.et or ethiotelecom.et domains
+severity: high

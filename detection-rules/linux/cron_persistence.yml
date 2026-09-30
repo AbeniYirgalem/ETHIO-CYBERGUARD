@@ -1,0 +1,27 @@
+id: nix-sigma-002
+title: Suspicious Cron Job Modification
+status: stable
+description: Detects modifications to /etc/cron* or user crontabs executing scripts
+  from world-writable directories.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.0.0
+date: '2026-09-30'
+references:
+- https://attack.mitre.org/techniques/T1053/003/
+tags:
+- attack.persistence
+- attack.t1053.003
+logsource:
+  category: file_change
+  product: linux
+detection:
+  selection:
+    process.command_line:
+    - '*crontab*'
+    - '*/tmp/*'
+    - '*/var/tmp/*'
+    - '*curl *|*sh*'
+  condition: selection
+falsepositives:
+- System administrator maintenance scripts
+severity: high

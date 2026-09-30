@@ -1,0 +1,27 @@
+id: win-sigma-004
+title: Certutil Ingress File Transfer
+status: stable
+description: Detects certutil.exe used to download files from remote URLs, commonly
+  used by adversaries as a LOLBIN.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.0.0
+date: '2026-09-30'
+references:
+- https://attack.mitre.org/techniques/T1105/
+tags:
+- attack.command_and_control
+- attack.t1105
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    process.name: certutil.exe
+    process.command_line:
+    - '*-urlcache*'
+    - '*-split*'
+    - '*http*'
+  condition: selection
+falsepositives:
+- Administrative certificate revocation checking
+severity: high

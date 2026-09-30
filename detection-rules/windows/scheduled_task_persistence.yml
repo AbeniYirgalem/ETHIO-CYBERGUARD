@@ -1,0 +1,26 @@
+id: win-sigma-003
+title: Scheduled Task Creation for Lateral Persistence
+status: stable
+description: Detects use of schtasks.exe to create scheduled tasks running script
+  interpreters.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.0.0
+date: '2026-09-30'
+references:
+- https://attack.mitre.org/techniques/T1053/005/
+tags:
+- attack.persistence
+- attack.t1053.005
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    process.name: schtasks.exe
+    process.command_line:
+    - '*/create*'
+    - '*/sc*'
+  condition: selection
+falsepositives:
+- Software updates scheduled by system administrators
+severity: high

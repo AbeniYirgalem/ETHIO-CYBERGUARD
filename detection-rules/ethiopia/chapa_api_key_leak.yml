@@ -1,0 +1,25 @@
+id: eth-sigma-003
+title: Chapa Payment Gateway Secret Key Exfiltration
+status: stable
+description: Detects exposure of CHASECK_ live API secret keys in public HTTP responses
+  or egress logs.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.0.0
+date: '2026-09-30'
+references:
+- https://chapa.co/docs
+tags:
+- attack.credential_access
+- sector.fintech
+logsource:
+  category: dlp
+  product: gateway
+detection:
+  selection:
+    process.command_line:
+    - '*CHASECK_TEST-*'
+    - '*CHASECK_LIVE-*'
+  condition: selection
+falsepositives:
+- Authorized developer config file deployment
+severity: critical

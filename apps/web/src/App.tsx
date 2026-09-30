@@ -15,6 +15,9 @@ import { TyposquatView } from './components/TyposquatView';
 import { OSINTReconView } from './components/OSINTReconView';
 import { AwarenessSimulatorView } from './components/AwarenessSimulatorView';
 import { UnifiedPipelineView } from './components/UnifiedPipelineView';
+import { ReportsView } from './components/ReportsView';
+import { SettingsView } from './components/SettingsView';
+import { NotificationsModal } from './components/NotificationsModal';
 import { 
   INITIAL_INCIDENTS, 
   INITIAL_EVENTS, 
@@ -34,6 +37,13 @@ export const App: React.FC = () => {
   const [actions, setActions] = useState<ResponseAction[]>(INITIAL_ACTIONS);
   const [isStreaming, setIsStreaming] = useState(true);
   const [liveCount, setLiveCount] = useState(4210);
+
+  // Identity, Tenant & Notification State
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [language, setLanguage] = useState<'en' | 'am'>('en');
+  const [currentOrg, setCurrentOrg] = useState("Commercial Bank of Ethiopia (CBE)");
+  const [currentRole, setCurrentRole] = useState("SECURITY_ANALYST");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Simulated live telemetry stream
   useEffect(() => {
@@ -103,23 +113,35 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#070B12] text-[#E6EDF3] flex flex-col antialiased selection:bg-[#00D9FF] selection:text-black">
       {/* Header */}
-      <Header liveCount={liveCount} />
+      <Header 
+        liveCount={liveCount} 
+        onOpenNotifications={() => setNotificationsOpen(true)}
+        language={language}
+        onToggleLanguage={() => setLanguage(l => l === 'en' ? 'am' : 'en')}
+        currentOrg={currentOrg}
+        currentRole={currentRole}
+        onToggleMobileMenu={() => setMobileMenuOpen(m => !m)}
+      />
 
       {/* Main App Body */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Left Sidebar */}
         <Sidebar 
           activeTab={activeTab} 
           setActiveTab={setActiveTab}
           pendingApprovalsCount={pendingCount}
           criticalIncidentsCount={criticalCount}
+          mobileOpen={mobileMenuOpen}
+          onCloseMobile={() => setMobileMenuOpen(false)}
         />
 
         {/* Dynamic Main Workspace Content */}
-        <main className="flex-1 overflow-y-auto p-6 bg-[#070B12] space-y-6">
-          {/* Top Switcher Banner: Public Portal Link */}
-          <div className="flex justify-between items-center bg-[#0D131C] border border-[#1E2A38] px-4 py-2 rounded-lg text-xs">
-            <span className="text-[#7D8A99]">Active Session: <strong>Dawit Mengistu (Tier-2 SOC Analyst)</strong></span>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#070B12] space-y-6">
+          {/* Top Switcher Banner: Public Portal Link & Active Session */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#0D131C] border border-[#1E2A38] px-4 py-2 rounded-lg text-xs gap-2">
+            <span className="text-[#7D8A99]">
+              Active Tenant: <strong className="text-white">{currentOrg}</strong> • Role: <span className="font-mono text-[#00D9FF]">{currentRole}</span>
+            </span>
             <button
               onClick={() => setInPublicPortal(true)}
               className="text-[#00D9FF] hover:underline flex items-center space-x-1"
@@ -241,6 +263,21 @@ export const App: React.FC = () => {
             />
           )}
 
+          {activeTab === 'reports' && (
+            <ReportsView />
+          )}
+
+          {activeTab === 'settings' && (
+            <SettingsView 
+              currentRole={currentRole}
+              setCurrentRole={setCurrentRole}
+              currentOrg={currentOrg}
+              setCurrentOrg={setCurrentOrg}
+              language={language}
+              setLanguage={setLanguage}
+            />
+          )}
+
           {activeTab === 'admin' && (
             <div className="space-y-6">
               <div className="pb-2 border-b border-[#1E2A38]">
@@ -270,7 +307,7 @@ export const App: React.FC = () => {
 
                 <div className="bg-[#111923] border border-[#1E2A38] rounded-xl p-5">
                   <h2 className="text-sm font-bold text-white mb-2">Tenant Organization</h2>
-                  <p className="text-xs text-white font-bold">Commercial Bank of Ethiopia (CBE)</p>
+                  <p className="text-xs text-white font-bold">{currentOrg}</p>
                   <p className="text-[11px] text-[#7D8A99]">Addis Ababa HQ • Sector: Banking</p>
                   <p className="text-[11px] text-[#00D9FF] mt-2">Compliance: INSA Financial Directive 2026</p>
                 </div>
@@ -279,6 +316,12 @@ export const App: React.FC = () => {
           )}
         </main>
       </div>
+
+      {/* Notifications Drawer Modal */}
+      <NotificationsModal 
+        isOpen={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+      />
     </div>
   );
 };

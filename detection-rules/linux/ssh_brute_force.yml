@@ -1,0 +1,22 @@
+id: nix-sigma-001
+title: Linux SSH Repeated Authentication Failures
+status: stable
+description: Detects high-volume SSH login failures targeting Linux servers.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.0.0
+date: '2026-09-30'
+references:
+- https://attack.mitre.org/techniques/T1110/001/
+tags:
+- attack.credential_access
+- attack.t1110.001
+logsource:
+  category: auth
+  product: linux
+detection:
+  selection:
+    event_type: ssh_auth_failure
+  condition: selection
+falsepositives:
+- Users with expired passwords or misconfigured SSH keys
+severity: high

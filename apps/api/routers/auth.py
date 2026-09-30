@@ -1,27 +1,38 @@
 """
-ETHIO-CYBERGUARD Authentication API Router
-Provides login, session verification, and demo credentials endpoint.
+ETHIO-CYBERGUARD Authentication & Identity Router
+Provides login, registration, session verification, demo credentials, and RBAC endpoints.
+Supports both /api/auth and /api/v1/auth routes.
 """
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, EmailStr
 from typing import Dict, Any, Optional
 import hashlib
+import uuid
 
 from ..dependencies import DEMO_USERS, create_access_token, get_current_user
 
-router = APIRouter(prefix="/api/v1/auth", tags=["Authentication & Identity"])
+router = APIRouter(tags=["Authentication & Identity"])
 
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+    full_name: str
+    organization: Optional[str] = "Commercial Bank of Ethiopia"
+    role: Optional[str] = "SECURITY_ANALYST"
+    department: Optional[str] = "Security Operations Center"
 
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: Dict[str, Any]
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/api/auth/login", response_model=TokenResponse)
+@router.post("/api/v1/auth/login", response_model=TokenResponse)
 def login_for_access_token(payload: LoginRequest):
     email = payload.email.strip().lower()
     user = DEMO_USERS.get(email)
@@ -61,7 +72,61 @@ def login_for_access_token(payload: LoginRequest):
         }
     }
 
-@router.get("/me")
+@router.post("/api/auth/register", status_code=status.HTTP_201_CREATED)
+@router.post("/api/v1/auth/register", status_code=status.HTTP_201_CREATED)
+def register_user(payload: RegisterRequest):
+    email = payload.email.strip().lower()
+    if email in DEMO_USERS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User with this email already exists"
+        )
+    
+    new_user_id = f"usr_{uuid.uuid4().hex[:8]}"
+    hashed_password = hashlib.sha256(payload.password.encode("utf-8")).hexdigest()
+    
+    new_user = {
+        "id": new_user_id,
+        "email": email,
+        "name": payload.full_name,
+        "role": payload.role or "SECURITY_ANALYST",
+        "department": payload.department or "SOC Operations",
+        "organization": payload.organization,
+        "password_hash": hashed_password
+    }
+    
+    DEMO_USERS[email] = new_user
+    
+    token = create_access_token({
+        "sub": email,
+        "id": new_user_id,
+        "name": payload.full_name,
+        "role": new_user["role"],
+        "department": new_user["department"]
+    })
+    
+    return {
+        "status": "CREATED",
+        "message": f"User {email} registered successfully.",
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id": new_user_id,
+            "email": email,
+            "name": payload.full_name,
+            "role": new_user["role"],
+            "department": new_user["department"],
+            "organization": payload.organization
+        }
+    }
+
+@router.post("/api/auth/logout")
+@router.post("/api/v1/auth/logout")
+def logout_user():
+    return {"status": "SUCCESS", "message": "Session invalidated."}
+
+@router.get("/api/auth/me")
+@router.get("/api/v1/auth/me")
 def read_current_user(current_user: Dict[str, Any] = Depends(get_current_user)):
     return {
         "status": "authenticated",
@@ -74,7 +139,8 @@ def read_current_user(current_user: Dict[str, Any] = Depends(get_current_user)):
         }
     }
 
-@router.get("/demo-credentials")
+@router.get("/api/auth/demo-credentials")
+@router.get("/api/v1/auth/demo-credentials")
 def list_demo_credentials():
     """Returns available pre-seeded demo accounts for easy evaluator onboarding."""
     return {

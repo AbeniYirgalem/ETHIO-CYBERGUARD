@@ -1,28 +1,23 @@
-id: ECG-RULE-AUTH-001
-name: Distributed Authentication Brute Force Detection
-description: Detects more than 10 failed login attempts within a 5-minute sliding window from a single source or subnet targeting enterprise authentication endpoints.
-status: enabled
-severity: HIGH
-author: ETHIO-CYBERGUARD Detection Engineering
-date: 2026-09-30
+id: auth-sigma-001
+title: Perimeter Distributed Brute Force Attempt
+status: stable
+description: Detects cluster of failed authentication attempts from multiple remote
+  IPs against administrative ports.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.0.0
+date: '2026-09-30'
 references:
-  - https://attack.mitre.org/techniques/T1110/001/
-
+- https://attack.mitre.org/techniques/T1110/003/
 tags:
-  - attack.credential_access
-  - attack.t1110.001
-  - ethiopia.financial_sector
-
+- attack.credential_access
+- attack.t1110.003
+logsource:
+  category: auth
+  product: system
 detection:
-  condition:
+  selection:
     event_type: authentication_failure
-    status: failed
-  aggregation:
-    field: source_ip
-    threshold: 10
-    timeframe: 300s # 5 minutes
-
-response:
-  create_alert: true
-  recommended_action: BLOCK_IP
-  alert_title: "Multiple Failed Logons Detected from {source_ip}"
+  condition: selection
+falsepositives:
+- Misconfigured batch service account with outdated credentials
+severity: high

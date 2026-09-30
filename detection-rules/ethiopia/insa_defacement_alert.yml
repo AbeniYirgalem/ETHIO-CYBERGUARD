@@ -1,0 +1,28 @@
+id: eth-sigma-002
+title: Government .gov.et Web Defacement or Unauthorized Shell
+status: stable
+description: Detects creation of PHP/ASPX web shells inside Ethiopian government web
+  server docroots.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.0.0
+date: '2026-09-30'
+references:
+- https://attack.mitre.org/techniques/T1505/003/
+tags:
+- attack.persistence
+- attack.t1505.003
+- sector.government
+logsource:
+  category: file_change
+  product: web_server
+detection:
+  selection:
+    process.command_line:
+    - '*c99.php*'
+    - '*r57.php*'
+    - '*wso.php*'
+    - '*alfa.php*'
+  condition: selection
+falsepositives:
+- None - known web shell artifacts
+severity: critical

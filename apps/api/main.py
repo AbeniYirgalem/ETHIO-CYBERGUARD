@@ -27,6 +27,16 @@ from services.pipeline.unified_engine import UnifiedPipelineEngine
 from services.alerting.notifier import AlertNotifier
 from scripts.benchmark_eps import run_benchmark
 from apps.api.routers.auth import router as auth_router
+from apps.api.routers.incidents import router as incidents_router
+from apps.api.routers.phishing import router as phishing_router
+from apps.api.routers.threat_intel import router as threat_intel_router
+from apps.api.routers.osint import router as osint_router
+from apps.api.routers.typosquat import router as typosquat_router
+from apps.api.routers.awareness import router as awareness_router
+from apps.api.routers.ai import router as ai_router
+from apps.api.routers.response import router as response_router
+from apps.api.routers.dashboard import router as dashboard_router
+from apps.api.routers.reports import router as reports_router
 
 app = FastAPI(
     title="ETHIO-CYBERGUARD Central SOC API",
@@ -34,8 +44,18 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Register Authentication & RBAC Router
+# Register Modular Routers (Supporting both /api and /api/v1 paths)
 app.include_router(auth_router)
+app.include_router(incidents_router)
+app.include_router(phishing_router)
+app.include_router(threat_intel_router)
+app.include_router(osint_router)
+app.include_router(typosquat_router)
+app.include_router(awareness_router)
+app.include_router(ai_router)
+app.include_router(response_router)
+app.include_router(dashboard_router)
+app.include_router(reports_router)
 
 # Secure CORS configuration (strictly disallow insecure wildcard with credentials)
 allowed_origins_env = os.getenv(

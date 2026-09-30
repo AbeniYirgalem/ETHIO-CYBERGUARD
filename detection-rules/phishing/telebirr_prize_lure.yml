@@ -1,0 +1,26 @@
+id: phi-sigma-001
+title: Telebirr Mobile Money Anniversary Scam Lure
+status: stable
+description: Detects inbound email or SMS payloads enticing users with 10,000 Birr
+  prizes while harvesting PIN numbers.
+author: ETHIO-CYBERGUARD Detection Team
+version: 1.0.0
+date: '2026-09-30'
+references:
+- https://attack.mitre.org/techniques/T1566/002/
+tags:
+- attack.initial_access
+- attack.t1566.002
+- region.ethiopia
+logsource:
+  category: email
+  product: mta
+detection:
+  selection:
+    email.sender_domain:
+    - '*telebirr-bonus.xyz*'
+    - '*telecom-promo.xyz*'
+  condition: selection
+falsepositives:
+- None known - confirmed fraudulent domains
+severity: critical

@@ -1,0 +1,23 @@
+{
+  "telebirr_scam": {
+    "sender": "support@telebirr-bonus.xyz",
+    "subject": "የቴሌብር 10,000 ብር የሽልማት አሸናፊ - አሁኑኑ ያረጋግጡ",
+    "auth_results": { "spf": "fail", "dkim": "fail", "dmarc": "fail" },
+    "body": "እንኳን ደስ አሎት! የ10,000 ብር የቴሌብር ቦነስ አሸንፈዋል። የቴሌብር ፒን ቁጥርዎን በ http://196.188.99.12/claim በማስገባት ሽልማቱን ያረጋግጡ።",
+    "expected_verdict": "CRITICAL_PHISHING"
+  },
+  "cbe_kyc_fraud": {
+    "sender": "security-alert@combanketh-portal.com",
+    "subject": "URGENT: Temporary Restriction on CBE Birr Account",
+    "auth_results": { "spf": "fail", "dkim": "fail", "dmarc": "fail" },
+    "body": "Dear CBE Customer, Complete KYC now: https://cbe-ebanking-auth.net/portal/kyc",
+    "expected_verdict": "HIGH_RISK"
+  },
+  "benign_newsletter": {
+    "sender": "bulletin@cbe.com.et",
+    "subject": "Corporate Security Newsletter",
+    "auth_results": { "spf": "pass", "dkim": "pass", "dmarc": "pass" },
+    "body": "Please review new security policies on internal portal.",
+    "expected_verdict": "CLEAN"
+  }
+}
