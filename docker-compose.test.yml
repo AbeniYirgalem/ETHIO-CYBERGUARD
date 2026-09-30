@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: ecg_postgres_test
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: ethio_cyberguard_test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    networks:
+      - ecg_test_network
+
+  redis-test:
+    image: redis:7-alpine
+    container_name: ecg_redis_test
+    ports:
+      - "6380:6379"
+    networks:
+      - ecg_test_network
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.api
+    container_name: ecg_test_runner
+    environment:
+      DATABASE_URL: postgresql://test_user:test_password@postgres-test:5432/ethio_cyberguard_test
+      REDIS_URL: redis://redis-test:6379/0
+      API_SECRET_KEY: test_secret_key_for_ci_cd_pipelines
+      DEMO_MODE: "false"
+      ALLOWED_ORIGINS: "*"
+    volumes:
+      - ./tests:/app/tests
+      - ./apps/api:/app/apps/api
+      - ./services:/app/services
+      - ./database:/app/database
+    command: ["pytest", "tests/", "-v", "--tb=short"]
+    depends_on:
+      - postgres-test
+      - redis-test
+    networks:
+      - ecg_test_network
+
+networks:
+  ecg_test_network:
+    driver: bridge

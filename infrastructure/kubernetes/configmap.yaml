@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ethio-cyberguard-config
+  namespace: ecg-production
+  labels:
+    app.kubernetes.io/name: ethio-cyberguard
+    app.kubernetes.io/part-of: ethio-cyberguard
+data:
+  DEMO_MODE: "false"
+  ALLOWED_ORIGINS: "https://cyberguard.et,https://soc.cyberguard.et"
+  MAX_PAYLOAD_BYTES: "5242880"
+  RATE_LIMIT_PER_MINUTE: "120"
+  LOG_LEVEL: "INFO"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ethio-cyberguard-secrets
+  namespace: ecg-production
+  labels:
+    app.kubernetes.io/name: ethio-cyberguard
+type: Opaque
+stringData:
+  DATABASE_URL: "postgresql://ecg_prod_user:StrongPasswordHere@postgres-cluster.database.svc.cluster.local:5432/ethio_cyberguard"
+  REDIS_URL: "redis://:RedisPasswordHere@redis-cluster.database.svc.cluster.local:6379/0"
+  API_SECRET_KEY: "replace_with_high_entropy_256_bit_secret_key"
+  INGEST_API_KEY: "ecg_ingest_production_secret_key"

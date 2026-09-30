@@ -78,6 +78,34 @@ export const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [isStreaming]);
 
+  // Deep-link URL hash synchronization
+  useEffect(() => {
+    const handleHash = () => {
+      let hash = window.location.hash.replace('#', '') as TabId | 'recon' | 'threat-intel';
+      if (hash === 'recon') hash = 'osint';
+      if (hash === 'threat-intel') hash = 'threat_intel';
+
+      const validTabs: TabId[] = [
+        'overview', 'monitoring', 'pipeline', 'incidents', 'threat_intel',
+        'investigation', 'phishing', 'typosquat', 'osint', 'awareness',
+        'assistant', 'risk', 'response', 'reports', 'settings', 'admin'
+      ];
+      if (validTabs.includes(hash as TabId)) {
+        setActiveTab(hash as TabId);
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
+  const switchTab = (tab: TabId) => {
+    setActiveTab(tab);
+    window.location.hash = tab;
+  };
+
+  const [showDemoBanner, setShowDemoBanner] = useState(true);
+
   // Action Approval Handlers
   const handleApproveAction = (id: string) => {
     setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'APPROVED' } : a));
@@ -128,7 +156,7 @@ export const App: React.FC = () => {
         {/* Left Sidebar */}
         <Sidebar 
           activeTab={activeTab} 
-          setActiveTab={setActiveTab}
+          setActiveTab={switchTab}
           pendingApprovalsCount={pendingCount}
           criticalIncidentsCount={criticalCount}
           mobileOpen={mobileMenuOpen}
@@ -137,6 +165,26 @@ export const App: React.FC = () => {
 
         {/* Dynamic Main Workspace Content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#070B12] space-y-6">
+          {/* Demo Mode Alert Banner */}
+          {showDemoBanner && (
+            <div className="bg-[#FF9100]/10 border border-[#FF9100]/30 rounded-lg p-3 px-4 flex items-center justify-between text-xs text-[#FF9100]">
+              <div className="flex items-center space-x-2">
+                <span className="font-bold flex items-center">
+                  <span className="w-2 h-2 rounded-full bg-[#FF9100] animate-pulse mr-2"></span>
+                  Demo Mode:
+                </span>
+                <span>All incidents, assets, and telemetry metrics are currently simulated.</span>
+              </div>
+              <button 
+                onClick={() => setShowDemoBanner(false)}
+                className="text-[#FF9100]/70 hover:text-[#FF9100] font-mono text-sm px-1.5"
+                title="Dismiss banner"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {/* Top Switcher Banner: Public Portal Link & Active Session */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#0D131C] border border-[#1E2A38] px-4 py-2 rounded-lg text-xs gap-2">
             <span className="text-[#7D8A99]">

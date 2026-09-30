@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecg-api-service
+  namespace: ecg-production
+  labels:
+    app.kubernetes.io/name: ecg-api
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: ecg-api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecg-web-service
+  namespace: ecg-production
+  labels:
+    app.kubernetes.io/name: ecg-web
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: ecg-web

@@ -1,16 +1,18 @@
 """
 ETHIO-CYBERGUARD SOAR Response Router
-Provides human-in-the-loop containment action approvals, host isolation, IP blocking,
-account disablement, and immutable audit logging.
+Provides human-in-the-loop containment action approvals, dry-run mode, rollback,
+host isolation, IP blocking, account disablement, and immutable SHA-256 audit logging.
 Supports /api/response and /api/v1/response.
 """
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import hashlib
 import uuid
+
+from ..dependencies import require_permission, get_current_user
 
 router = APIRouter(tags=["SOAR Containment & Automated Response"])
 
@@ -25,7 +27,9 @@ ACTIONS_STORE: List[Dict[str, Any]] = [
         "reasoning": "Potential active malware / C2 beaconing. Host isolation cuts lateral traversal while maintaining forensic link to SOC.",
         "confidence": 94,
         "status": "PENDING_APPROVAL",
-        "created_at": "2026-09-30T10:45:00Z"
+        "dry_run": False,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
     },
     {
         "id": "ACT-002",
@@ -36,18 +40,22 @@ ACTIONS_STORE: List[Dict[str, Any]] = [
         "reasoning": "Confirmed Cobalt Strike C2 server on Ethio-CERT blacklist. Egress and ingress drop recommended.",
         "confidence": 98,
         "status": "PENDING_APPROVAL",
-        "created_at": "2026-09-30T10:46:00Z"
+        "dry_run": False,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
 ]
 
 AUDIT_LOG_STORE: List[Dict[str, Any]] = [
     {
         "id": "AUD-001",
-        "timestamp": "2026-09-30T10:40:00Z",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "operator": "system",
         "action": "CORRELATION_INCIDENT_CREATED",
         "target": "INC-00042",
         "result": "SUCCESS",
+        "details": "Initial incident correlation",
+        "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
         "integrity_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     }
 ]
@@ -62,6 +70,7 @@ class HostIsolationRequest(BaseModel):
     reason: str
     incident_number: Optional[str] = "INC-00042"
     require_approval: Optional[bool] = True
+    dry_run: Optional[bool] = False
 
 class BlockIPRequest(BaseModel):
     ip_address: str
@@ -69,6 +78,7 @@ class BlockIPRequest(BaseModel):
     reason: str
     incident_number: Optional[str] = "INC-00042"
     require_approval: Optional[bool] = True
+    dry_run: Optional[bool] = False
 
 class DisableAccountRequest(BaseModel):
     username: str
@@ -76,18 +86,22 @@ class DisableAccountRequest(BaseModel):
     reason: str
     incident_number: Optional[str] = "INC-00042"
     require_approval: Optional[bool] = True
+    dry_run: Optional[bool] = False
 
 def _record_audit(operator: str, action: str, target: str, result: str, details: str):
-    entry_str = f"{operator}|{action}|{target}|{result}|{datetime.now(timezone.utc).isoformat()}"
+    prev_hash = AUDIT_LOG_STORE[0]["integrity_hash"] if AUDIT_LOG_STORE else "0000000000000000000000000000000000000000000000000000000000000000"
+    ts = datetime.now(timezone.utc).isoformat()
+    entry_str = f"{prev_hash}|{operator}|{action}|{target}|{result}|{ts}"
     h = hashlib.sha256(entry_str.encode("utf-8")).hexdigest()
     entry = {
         "id": f"AUD-{len(AUDIT_LOG_STORE) + 1:03d}",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": ts,
         "operator": operator,
         "action": action,
         "target": target,
         "result": result,
         "details": details,
+        "prev_hash": prev_hash,
         "integrity_hash": h
     }
     AUDIT_LOG_STORE.insert(0, entry)
@@ -98,8 +112,10 @@ def list_response_actions():
     return {"total": len(ACTIONS_STORE), "actions": ACTIONS_STORE}
 
 @router.post("/api/response/isolate-host")
+@router.post("/api/v1/response/isolate-host")
 def request_host_isolation(payload: HostIsolationRequest):
     action_id = f"ACT-{len(ACTIONS_STORE) + 1:03d}"
+    now = datetime.now(timezone.utc)
     action = {
         "id": action_id,
         "incident_number": payload.incident_number,
@@ -108,20 +124,25 @@ def request_host_isolation(payload: HostIsolationRequest):
         "recommended_by": "ANALYST_REQUEST",
         "reasoning": payload.reason,
         "confidence": 95,
-        "status": "PENDING_APPROVAL" if payload.require_approval else "APPROVED",
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "status": "DRY_RUN_SIMULATED" if payload.dry_run else ("PENDING_APPROVAL" if payload.require_approval else "APPROVED"),
+        "dry_run": payload.dry_run,
+        "expires_at": (now + timedelta(minutes=30)).isoformat(),
+        "created_at": now.isoformat()
     }
     ACTIONS_STORE.insert(0, action)
-    _record_audit("analyst", "ISOLATE_HOST_SUBMITTED", payload.hostname, "PENDING", payload.reason)
+    _record_audit("analyst", f"ISOLATE_HOST_{'DRY_RUN' if payload.dry_run else 'SUBMITTED'}", payload.hostname, "SUCCESS" if payload.dry_run else "PENDING", payload.reason)
     return {
-        "status": "QUEUED" if payload.require_approval else "EXECUTED",
+        "status": "SIMULATED" if payload.dry_run else ("QUEUED" if payload.require_approval else "EXECUTED"),
+        "dry_run": payload.dry_run,
         "action_id": action_id,
         "action": action
     }
 
 @router.post("/api/response/block-ip")
+@router.post("/api/v1/response/block-ip")
 def request_block_ip(payload: BlockIPRequest):
     action_id = f"ACT-{len(ACTIONS_STORE) + 1:03d}"
+    now = datetime.now(timezone.utc)
     action = {
         "id": action_id,
         "incident_number": payload.incident_number,
@@ -130,20 +151,25 @@ def request_block_ip(payload: BlockIPRequest):
         "recommended_by": "ANALYST_REQUEST",
         "reasoning": payload.reason,
         "confidence": 99,
-        "status": "PENDING_APPROVAL" if payload.require_approval else "APPROVED",
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "status": "DRY_RUN_SIMULATED" if payload.dry_run else ("PENDING_APPROVAL" if payload.require_approval else "APPROVED"),
+        "dry_run": payload.dry_run,
+        "expires_at": (now + timedelta(minutes=30)).isoformat(),
+        "created_at": now.isoformat()
     }
     ACTIONS_STORE.insert(0, action)
-    _record_audit("analyst", "BLOCK_IP_SUBMITTED", payload.ip_address, "PENDING", payload.reason)
+    _record_audit("analyst", f"BLOCK_IP_{'DRY_RUN' if payload.dry_run else 'SUBMITTED'}", payload.ip_address, "SUCCESS" if payload.dry_run else "PENDING", payload.reason)
     return {
-        "status": "QUEUED" if payload.require_approval else "EXECUTED",
+        "status": "SIMULATED" if payload.dry_run else ("QUEUED" if payload.require_approval else "EXECUTED"),
+        "dry_run": payload.dry_run,
         "action_id": action_id,
         "action": action
     }
 
 @router.post("/api/response/disable-account")
+@router.post("/api/v1/response/disable-account")
 def request_disable_account(payload: DisableAccountRequest):
     action_id = f"ACT-{len(ACTIONS_STORE) + 1:03d}"
+    now = datetime.now(timezone.utc)
     action = {
         "id": action_id,
         "incident_number": payload.incident_number,
@@ -152,13 +178,16 @@ def request_disable_account(payload: DisableAccountRequest):
         "recommended_by": "ANALYST_REQUEST",
         "reasoning": payload.reason,
         "confidence": 90,
-        "status": "PENDING_APPROVAL" if payload.require_approval else "APPROVED",
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "status": "DRY_RUN_SIMULATED" if payload.dry_run else ("PENDING_APPROVAL" if payload.require_approval else "APPROVED"),
+        "dry_run": payload.dry_run,
+        "expires_at": (now + timedelta(minutes=30)).isoformat(),
+        "created_at": now.isoformat()
     }
     ACTIONS_STORE.insert(0, action)
-    _record_audit("analyst", "DISABLE_ACCOUNT_SUBMITTED", payload.username, "PENDING", payload.reason)
+    _record_audit("analyst", f"DISABLE_ACCOUNT_{'DRY_RUN' if payload.dry_run else 'SUBMITTED'}", payload.username, "SUCCESS" if payload.dry_run else "PENDING", payload.reason)
     return {
-        "status": "QUEUED" if payload.require_approval else "EXECUTED",
+        "status": "SIMULATED" if payload.dry_run else ("QUEUED" if payload.require_approval else "EXECUTED"),
+        "dry_run": payload.dry_run,
         "action_id": action_id,
         "action": action
     }
@@ -170,6 +199,13 @@ def approve_action(action_id: str, payload: ActionDecisionPayload):
     if not action:
         raise HTTPException(status_code=404, detail=f"Action '{action_id}' not found")
     
+    # Check expiration
+    if action.get("expires_at"):
+        exp = datetime.fromisoformat(action["expires_at"])
+        if datetime.now(timezone.utc) > exp:
+            action["status"] = "EXPIRED"
+            raise HTTPException(status_code=400, detail="Action approval has expired. Re-submission required.")
+
     action["status"] = "APPROVED"
     action["executed_at"] = datetime.now(timezone.utc).isoformat()
     action["reviewed_by"] = payload.operator or "Dawit Mengistu (Security Analyst)"
@@ -210,6 +246,34 @@ def reject_action(action_id: str, payload: ActionDecisionPayload):
     return {
         "status": "SUCCESS",
         "message": f"Action {action_id} REJECTED.",
+        "action": action
+    }
+
+@router.post("/api/response/actions/{action_id}/rollback")
+@router.post("/api/v1/response/actions/{action_id}/rollback")
+def rollback_action(action_id: str, payload: ActionDecisionPayload):
+    action = next((a for a in ACTIONS_STORE if a["id"] == action_id), None)
+    if not action:
+        raise HTTPException(status_code=404, detail=f"Action '{action_id}' not found")
+        
+    if action["status"] != "APPROVED":
+        raise HTTPException(status_code=400, detail="Only executed/approved actions can be rolled back.")
+        
+    action["status"] = "ROLLED_BACK"
+    action["rolled_back_at"] = datetime.now(timezone.utc).isoformat()
+    action["rollback_reason"] = payload.reason
+    
+    _record_audit(
+        payload.operator or "Dawit Mengistu (Security Analyst)",
+        f"ACTION_ROLLED_BACK_{action['action_type']}",
+        action["target_entity"],
+        "SUCCESS",
+        f"Rollback reason: {payload.reason}"
+    )
+    
+    return {
+        "status": "SUCCESS",
+        "message": f"Action {action_id} ({action['action_type']}) has been safely rolled back.",
         "action": action
     }
 

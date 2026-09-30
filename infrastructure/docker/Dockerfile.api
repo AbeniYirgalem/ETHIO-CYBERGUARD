@@ -14,9 +14,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY apps/api/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend codebase and services
+# Copy backend codebase, services, and database schemas
 COPY apps/api /app/apps/api
 COPY services /app/services
+COPY database /app/database
+COPY alembic.ini /app/alembic.ini
 
 EXPOSE 8000
 

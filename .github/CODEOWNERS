@@ -1,0 +1,17 @@
+# Global Owners for ETHIO-CYBERGUARD Repository
+# Every code change, architecture update, and CI workflow modification
+# requires review and sign-off by the lead maintainer.
+
+* @AbeniYirgalem
+
+# Backend API & Cyber Services
+/apps/api/            @AbeniYirgalem
+/services/            @AbeniYirgalem
+/database/            @AbeniYirgalem
+
+# Web SOC Frontend
+/apps/web/            @AbeniYirgalem
+
+# CI/CD Workflows & Infrastructure
+/.github/workflows/   @AbeniYirgalem
+/infrastructure/      @AbeniYirgalem

@@ -37,12 +37,24 @@ from apps.api.routers.ai import router as ai_router
 from apps.api.routers.response import router as response_router
 from apps.api.routers.dashboard import router as dashboard_router
 from apps.api.routers.reports import router as reports_router
+from apps.api.routers.jobs import router as jobs_router
+from apps.api.routers.connectors import router as connectors_router
+from apps.api.routers.health import router as health_router
+from database.connection import init_db
+from services.websocket.manager import ws_manager
+from services.ingestion.pipeline import ingestion_pipeline
+from apps.api.dependencies import verify_collector_api_key
+from apps.api.config import DEMO_MODE, MAX_PAYLOAD_BYTES
 
 app = FastAPI(
     title="ETHIO-CYBERGUARD Central SOC API",
     description="Centralized Security Operations Center and AI Investigation Platform API",
-    version="1.0.0"
+    version="1.1.0"
 )
+
+@app.on_event("startup")
+def startup_event():
+    init_db()
 
 # Register Modular Routers (Supporting both /api and /api/v1 paths)
 app.include_router(auth_router)
@@ -56,6 +68,9 @@ app.include_router(ai_router)
 app.include_router(response_router)
 app.include_router(dashboard_router)
 app.include_router(reports_router)
+app.include_router(jobs_router)
+app.include_router(connectors_router)
+app.include_router(health_router)
 
 # Secure CORS configuration (strictly disallow insecure wildcard with credentials)
 allowed_origins_env = os.getenv(
@@ -85,27 +100,7 @@ awareness_simulator = AwarenessSimulator()
 unified_pipeline = UnifiedPipelineEngine()
 alert_notifier = AlertNotifier()
 
-class ConnectionManager:
-    """Manages active WebSocket connections from SOC frontend clients."""
-    def __init__(self):
-        self.active_connections: List[WebSocket] = []
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        if websocket in self.active_connections:
-            self.active_connections.remove(websocket)
-
-    async def broadcast(self, message: Dict[str, Any]):
-        for connection in self.active_connections:
-            try:
-                await connection.send_json(message)
-            except Exception:
-                pass
-
-ws_manager = ConnectionManager()
+# Production Channel-based WebSocket Manager imported from services.websocket.manager
 
 # In-Memory State for Demonstration & Local Running
 mock_incidents = [
@@ -249,13 +244,31 @@ def get_soc_overview():
         }
     }
 
+@app.get("/api/system/mode")
+@app.get("/api/v1/system/mode")
+def get_system_mode():
+    return {
+        "demo_mode": DEMO_MODE,
+        "banner": "Demo Mode: all incidents and metrics are simulated." if DEMO_MODE else "Production Mode: live infrastructure active.",
+        "max_payload_bytes": MAX_PAYLOAD_BYTES
+    }
+
 @app.post("/api/v1/events/ingest")
-def ingest_event(payload: EventIngestPayload):
+def ingest_event(
+    payload: EventIngestPayload,
+    is_authenticated: bool = Depends(verify_collector_api_key)
+):
     norm = normalizer.normalize(payload.dict())
+    ingest_result = ingestion_pipeline.ingest(norm, client_id=payload.host_name or "collector")
+    if ingest_result.get("status") == "RATE_LIMITED":
+        raise HTTPException(status_code=429, detail=ingest_result.get("message"))
+        
     alerts = detection_engine.evaluate_event(norm)
     return {
-        "status": "ACCEPTED",
+        "status": ingest_result.get("status", "ACCEPTED"),
         "event_id": norm["event_id"],
+        "event_hash": ingest_result.get("event_hash"),
+        "queue_depth": ingest_result.get("queue_depth", 0),
         "alerts_triggered": len(alerts),
         "alerts": alerts
     }
@@ -436,13 +449,31 @@ def readiness_check():
 
 # --- Real-Time SOC WebSocket Telemetry Stream ---
 @app.websocket("/ws/live-events")
-async def websocket_live_events(websocket: WebSocket):
-    await ws_manager.connect(websocket)
+async def websocket_live_events(websocket: WebSocket, token: Optional[str] = None):
+    user_meta = {"role": "SECURITY_ANALYST", "organization": "Commercial Bank of Ethiopia"}
+    if token:
+        try:
+            from apps.api.dependencies import verify_token
+            payload = verify_token(token)
+            user_meta = {
+                "role": payload.get("role", "SECURITY_ANALYST"),
+                "organization": payload.get("organization", "Commercial Bank of Ethiopia"),
+                "email": payload.get("sub")
+            }
+        except Exception:
+            pass
+
+    connected = await ws_manager.connect(websocket, user_meta)
+    if not connected:
+        return
+
     try:
-        # Welcome event handshake
+        # Welcome event handshake with channel confirmations
         await websocket.send_json({
             "type": "CONNECTION_ESTABLISHED",
-            "message": "Connected to ETHIO-CYBERGUARD live SOC telemetry stream",
+            "message": "Connected to authenticated ETHIO-CYBERGUARD live SOC telemetry stream",
+            "tenant_channel": f"tenant:{user_meta.get('organization')}",
+            "role": user_meta.get("role"),
             "timestamp": datetime.now(timezone.utc).isoformat()
         })
         while True:
