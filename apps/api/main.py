@@ -19,6 +19,10 @@ from services.detection.engine import DetectionEngine
 from services.correlation.correlator import CorrelationEngine
 from services.ai.orchestrator import MultiAgentOrchestrator
 from services.ai.assistant_agent import SecurityAssistantAgent
+from services.phishing.email_analyzer import PhishingAnalyzer
+from services.typosquat.domain_monitor import TyposquatMonitor
+from services.osint.surface_recon import AttackSurfaceRecon
+from services.awareness.simulator import AwarenessSimulator
 
 app = FastAPI(
     title="ETHIO-CYBERGUARD Central SOC API",
@@ -41,6 +45,10 @@ detection_engine = DetectionEngine()
 correlation_engine = CorrelationEngine()
 ai_orchestrator = MultiAgentOrchestrator()
 assistant_agent = SecurityAssistantAgent()
+phishing_analyzer = PhishingAnalyzer()
+typosquat_monitor = TyposquatMonitor()
+osint_recon = AttackSurfaceRecon()
+awareness_simulator = AwarenessSimulator()
 
 # In-Memory State for Demonstration & Local Running
 mock_incidents = [
@@ -134,6 +142,15 @@ class AssistantQueryRequest(BaseModel):
 
 class ActionDecisionPayload(BaseModel):
     reason: Optional[str] = "Approved by SOC analyst Dawit Mengistu"
+
+class PhishingAnalyzeRequest(BaseModel):
+    raw_content: str
+    subject: Optional[str] = None
+    sender: Optional[str] = None
+
+class AwarenessLaunchRequest(BaseModel):
+    campaign_id: str
+    department: Optional[str] = "All"
 
 # REST Endpoints
 @app.get("/")
@@ -277,3 +294,37 @@ def reject_action(action_id: str, payload: ActionDecisionPayload):
         "message": f"Action {action_id} REJECTED.",
         "action": action
     }
+
+# --- Phishing Email Analyzer (ThePhish / NLP Engine) ---
+@app.post("/api/v1/phishing/analyze")
+def analyze_phishing_email(payload: PhishingAnalyzeRequest):
+    result = phishing_analyzer.analyze(
+        raw_content=payload.raw_content,
+        subject=payload.subject,
+        sender=payload.sender
+    )
+    return result
+
+# --- Typosquatting & Brand Defense Monitor (openSquat Engine) ---
+@app.get("/api/v1/typosquat/scan")
+def scan_typosquats(target: str = "telebirr.et", limit: int = 40):
+    return typosquat_monitor.scan_domain(domain_or_brand=target, limit=limit)
+
+# --- OSINT & Attack Surface Recon (SpiderFoot / Sherlock Engine) ---
+@app.get("/api/v1/osint/scan")
+def scan_attack_surface(target: str = "ethiotelecom.et"):
+    return osint_recon.scan_target(target=target)
+
+# --- Security Awareness & Training (CyberSatark Engine) ---
+@app.get("/api/v1/awareness/campaigns")
+def list_awareness_campaigns():
+    return {"campaigns": awareness_simulator.get_campaigns()}
+
+@app.get("/api/v1/awareness/metrics")
+def get_awareness_metrics():
+    return awareness_simulator.get_org_metrics()
+
+@app.post("/api/v1/awareness/launch")
+def launch_awareness_simulation(payload: AwarenessLaunchRequest):
+    return awareness_simulator.launch_simulation(campaign_id=payload.campaign_id, department=payload.department)
+

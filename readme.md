@@ -1,246 +1,337 @@
 # 🛡️ ETHIO-CYBERGUARD
 
+```text
+  ███████╗████████╗██╗  ██╗██╗ ██████╗      ██████╗██╗   ██╗██████╗ ███████╗██████╗  ██████╗ ██╗   ██╗ █████╗ ██████╗ ██████╗ 
+  ██╔════╝╚══██╔══╝██║  ██║██║██╔═══██╗    ██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗██╔════╝ ██║   ██║██╔══██╗██╔══██╗██╔══██╗
+  █████╗     ██║   ███████║██║██║   ██║    ██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝██║  ███╗██║   ██║███████║██████╔╝██║  ██║
+  ██╔══╝     ██║   ██╔══██║██║██║   ██║    ██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗██║   ██║██║   ██║██╔══██║██╔══██╗██║  ██║
+  ███████╗   ██║   ██║  ██║██║╚██████╔╝    ╚██████╗   ██║   ██████╔╝███████╗██║  ██║╚██████╔╝╚██████╔╝██║  ██║██║  ██║██████╔╝
+  ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝ ╚═════╝      ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ 
+```
+
 <p align="center">
-  <strong>AI-Assisted Cybersecurity Platform for Threat Detection, Investigation, and Incident Response</strong>
+  <strong>Next-Generation AI-Powered SIEM, Threat Intelligence & Human Defense Platform</strong>
   <br />
-  <em>Centralized Security Operations Center (SOC) & SIEM tailored for educational, financial, enterprise, and governmental institutions.</em>
+  <em>Tailored for Corporate, Banking, Higher Education, and Critical Infrastructure Defense with Native Ethiopian Threat Context.</em>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-ETHIO--CYBERGUARD-00D9FF?style=for-the-badge&logo=shield" alt="Platform" />
-  <img src="https://img.shields.io/badge/Architecture-Multi--Agent_AI-FF1744?style=for-the-badge" alt="Multi-Agent AI" />
-  <img src="https://img.shields.io/badge/Frontend-React_19_+_Tailwind_v4-22C55E?style=for-the-badge&logo=react" alt="React 19" />
-  <img src="https://img.shields.io/badge/Backend-FastAPI_REST-F59E0B?style=for-the-badge&logo=fastapi" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/Database-PostgreSQL_+_Timescale-336791?style=for-the-badge&logo=postgresql" alt="PostgreSQL" />
+  <a href="https://AbeniYirgalem.github.io/ETHIO-CYBERGUARD/"><img src="https://img.shields.io/badge/Live_Demo-GitHub_Pages-00D9FF?style=for-the-badge&logo=github&logoColor=black" alt="Live Demo" /></a>
+  <img src="https://img.shields.io/badge/Multi--Agent_AI-7_Agents-FF1744?style=for-the-badge&logo=openai" alt="Multi-Agent AI" />
+  <img src="https://img.shields.io/badge/Frontend-React_19_+_Tailwind-22C55E?style=for-the-badge&logo=react" alt="React 19" />
+  <img src="https://img.shields.io/badge/Backend-FastAPI_Python_3.10+-F59E0B?style=for-the-badge&logo=fastapi" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Tests-15%2F15_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
+  <img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="License" />
 </p>
 
 ---
 
-## 🎯 1. System Vision & Architecture
+## 🌐 Live Web Experience
 
-ETHIO-CYBERGUARD is a next-generation SOC/SIEM platform engineered to provide accessible, high-performance security monitoring, event normalization, threat detection, multi-agent AI investigation, and **human-approved response**.
+Test the fully interactive SOC Dashboard, Phishing Forensics, Brand Defense, and Attack Surface Scanner directly in your browser:
+
+🔗 **[https://AbeniYirgalem.github.io/ETHIO-CYBERGUARD/](https://AbeniYirgalem.github.io/ETHIO-CYBERGUARD/)**
+
+---
+
+## 💡 What is ETHIO-CYBERGUARD?
+
+**ETHIO-CYBERGUARD** is an integrated cybersecurity operations platform combining **enterprise SIEM event correlation**, **multi-agent AI investigation**, **automated phishing email forensics**, **brand typosquatting defense**, **external attack surface discovery (OSINT)**, and **security awareness training**.
+
+While standard security tools focus exclusively on Western infrastructure, ETHIO-CYBERGUARD provides **first-class detection for Ethiopian cyber threats**:
+- **Financial & Mobile Money Defense**: Impersonation detection for Telebirr, Commercial Bank of Ethiopia (CBE), Awash Bank, Dashen Bank, and Chapa.
+- **Language & Linguistic AI**: Detects scare tactics, lottery lures, and credential harvesting in both **English and Amharic (አማርኛ)**.
+- **National ASN & Infrastructure Mapping**: Preconfigured intelligence feeds for Ethio Telecom (`AS24757`), Safaricom Ethiopia (`AS329340`), and INSA (`AS37059`).
+
+---
+
+## 🏆 Comparative Matrix: ETHIO-CYBERGUARD vs Top GitHub Security Projects
+
+We combined the best paradigms of the most-starred open-source cybersecurity repositories into a unified, coherent SOC workflow:
+
+| Feature / Capability | **ThePhish** | **openSquat** | **CyberSatark** | **SpiderFoot / Sherlock** | **ETHIO-CYBERGUARD (This Repo)** |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Primary Domain** | Phishing Email Forensics | Look-Alike Domains | Awareness Simulation | OSINT & Attack Surface | **Unified SOC, SIEM & AI Platform** |
+| **Central SOC & SIEM Correlation** | ❌ No | ❌ No | ❌ No | ❌ No | **✅ Yes (ECS Normalizer + SIGMA Rules)** |
+| **Multi-Agent AI Investigation** | ❌ No | ❌ No | ❌ No | ❌ No | **✅ Yes (7 Specialized LLM Agents)** |
+| **Automated SPF / DKIM / DMARC Forensics** | ✅ Yes | ❌ No | ❌ No | ❌ No | **✅ Yes (RFC-822 Parser & Auth Audit)** |
+| **Typosquatting & Homoglyph Monitoring** | ❌ No | ✅ Yes | ❌ No | ❌ No | **✅ Yes (openSquat Generator & Takedown)** |
+| **Phishing Awareness & Employee Training** | ❌ No | ❌ No | ✅ Yes | ❌ No | **✅ Yes (CyberSatark Simulation Engine)** |
+| **Attack Surface & Subdomain OSINT** | ❌ No | ❌ No | ❌ No | ✅ Yes | **✅ Yes (DNS, SSL, Port Scanner, ASN)** |
+| **Amharic (አማርኛ) Threat Analysis** | ❌ No | ❌ No | ❌ No | ❌ No | **✅ Yes (Telebirr & CBE Fraud Heuristics)** |
+| **Human-Approved Incident Response (SOAR)** | ❌ No | ❌ No | ❌ No | ❌ No | **✅ Yes (Dual-Custody Playbooks)** |
+| **Zero-Install Interactive Web UI** | ⚠️ Complex | ❌ CLI Only | ⚠️ Flask | ⚠️ Complex Setup | **✅ 1-Click React 19 + GitHub Pages** |
+
+---
+
+## 🏗️ System Architecture
 
 ```
-                    ┌─────────────────────────────┐
-                    │       Security Sources      │
-                    │                             │
-                    │ • Windows endpoints         │
-                    │ • Linux servers             │
-                    │ • Network devices (Routers) │
-                    │ • Firewalls                 │
-                    │ • Core Banking Applications │
-                    │ • Cloud services             │
-                    └──────────────┬──────────────┘
-                                   │
-                                   ▼
-                    ┌─────────────────────────────┐
-                    │      DATA COLLECTION         │
-                    │                             │
-                    │ Agents / Syslog / APIs      │
-                    │ Filebeat / OpenTelemetry     │
-                    └──────────────┬──────────────┘
-                                   │
-                                   ▼
-                    ┌─────────────────────────────┐
-                    │    INGESTION & NORMALIZATION│
-                    │                             │
-                    │ Parse → Validate → Normalize│
-                    │ Enrich → Store               │
-                    └──────────────┬──────────────┘
-                                   │
-                    ┌──────────────┴──────────────┐
-                    ▼                             ▼
-          ┌──────────────────┐          ┌──────────────────┐
-          │ Detection Engine │          │ Threat Intel     │
-          │                  │          │                  │
-          │ Rules            │          │ IPs              │
-          │ Signatures       │          │ Domains          │
-          │ Behavioral       │          │ Hashes           │
-          │ Anomaly          │          │ CVEs             │
-          └────────┬─────────┘          └────────┬─────────┘
-                   │                             │
-                   └──────────────┬──────────────┘
-                                  ▼
-                    ┌─────────────────────────────┐
-                    │      CORRELATION ENGINE     │
-                    │                             │
-                    │ Events → Alerts → Incidents │
-                    └──────────────┬──────────────┘
-                                   │
-                                   ▼
-                    ┌─────────────────────────────┐
-                    │       AI ANALYSIS LAYER     │
-                    │                             │
-                    │ Event Analysis Agent        │
-                    │ Threat Intel Agent          │
-                    │ Correlation Agent           │
-                    │ Investigation Agent         │
-                    │ Risk Agent                  │
-                    │ Report Agent                │
-                    │ Security Assistant          │
-                    └──────────────┬──────────────┘
-                                   │
-                                   ▼
-                    ┌─────────────────────────────┐
-                    │       SOC DASHBOARD         │
-                    │                             │
-                    │ Alerts / Incidents / Risks  │
-                    │ Investigations / Reports    │
-                    │ AI Assistant / Analytics    │
-                    └──────────────┬──────────────┘
-                                   │
-                                   ▼
-                    ┌─────────────────────────────┐
-                    │       RESPONSE CENTER       │
-                    │                             │
-                    │ Recommendations             │
-                    │ Human approval              │
-                    │ Response execution           │
-                    │ Audit trail                 │
-                    └─────────────────────────────┘
+                    ┌────────────────────────────────────────────────────────┐
+                    │                    Security Sources                    │
+                    │                                                        │
+                    │ • Windows Workstations (PowerShell / Sysmon)           │
+                    │ • Linux Core Banking Servers (Auditd)                  │
+                    │ • Perimeter Firewalls & Routers (Syslog UDP 5140)      │
+                    │ • Inbound Enterprise Emails (RFC-822 MTAs)             │
+                    │ • External DNS & Registered TLD Feeds                  │
+                    └───────────────────────────┬────────────────────────────┘
+                                                │
+                                                ▼
+                    ┌────────────────────────────────────────────────────────┐
+                    │               Collection & Normalization               │
+                    │                                                        │
+                    │ Ingest → Parse → Elastic Common Schema (ECS) → Enrich   │
+                    └───────────────────────────┬────────────────────────────┘
+                                                │
+                        ┌───────────────────────┴───────────────────────┐
+                        ▼                                               ▼
+        ┌──────────────────────────────┐                ┌──────────────────────────────┐
+        │       Detection Engine       │                │      Threat Intelligence     │
+        │                              │                │                              │
+        │ • 148 SIGMA YAML Rules       │                │ • Malicious IP & Domain C2s  │
+        │ • PowerShell Obfuscation     │                │ • Cobalt Strike & Mimikatz   │
+        │ • SWIFT Off-Hours Anomaly    │                │ • Ethio-CERT Feeds           │
+        └───────────────┬──────────────┘                └───────────────┬──────────────┘
+                        │                                               │
+                        └───────────────────────┬───────────────────────┘
+                                                ▼
+                    ┌────────────────────────────────────────────────────────┐
+                    │               Correlation & Attack Graph               │
+                    │                                                        │
+                    │ Multi-Stage Attack Chains → Severity Weighted Scoring │
+                    └───────────────────────────┬────────────────────────────┘
+                                                │
+                        ┌───────────────────────┴───────────────────────┐
+                        ▼                                               ▼
+        ┌──────────────────────────────┐                ┌──────────────────────────────┐
+        │      Multi-Agent AI Core     │                │ Proactive Defense Services   │
+        │                              │                │                              │
+        │ 1. Event Analyzer Agent      │                │ • ThePhish Email Forensics   │
+        │ 2. Threat Intel Agent        │                │ • openSquat Domain Defense   │
+        │ 3. Correlation Agent         │                │ • SpiderFoot OSINT Recon     │
+        │ 4. Investigation Agent       │                │ • CyberSatark Simulations    │
+        │ 5. Risk Assessment Agent     │                └───────────────┬──────────────┘
+        │ 6. Executive Report Agent    │                                │
+        │ 7. SOC Assistant Agent       │                                │
+        └───────────────┬──────────────┘                                │
+                        │                                               │
+                        └───────────────────────┬───────────────────────┘
+                                                ▼
+                    ┌────────────────────────────────────────────────────────┐
+                    │               Enterprise SOC Workspace                │
+                    │                                                        │
+                    │ • Live ECS Telemetry Feed (4,200+ eps)                 │
+                    │ • Interactive Threat Scenario Injector                 │
+                    │ • Amharic / English Phishing Analyzer                  │
+                    │ • Brand Defense & TLD Squatting Monitor                │
+                    │ • Public Attack Surface Mapping                        │
+                    │ • Human-in-the-Loop SOAR Response Center               │
+                    └────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🤖 2. Multi-Agent AI Architecture
+## 🚀 Key Modules & Capabilities
 
-The platform integrates seven dedicated AI agents coordinated through a central investigation orchestrator. Every agent operates on structured telemetry schemas and is strictly grounded in observed evidence.
+### 1. 📧 Phishing Email & Header Analyzer (`services/phishing/`)
+*Inspired by **ThePhish** and **Email-Phishing-Detection-NLP**.*
+- **Authentication Verification**: Performs instantaneous cryptographic evaluation of `Received-SPF`, `Authentication-Results` (`dkim=pass|fail`), and `DMARC` alignment.
+- **Header Mismatch Detection**: Flags discrepancies between visible `From:` display name and the hidden `Reply-To:` or envelope sender.
+- **Link & IP Host Forensics**: Extracts hyperlinks, identifies raw IP hosts (`http://196.188.x.x/`), identifies risky disposable TLDs (`.xyz`, `.top`, `.click`), and checks for credential harvesting lures.
+- **Amharic & Regional NLP**: Scans for financial keywords including `ቴሌብር` (Telebirr), `የኢትዮጵያ ንግድ ባንክ` (CBE), `የይለፍ ቃል / ፒን` (PIN/OTP harvesting), and `የሽልማት አሸናፊ` (lottery scam lures).
 
-| # | Agent Name | Primary Responsibility | Input Telemetry | Primary Output Artifact |
-| :-: | :--- | :--- | :--- | :--- |
-| **1** | **🔎 Security Event Analysis Agent** | Analyzes discrete events for malicious behaviors, LotL scripts, and evasion | Event JSON (process, command line, user) | Suspiciousness rating, confidence, MITRE ATT&CK techniques |
-| **2** | **🧠 Threat Intelligence Agent** | Correlates observed IOCs with known threat actors and regional campaigns | IPs, domains, SHA-256 hashes, URLs | Reputation score, actor attribution, Ethio-CERT match |
-| **3** | **🔗 Incident Correlation Agent** | Synthesizes disconnected alerts into a unified attack lifecycle | Rolling alert cluster across assets | Cyber Kill Chain progression, attack graph topology |
-| **4** | **🔬 Investigation Agent** | Performs Tier-3 digital forensics and answers core SOC queries | Full incident dossier & evidence | What happened, start time, compromised systems, next steps |
-| **5** | **⚠️ Risk Assessment Agent** | Quantifies transparent, multi-dimensional risk scores (0-100) | Asset criticality, threat level, blast radius | Overall score, Impact, Likelihood, Exposure, Confidence |
-| **6** | **📝 Security Report Agent** | Automatically authors technical forensic and executive briefings | Multi-agent findings & timeline | Markdown technical dossiers and CISO executive briefs |
-| **7** | **💬 Security Assistant** | Conversational SOC copilot grounded strictly in verified evidence | Analyst queries + Incident telemetry | Grounded responses with telemetry source citations |
+### 2. 🌐 Brand Defense & Typosquatting Monitor (`services/typosquat/`)
+*Inspired by **openSquat**.*
+- **Intelligent Permutations**: Generates homoglyphs (`1` for `l`, `0` for `o`), omissions (`telebir.et`), transpositions, combosquatting (`telebirr-login.com`, `cbe-portal.net`), and TLD swapping.
+- **Levenshtein Metric**: Computes edit distance and visual similarity score (0–100%).
+- **Active Threat Classification**: Differentiates between live active credential harvesters, parked domains, and candidates available for defensive purchase.
+- **SOAR Actions**: Trigger 1-click registrar takedown requests, DNS sinkhole blacklisting, and defensive domain purchases.
 
----
+### 3. 📡 Attack Surface & OSINT Reconnaissance (`services/osint/`)
+*Inspired by **SpiderFoot** and **Sherlock**.*
+- **Perimeter Profiling**: Automated mapping of target domains (`ethiotelecom.et`, `combanketh.et`, `insa.gov.et`, `aau.edu.et`).
+- **ASN & Infrastructure Routing**: Identifies Autonomous System Numbers (`AS24757`, `AS329340`, `AS37059`), geographic coordinates (Addis Ababa), and IP CIDR blocks.
+- **Passive Subdomain Discovery**: Enumerates mail gateways, AnyConnect VPNs, partner APIs, and exposed staging consoles.
+- **SYN Port & Service Risk**: Identifies high-risk exposed management ports (RDP `3389`, Telnet `23`, SMB `445`, Alt-HTTP `8080`).
+- **SSL/TLS Audit**: Verifies cipher suite strength, expiration countdown, and HSTS enforcement.
 
-## 🔒 3. Human-in-the-Loop Response Architecture
+### 4. 🎓 Security Awareness & Phishing Simulation (`services/awareness/`)
+*Inspired by **CyberSatark**.*
+- **Localized Campaign Library**: Realistic Amharic and English campaign templates:
+  1. *Telebirr 10,000 Birr Anniversary Prize Fraud*
+  2. *Commercial Bank of Ethiopia (CBE) Birr Security KYC Re-verification*
+  3. *Addis Ababa University (AAU) Academic Portal Password Expiry*
+  4. *HR Ethiopian New Year (Enkutatash) Performance Bonus Scam*
+- **Organizational Vulnerability Matrix**: Real-time click rate, compromise rate, and reporting rate by department (Finance, IT, HR, Branch Operations, Executive).
+- **Interactive Micro-Learning**: Highlights educational red flags to build a robust human firewall.
 
-In alignment with strict cybersecurity safety standards, **ETHIO-CYBERGUARD never allows AI agents or LLMs to autonomously execute destructive containment actions**.
+### 5. 🤖 Multi-Agent AI Investigation (`services/ai/`)
+Seven specialized AI agents work collaboratively to investigate security events:
+1. **Event Analysis Agent**: Deconstructs raw logs into MITRE ATT&CK tactics.
+2. **Threat Intel Agent**: Cross-references IOCs against global and Ethio-CERT blacklists.
+3. **Correlation Agent**: Maps isolated alerts into an end-to-end incident timeline.
+4. **Investigation Agent**: Queries host telemetry to determine root cause and blast radius.
+5. **Risk Assessment Agent**: Computes asset-weighted risk scores (0–100).
+6. **Executive Report Agent**: Formulates clear executive summaries and technical post-mortems.
+7. **Security Assistant Agent**: Interactive AI copilot answering Tier-1/Tier-2 analyst queries.
 
-```
-AI Recommendation (e.g. "Isolate SERVER-04", "Block IP 185.220.101.5")
-       ↓
-Analyst Reviews Evidence & Blast Radius
-       ↓
-┌───────────────┐
-│ APPROVE       │
-│ or            │
-│ REJECT        │
-└───────┬───────┘
-        ↓
-Response Engine
-        ↓
-Execution via Firewall / Endpoint Agent
-        ↓
-Immutable Cryptographic Audit Log
-```
-
----
-
-## 📁 4. Repository Structure
-
-```
-ETHIO-CYBERGUARD/
-│
-├── apps/
-│   ├── web/                     # SOC Dashboard (React 19, TypeScript, Tailwind v4, Lucide)
-│   └── api/                     # Central REST & WebSocket API (FastAPI, Pydantic v2)
-│
-├── services/
-│   ├── ingestion/               # Event normalizer conforming to standard ECS
-│   ├── detection-engine/        # SIGMA rule evaluator & behavioral anomaly engine
-│   ├── correlation-engine/      # Incident graph builder & chronological timeline
-│   └── ai/                      # 7 AI Agents + Orchestrator
-│       ├── event_agent.py
-│       ├── threat_agent.py
-│       ├── correlation_agent.py
-│       ├── investigation_agent.py
-│       ├── risk_agent.py
-│       ├── report_agent.py
-│       ├── assistant_agent.py
-│       └── orchestrator.py
-│
-├── database/
-│   ├── schema.sql               # PostgreSQL core DDL (20+ entities, indexes, ENUMs)
-│   └── seeds/seeds.sql          # Ethiopian SOC realistic seed data (CBE, Ethio Telecom, AAU)
-│
-├── collectors/
-│   ├── endpoint/                # Windows (PowerShell) & Linux endpoint collectors
-│   ├── syslog/                  # UDP RFC 5424 Syslog receiver
-│   └── network/                 # Passive network flow and DNS sniffer
-│
-├── infrastructure/
-│   └── docker/                  # Dockerfiles for API and Web services
-│
-├── docs/
-│   ├── architecture.md          # Complete pipeline and system architecture
-│   ├── ai-architecture.md       # 7-agent specifications and safety guardrails
-│   ├── api.md                   # REST API documentation and endpoints
-│   ├── database.md              # Database schema & Mermaid ERD
-│   ├── security.md              # RBAC matrix and platform security guidelines
-│   └── deployment.md            # Production deployment and hardening guide
-│
-├── docker-compose.yml           # Full stack deployment (Web, API, Postgres, Redis)
-├── .env.example                 # Environment configuration template
-└── README.md                    # Project documentation
-```
+### 6. 🛡️ Human-in-the-Loop SOAR Response (`services/response/`)
+High-impact containment actions require explicit SOC human approval:
+- **Host Isolation**: Cuts lateral traversal while preserving forensic access.
+- **Account Disablement**: Revokes active Kerberos / OAuth tokens.
+- **Firewall IP Egress Drop**: Blocks active C2 communication.
+- **Complete Audit Trail**: Immutable logging of analyst decisions and rationale.
 
 ---
 
-## ⚡ 5. Quickstart Guide
+## ⚡ Quickstart & Installation
 
-### Option A: Docker Compose (Recommended)
+### Option A: 1-Click Browser Demo
+Navigate to the hosted application without installing anything:
+👉 **[Launch Live Platform](https://AbeniYirgalem.github.io/ETHIO-CYBERGUARD/)**
+
+---
+
+### Option B: Local Full-Stack Development
+
+#### Prerequisites
+- Node.js 20+ & npm 10+
+- Python 3.10+
+- Git
+
+#### 1. Clone Repository
 ```bash
-# Clone the repository
 git clone https://github.com/AbeniYirgalem/ETHIO-CYBERGUARD.git
 cd ETHIO-CYBERGUARD
-
-# Copy environment variables
-cp .env.example .env
-
-# Launch all services
-docker-compose up -d --build
 ```
-- **Web SOC Dashboard**: [http://localhost:3000](http://localhost:3000)
-- **Central API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### Option B: Local Development
-
-#### 1. Backend Service
+#### 2. Start Backend API Gateway
 ```bash
-cd apps/api
-python -m venv venv
-# Windows:
-.\venv\Scripts\activate
-# Linux/macOS:
-source venv/bin/activate
+# Install Python dependencies
+pip install -r apps/api/requirements.txt
 
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+# Run FastAPI server with auto-reload
+python -m uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+API Documentation will be live at: `http://localhost:8000/docs`
 
-#### 2. Frontend Web Dashboard
+#### 3. Start Frontend Dashboard
 ```bash
 cd apps/web
 npm install
 npm run dev
 ```
+Open `http://localhost:5173` to access the SOC interface.
 
 ---
 
-## 🌍 6. Ethiopian Cybersecurity Context
+### Option C: Docker Compose Deployment
 
-ETHIO-CYBERGUARD is designed to address the specific challenges of organizations operating in Ethiopia and developing technology ecosystems:
-- **Ethio Telecom Infrastructure Integration**: Native support for Ethiopian IP subnets (`197.156.0.0/16`, `213.55.0.0/16`).
-- **Critical National Infrastructure Scenarios**: Preconfigured templates for Commercial Bank of Ethiopia (CBE) core banking ledgers, SWIFT nodes, and university campus networks.
-- **Regulatory Alignment**: Designed for direct reporting and compliance integration with the **Information Network Security Agency (INSA)** and **Ethio-CERT**.
+Run the complete multi-tier stack (PostgreSQL, FastAPI Backend, React Frontend):
+```bash
+docker-compose up --build -d
+```
 
 ---
 
-## 📄 7. License
-Licensed under the Apache 2.0 License. Designed for education, research, and national cyber defense.
+## 🧪 Testing & Verification
+
+The test suite covers unit logic, pipeline integration, AI grounding, and prompt-injection safety:
+
+```bash
+# Run complete test suite
+python -m pytest tests/ -v
+```
+
+```text
+tests/ai-evaluation/test_ai_grounding.py ....... PASSED
+tests/integration/test_pipeline.py ............ PASSED
+tests/security/test_prompt_injection.py ....... PASSED
+tests/unit/test_awareness.py .................. PASSED
+tests/unit/test_normalizer.py ................. PASSED
+tests/unit/test_osint.py ...................... PASSED
+tests/unit/test_phishing.py ................... PASSED
+tests/unit/test_risk.py ....................... PASSED
+tests/unit/test_rules.py ...................... PASSED
+tests/unit/test_typosquat.py .................. PASSED
+
+============================= 15 passed in 0.38s =============================
+```
+
+---
+
+## 📂 Project Structure
+
+```text
+ETHIO-CYBERGUARD/
+├── apps/
+│   ├── api/                     # FastAPI backend gateway
+│   │   ├── main.py              # REST endpoints & CORS configuration
+│   │   └── requirements.txt     # Python backend dependencies
+│   └── web/                     # React 19 + Tailwind v4 SOC interface
+│       ├── src/
+│       │   ├── components/      # Modular SOC views
+│       │   │   ├── PhishingAnalyzerView.tsx    # ThePhish & NLP engine
+│       │   │   ├── TyposquatView.tsx           # openSquat brand defense
+│       │   │   ├── OSINTReconView.tsx          # SpiderFoot attack surface
+│       │   │   ├── AwarenessSimulatorView.tsx  # CyberSatark simulations
+│       │   │   ├── IncidentsView.tsx           # Timeline & Attack Graph
+│       │   │   ├── AssistantView.tsx           # 7 AI Agent Copilot
+│       │   │   ├── OverviewView.tsx            # Executive KPI metrics
+│       │   │   ├── ResponseView.tsx            # Human approval SOAR
+│       │   │   ├── ScenarioSimulator.tsx       # Live drilldown injector
+│       │   │   └── PublicLandingPage.tsx       # Public portal view
+│       │   ├── App.tsx
+│       │   └── main.tsx
+│       └── vite.config.ts
+├── services/                    # Core Cybersecurity Python Engines
+│   ├── phishing/                # RFC-822 email parser & Amharic scam detector
+│   ├── typosquat/               # openSquat homoglyph & domain permutator
+│   ├── osint/                   # SpiderFoot attack surface & ASN mapper
+│   ├── awareness/               # CyberSatark simulation campaigns
+│   ├── ingestion/               # ECS event normalizer
+│   ├── detection/               # SIGMA YAML rule engine
+│   ├── correlation/             # Alert correlation & attack graph builder
+│   ├── threat_intelligence/     # IOC reputation & lookup engine
+│   ├── ai/                      # 7 Multi-Agent AI Orchestrator
+│   └── response/                # SOAR execution engine
+├── collectors/                  # Telemetry agents
+│   ├── endpoint/windows_collector.ps1   # Windows Event Log agent
+│   ├── endpoint/linux_collector.py      # Linux Auditd agent
+│   └── syslog/syslog_receiver.py        # Central UDP syslog collector
+├── database/                    # Database migrations & seed data
+│   ├── schema.sql               # PostgreSQL schema
+│   └── seeds/seeds.sql          # Realistic Ethiopian enterprise seeds
+├── detection-rules/             # SIGMA YAML detection rules
+├── playbooks/                   # Automated SOAR incident playbooks
+├── tests/                       # Automated Pytest suite (15 tests)
+├── .github/workflows/           # CI/CD pipelines
+│   ├── ci.yml                   # Automated compile, lint, and test
+│   └── deploy-pages.yml         # GitHub Pages automated deployment
+├── docker-compose.yml           # Multi-container orchestration
+└── LICENSE                      # Apache 2.0 License
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+1. Fork the repository.
+2. Create your feature branch (`git checkout -b feature/defense-enhancement`).
+3. Commit your changes (`git commit -m 'feat: add detection rule for mobile banking fraud'`).
+4. Push to the branch (`git push origin feature/defense-enhancement`).
+5. Open a Pull Request.
+
+---
+
+## 📜 License
+
+Distributed under the **Apache 2.0 License**. See [`LICENSE`](./LICENSE) for full legal text.
+
+---
+
+<p align="center">
+  Built with ❤️ for Ethiopian and Global Cyber Resilience.
+</p>

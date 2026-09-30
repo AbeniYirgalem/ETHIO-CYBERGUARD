@@ -8,7 +8,11 @@ import {
   CheckSquare, 
   Settings,
   Flame,
-  Binary
+  Binary,
+  Mail,
+  Globe,
+  Radar,
+  GraduationCap
 } from 'lucide-react';
 
 export type TabId = 
@@ -17,6 +21,10 @@ export type TabId =
   | 'incidents' 
   | 'threat_intel' 
   | 'investigation' 
+  | 'phishing'
+  | 'typosquat'
+  | 'osint'
+  | 'awareness'
   | 'assistant' 
   | 'risk' 
   | 'response' 
@@ -47,7 +55,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     { id: 'threat_intel', label: 'Threat Intel', icon: Binary },
     { id: 'investigation', label: 'Investigation', icon: AlertTriangle },
-    { id: 'assistant', label: 'AI Security Assistant', icon: Bot, badge: 'AI Multi-Agent' },
+    { id: 'phishing', label: 'Phishing Analyzer', icon: Mail, badge: 'NLP / Forensics' },
+    { id: 'typosquat', label: 'Brand & Typosquat', icon: Globe, badge: 'openSquat' },
+    { id: 'osint', label: 'Attack Surface OSINT', icon: Radar, badge: 'SpiderFoot' },
+    { id: 'awareness', label: 'Security Awareness', icon: GraduationCap, badge: 'Simulations' },
+    { id: 'assistant', label: 'AI Security Assistant', icon: Bot, badge: '7 Agents' },
     { id: 'risk', label: 'Risk & Analytics', icon: BarChart3 },
     { 
       id: 'response', 

@@ -10,6 +10,10 @@ import { RiskView } from './components/RiskView';
 import { ResponseView } from './components/ResponseView';
 import { ScenarioSimulator } from './components/ScenarioSimulator';
 import { PublicLandingPage } from './components/PublicLandingPage';
+import { PhishingAnalyzerView } from './components/PhishingAnalyzerView';
+import { TyposquatView } from './components/TyposquatView';
+import { OSINTReconView } from './components/OSINTReconView';
+import { AwarenessSimulatorView } from './components/AwarenessSimulatorView';
 import { 
   INITIAL_INCIDENTS, 
   INITIAL_EVENTS, 
@@ -198,6 +202,22 @@ export const App: React.FC = () => {
               onApproveAction={handleApproveAction}
               onRejectAction={handleRejectAction}
             />
+          )}
+
+          {activeTab === 'phishing' && (
+            <PhishingAnalyzerView />
+          )}
+
+          {activeTab === 'typosquat' && (
+            <TyposquatView />
+          )}
+
+          {activeTab === 'osint' && (
+            <OSINTReconView />
+          )}
+
+          {activeTab === 'awareness' && (
+            <AwarenessSimulatorView />
           )}
 
           {activeTab === 'assistant' && (
