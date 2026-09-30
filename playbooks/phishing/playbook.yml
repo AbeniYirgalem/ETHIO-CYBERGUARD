@@ -1,0 +1,22 @@
+name: Phishing & Spear-Phishing Campaign Playbook
+id: PB-PHISH-04
+description: Rapid mitigation for credential harvesting or malware delivery emails.
+trigger:
+  incident_type: phishing_campaign
+  minimum_severity: MEDIUM
+
+steps:
+  - id: step_1
+    name: Block Destination Domain on Recursive DNS
+    action: BLOCK_DOMAIN
+    requires_approval: true
+
+  - id: step_2
+    name: Purge Phishing Message from Exchange / Mailbox
+    action: PURGE_EMAIL
+    requires_approval: true
+
+  - id: step_3
+    name: Force Session Expiry for Users Who Clicked Link
+    action: REVOKE_USER_SESSIONS
+    requires_approval: true

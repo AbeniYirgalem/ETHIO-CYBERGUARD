@@ -1,0 +1,29 @@
+id: ECG-RULE-EP-001
+name: Suspicious Obfuscated PowerShell Command Line
+description: Detects process executions of powershell.exe containing base64 encoded strings, hidden windows, or download cradles used to evade host logging.
+status: enabled
+severity: CRITICAL
+author: ETHIO-CYBERGUARD Core Rules
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - attack.defense_evasion
+  - attack.t1027
+
+detection:
+  selection:
+    process_name:
+      - powershell.exe
+      - pwsh.exe
+    command_line|contains:
+      - "-enc"
+      - "-encodedcommand"
+      - "downloadstring"
+      - "invoke-expression"
+      - "bypass"
+  condition: selection
+
+response:
+  create_alert: true
+  recommended_action: ISOLATE_HOST
+  require_human_approval: true

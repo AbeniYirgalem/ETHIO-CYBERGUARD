@@ -8,6 +8,8 @@ import { ThreatIntelView } from './components/ThreatIntelView';
 import { AssistantView } from './components/AssistantView';
 import { RiskView } from './components/RiskView';
 import { ResponseView } from './components/ResponseView';
+import { ScenarioSimulator } from './components/ScenarioSimulator';
+import { PublicLandingPage } from './components/PublicLandingPage';
 import { 
   INITIAL_INCIDENTS, 
   INITIAL_EVENTS, 
@@ -18,8 +20,9 @@ import {
 import type { Incident, SecurityEvent, ResponseAction } from './types';
 
 export const App: React.FC = () => {
+  const [inPublicPortal, setInPublicPortal] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
-  const [incidents] = useState<Incident[]>(INITIAL_INCIDENTS);
+  const [incidents, setIncidents] = useState<Incident[]>(INITIAL_INCIDENTS);
   const [selectedIncident, setSelectedIncident] = useState<Incident>(INITIAL_INCIDENTS[0]);
   const [events, setEvents] = useState<SecurityEvent[]>(INITIAL_EVENTS);
   const [indicators] = useState(INITIAL_INDICATORS);
@@ -74,8 +77,23 @@ export const App: React.FC = () => {
     setActiveTab('incidents');
   };
 
+  // Scenario Simulator Handlers
+  const handleInjectEvents = (injected: SecurityEvent[]) => {
+    setEvents(prev => [...injected, ...prev.slice(0, 45)]);
+  };
+
+  const handleAddIncident = (newInc: Incident) => {
+    setIncidents(prev => [newInc, ...prev]);
+    setSelectedIncident(newInc);
+    setActiveTab('incidents');
+  };
+
   const pendingCount = actions.filter(a => a.status === 'PENDING_APPROVAL').length;
   const criticalCount = incidents.filter(i => i.severity === 'CRITICAL').length;
+
+  if (inPublicPortal) {
+    return <PublicLandingPage onEnterSOC={() => setInPublicPortal(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-[#070B12] text-[#E6EDF3] flex flex-col antialiased selection:bg-[#00D9FF] selection:text-black">
@@ -93,7 +111,26 @@ export const App: React.FC = () => {
         />
 
         {/* Dynamic Main Workspace Content */}
-        <main className="flex-1 overflow-y-auto p-6 bg-[#070B12]">
+        <main className="flex-1 overflow-y-auto p-6 bg-[#070B12] space-y-6">
+          {/* Top Switcher Banner: Public Portal Link */}
+          <div className="flex justify-between items-center bg-[#0D131C] border border-[#1E2A38] px-4 py-2 rounded-lg text-xs">
+            <span className="text-[#7D8A99]">Active Session: <strong>Dawit Mengistu (Tier-2 SOC Analyst)</strong></span>
+            <button
+              onClick={() => setInPublicPortal(true)}
+              className="text-[#00D9FF] hover:underline flex items-center space-x-1"
+            >
+              <span>Switch to Public Portal View →</span>
+            </button>
+          </div>
+
+          {/* Interactive Scenario Simulator */}
+          {(activeTab === 'overview' || activeTab === 'monitoring') && (
+            <ScenarioSimulator 
+              onInjectEvents={handleInjectEvents}
+              onAddIncident={handleAddIncident}
+            />
+          )}
+
           {activeTab === 'overview' && (
             <OverviewView 
               incidents={incidents}

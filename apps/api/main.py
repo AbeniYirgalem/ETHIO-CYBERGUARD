@@ -15,8 +15,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from services.ingestion.normalizer import EventNormalizer
-from services.detection_engine.engine import DetectionEngine
-from services.correlation_engine.correlator import CorrelationEngine
+from services.detection.engine import DetectionEngine
+from services.correlation.correlator import CorrelationEngine
 from services.ai.orchestrator import MultiAgentOrchestrator
 from services.ai.assistant_agent import SecurityAssistantAgent
 

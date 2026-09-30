@@ -1,0 +1,31 @@
+{
+  "scenario_name": "Operation Red Nile - African Financial Sector Intrusion",
+  "threat_actor": "APT-CobaltStrike-Actor",
+  "target_sector": "Commercial Banking (Addis Ababa HQ)",
+  "stages": [
+    {
+      "step": 1,
+      "tactic": "Initial Access",
+      "technique": "T1078 Valid Accounts",
+      "description": "Attacker leverages compromised credentials of user 'administrator' over VPN connection at 10:42:03 EAT."
+    },
+    {
+      "step": 2,
+      "tactic": "Execution & Defense Evasion",
+      "technique": "T1059.001 PowerShell / T1027 Obfuscation",
+      "description": "Spawns hidden powershell.exe with base64 encoded download cradle targeting in-memory reflective loader."
+    },
+    {
+      "step": 3,
+      "tactic": "Command & Control",
+      "technique": "T1071.001 Web Protocols",
+      "description": "HTTPS beaconing established to 185.220.101.5 on port 443 with randomized jitter (15-30 seconds)."
+    },
+    {
+      "step": 4,
+      "tactic": "Credential Access",
+      "technique": "T1003.001 LSASS Memory",
+      "description": "Attacker attempts to extract plaintext domain hashes using in-memory Mimikatz reflection."
+    }
+  ]
+}

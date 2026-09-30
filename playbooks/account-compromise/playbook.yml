@@ -1,0 +1,35 @@
+name: Account Compromise Response Playbook
+id: PB-ACC-01
+description: Standard operating procedure for suspected compromised enterprise credentials.
+trigger:
+  incident_type: account_compromise
+  minimum_severity: HIGH
+
+steps:
+  - id: step_1
+    name: Collect Authentication & Session Evidence
+    action: COLLECT_EVIDENCE
+    requires_approval: false
+    automated: true
+
+  - id: step_2
+    name: Invalidate Active Session Tokens & Kerberos Tickets
+    action: REVOKE_TOKEN
+    requires_approval: true
+    recommended_by: AI_EVENT_AGENT
+
+  - id: step_3
+    name: Temporarily Disable User Account
+    action: DISABLE_ACCOUNT
+    requires_approval: true
+    recommended_by: AI_RISK_AGENT
+
+  - id: step_4
+    name: Enforce Credential Reset & MFA Re-enrollment
+    action: RESET_CREDENTIALS
+    requires_approval: false
+
+  - id: step_5
+    name: Transmit Alert to SOC Leadership & INSA Liaison
+    action: NOTIFY_SECURITY_TEAM
+    requires_approval: false

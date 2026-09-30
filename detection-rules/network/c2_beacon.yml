@@ -1,0 +1,21 @@
+id: ECG-RULE-NET-001
+name: Known Threat Actor C2 Beaconing Communication
+description: Detects outbound network traffic from internal assets to indicators flagged by Ethio-CERT or commercial threat intelligence feeds.
+status: enabled
+severity: CRITICAL
+author: ETHIO-CYBERGUARD Network Defense
+tags:
+  - attack.command_and_control
+  - attack.t1071.001
+
+detection:
+  match_threat_intel:
+    field: destination_ip
+    feed: ethio_cert_blacklist
+    reputation: MALICIOUS
+  condition: match_threat_intel
+
+response:
+  create_alert: true
+  recommended_action: BLOCK_IP
+  firewall_direction: egress_and_ingress
