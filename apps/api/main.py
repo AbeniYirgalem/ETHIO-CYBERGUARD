@@ -3,7 +3,7 @@ ETHIO-CYBERGUARD Central Backend API Service
 FastAPI REST & WebSocket Gateway for SOC Monitoring, Ingestion, Detection & Multi-Agent AI
 """
 
-from fastapi import FastAPI, HTTPException, Request, Depends, status
+from fastapi import FastAPI, HTTPException, Request, Depends, status, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
@@ -24,6 +24,8 @@ from services.typosquat.domain_monitor import TyposquatMonitor
 from services.osint.surface_recon import AttackSurfaceRecon
 from services.awareness.simulator import AwarenessSimulator
 from services.pipeline.unified_engine import UnifiedPipelineEngine
+from services.alerting.notifier import AlertNotifier
+from scripts.benchmark_eps import run_benchmark
 
 app = FastAPI(
     title="ETHIO-CYBERGUARD Central SOC API",
@@ -51,6 +53,29 @@ typosquat_monitor = TyposquatMonitor()
 osint_recon = AttackSurfaceRecon()
 awareness_simulator = AwarenessSimulator()
 unified_pipeline = UnifiedPipelineEngine()
+alert_notifier = AlertNotifier()
+
+class ConnectionManager:
+    """Manages active WebSocket connections from SOC frontend clients."""
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: Dict[str, Any]):
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except Exception:
+                pass
+
+ws_manager = ConnectionManager()
 
 # In-Memory State for Demonstration & Local Running
 mock_incidents = [
@@ -359,5 +384,72 @@ http://196.188.99.12/claim-prize/telebirr-login.php
         recipient_ip=payload.recipient_ip or "10.10.1.24"
     )
     return result
+
+# --- Health, Readiness & Observability Endpoints ---
+@app.get("/api/v1/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "service": "ETHIO-CYBERGUARD-API",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "active_websockets": len(ws_manager.active_connections)
+    }
+
+@app.get("/api/v1/ready")
+def readiness_check():
+    return {
+        "status": "ready",
+        "database": "connected",
+        "rule_engine": "loaded",
+        "ai_orchestrator": "ready"
+    }
+
+# --- Real-Time SOC WebSocket Telemetry Stream ---
+@app.websocket("/ws/live-events")
+async def websocket_live_events(websocket: WebSocket):
+    await ws_manager.connect(websocket)
+    try:
+        # Welcome event handshake
+        await websocket.send_json({
+            "type": "CONNECTION_ESTABLISHED",
+            "message": "Connected to ETHIO-CYBERGUARD live SOC telemetry stream",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        while True:
+            # Keepalive and client message handler
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)
+
+# --- Multi-Channel Alert Notification Dispatch ---
+class AlertNotifyRequest(BaseModel):
+    incident_id: str
+    severity: str = "HIGH"
+    risk_score: int = 85
+    target_asset: str = "SERVER-04"
+    target_user: Optional[str] = "dawit.mengistu"
+    title_en: Optional[str] = "Security Incident Alert"
+    title_am: Optional[str] = "የደህንነት ማስጠንቀቂያ"
+    channel: str = "webhook"
+
+@app.post("/api/v1/alerts/notify")
+async def dispatch_alert_notification(payload: AlertNotifyRequest):
+    alert_dict = payload.model_dump()
+    result = alert_notifier.dispatch(alert_dict, channel=payload.channel)
+    # Broadcast to live SOC console via WebSocket
+    await ws_manager.broadcast({
+        "type": "NEW_ALERT_DISPATCHED",
+        "alert": alert_dict,
+        "notification": result
+    })
+    return result
+
+# --- Ingestion & Detection EPS Benchmark Runner ---
+@app.get("/api/v1/benchmark/run")
+def trigger_benchmark(events: int = 5000):
+    report = run_benchmark(total_events=events, num_workers=4)
+    return report
 
 

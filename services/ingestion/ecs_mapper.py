@@ -21,6 +21,9 @@ class ECSMapper:
     - Brand / Domain Scanners
     """
 
+    def normalize(self, raw: Dict[str, Any], source_type: str = "endpoint", tenant_id: str = "org_default") -> Dict[str, Any]:
+        return self.map_raw_event(raw, source_type, tenant_id).to_dict()
+
     def map_raw_event(self, raw: Dict[str, Any], source_type: str = "endpoint", tenant_id: str = "org_default") -> CanonicalEvent:
         timestamp = raw.get("timestamp") or datetime.now(timezone.utc).isoformat()
         event_id = raw.get("event_uid") or f"evt_{uuid.uuid4().hex[:12]}"

@@ -120,8 +120,10 @@ class DetectionEngine:
             reasons.append({"factor": "Remote external connection to privileged asset", "points": 20})
 
         # Check administrative account usage
-        user = (event.get("user") or "").lower()
-        if any(adm in user for adm in ["admin", "root", "administrator", "service_core"]):
+        user_val = event.get("user") or ""
+        user_str = (user_val.get("name") or user_val.get("id") or "") if isinstance(user_val, dict) else str(user_val)
+        user_lower = user_str.lower()
+        if any(adm in user_lower for adm in ["admin", "root", "administrator", "service_core"]):
             score += 20
             reasons.append({"factor": "Privileged credential utilized in abnormal context", "points": 20})
 
