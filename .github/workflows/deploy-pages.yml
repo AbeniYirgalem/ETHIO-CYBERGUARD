@@ -7,8 +7,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
   deployments: write
 
 concurrency:
@@ -41,22 +39,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: apps/web/dist
           publish_branch: gh-pages
-
-      - name: Configure GitHub Pages (Auto-Enable)
-        uses: actions/configure-pages@v5
-        continue-on-error: true
-        with:
-          enablement: true
-
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
-        continue-on-error: true
-        with:
-          path: apps/web/dist
-
-      - name: Deploy to GitHub Pages Actions Runtime
-        uses: actions/deploy-pages@v4
-        continue-on-error: true
 
       - name: Update GitHub Deployment Status
         if: always()
