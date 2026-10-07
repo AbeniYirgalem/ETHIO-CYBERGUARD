@@ -24,12 +24,13 @@
 
 <p align="center">
   <a href="https://AbeniYirgalem.github.io/ETHIO-CYBERGUARD/"><img src="https://img.shields.io/badge/Live_Demo-GitHub_Pages-00D9FF?style=for-the-badge&logo=github&logoColor=black" alt="Live Demo" /></a>
+  <a href="https://github.com/AbeniYirgalem/ETHIO-CYBERGUARD/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.0_Latest-22C55E?style=for-the-badge&logo=github" alt="Latest Release" /></a>
   <img src="https://img.shields.io/badge/Multi--Agent_AI-7_Agents-FF1744?style=for-the-badge&logo=openai" alt="Multi-Agent AI" />
   <img src="https://img.shields.io/badge/Throughput-51k+_EPS-00D9FF?style=for-the-badge&logo=speedtest" alt="51k+ EPS" />
   <img src="https://img.shields.io/badge/Frontend-React_19_+_Tailwind-22C55E?style=for-the-badge&logo=react" alt="React 19" />
   <img src="https://img.shields.io/badge/Backend-FastAPI_Python_3.10+-F59E0B?style=for-the-badge&logo=fastapi" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Tests-54%2F54_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
-  <img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="License" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="License" /></a>
 </p>
 
 </div>
@@ -399,6 +400,9 @@ While ETHIO-CYBERGUARD provides production-grade components, operators deploying
 ---
 
 ## 🤝 15. Contribution & Governance
+<a id="contributing-ov-file"></a>
+<a id="coc-ov-file"></a>
+<a id="security-ov-file"></a>
 
 Contributions from security analysts, developers, and researchers are warmly welcomed!
 
@@ -406,10 +410,12 @@ Contributions from security analysts, developers, and researchers are warmly wel
 - **Contributing Guide**: Review [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming conventions, PR guidelines, and code style.
 - **Repository Owners**: Managed by lead maintainer [@AbeniYirgalem](https://github.com/AbeniYirgalem) (see [.github/CODEOWNERS](.github/CODEOWNERS)).
 - **Security Disclosures**: Please report sensitive vulnerabilities directly to the maintainers as detailed in [SECURITY.md](SECURITY.md).
+- **Citation**: If you reference this work in research or technical whitepapers, see [`CITATION.cff`](./CITATION.cff).
 
 ---
 
 ## 📜 License
+<a id="License-1-ov-file"></a>
 
 Distributed under the **Apache 2.0 License**. See [`LICENSE`](./LICENSE) for full legal text.
 

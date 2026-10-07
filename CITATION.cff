@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, threat intelligence dataset, or detection architecture in your work or research, please cite it as below."
+title: "ETHIO-CYBERGUARD: Autonomous AI-Assisted Cybersecurity Threat Detection and Incident Response Platform"
+version: 1.1.0
+date-released: 2026-10-07
+url: "https://github.com/AbeniYirgalem/ETHIO-CYBERGUARD"
+repository-code: "https://github.com/AbeniYirgalem/ETHIO-CYBERGUARD"
+authors:
+  - family-names: "Yirgalem"
+    given-names: "Abenezer"
+    alias: "AbeniYirgalem"
+keywords:
+  - "cybersecurity"
+  - "security-operations-center"
+  - "incident-response"
+  - "threat-intelligence"
+  - "ai-agents"
+  - "soar"
+  - "siem"
+  - "sigma-rules"
+  - "ethiopia"
+  - "critical-infrastructure"
+license: "Apache-2.0"
