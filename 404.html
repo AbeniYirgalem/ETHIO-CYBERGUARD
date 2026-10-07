@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>ETHIO-CYBERGUARD | Redirecting...</title>
+    <script>
+      // Single Page Application routing fallback for GitHub Pages
+      var path = window.location.pathname.replace(/\/$/, "");
+      var repoName = "/ETHIO-CYBERGUARD";
+      if (path.indexOf(repoName) === 0) {
+        var subpath = path.slice(repoName.length);
+        if (subpath && subpath !== "/") {
+          window.location.replace(repoName + "/#" + subpath.replace(/^\//, ""));
+        } else {
+          window.location.replace(repoName + "/");
+        }
+      } else {
+        window.location.replace("./");
+      }
+    </script>
+    <meta http-equiv="refresh" content="0;URL='./'">
+  </head>
+  <body style="background-color: #070B12; color: #00D9FF; font-family: monospace; padding: 2rem;">
+    <p>Navigating to ETHIO-CYBERGUARD SOC...</p>
+  </body>
+</html>
