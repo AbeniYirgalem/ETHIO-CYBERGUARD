@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   AlertOctagon, 
   ShieldAlert, 
@@ -8,9 +8,13 @@ import {
   Clock, 
   Server, 
   Play, 
-  Pause
+  Pause,
+  Download,
+  Search
 } from 'lucide-react';
 import type { Incident, SecurityEvent } from '../types';
+import { EthiopiaCyberRadar } from './EthiopiaCyberRadar';
+import { soundManager } from '../utils/sound';
 
 interface OverviewViewProps {
   incidents: Incident[];
@@ -27,21 +31,80 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   setIsStreaming,
   onSelectIncident
 }) => {
+  const [selectedSeverity, setSelectedSeverity] = useState<'ALL' | 'CRITICAL' | 'HIGH' | 'MEDIUM'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filtered incidents based on active filter and query
+  const filteredIncidents = incidents.filter(inc => {
+    const matchesSev = selectedSeverity === 'ALL' || inc.severity === selectedSeverity;
+    const matchesQuery = searchQuery.trim() === '' || 
+      inc.incident_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      inc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      inc.affected_asset.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      inc.department.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSev && matchesQuery;
+  });
+
+  // Export incident queue report as downloadable JSON/briefing
+  const exportIncidentBriefing = () => {
+    soundManager.playSuccess();
+    const briefing = {
+      report: "ETHIO-CYBERGUARD Executive Threat Briefing",
+      timestamp: new Date().toISOString(),
+      location: "Addis Ababa Cyber Command HQ",
+      total_incidents: incidents.length,
+      critical_count: incidents.filter(i => i.severity === 'CRITICAL').length,
+      incidents: incidents.map(i => ({
+        id: i.incident_number,
+        title: i.title,
+        severity: i.severity,
+        status: i.status,
+        asset: i.affected_asset,
+        risk_score: i.risk_score,
+        summary: i.summary
+      }))
+    };
+
+    const blob = new Blob([JSON.stringify(briefing, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ETHIO-CYBERGUARD-Briefing-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Top Bar: Question & Quick Filter */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-2 border-b border-[#1E2A38]">
+      {/* Top Bar: Live Status & Controls */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-2 border-b border-[#1E2A38] gap-3">
         <div>
           <h1 className="text-xl font-bold text-white flex items-center space-x-2">
-            <span>Enterprise Security Posture</span>
-            <span className="text-xs px-2 py-0.5 rounded bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/20">Active Defense</span>
+            <span>Enterprise Security Posture & Command</span>
+            <span className="text-xs px-2 py-0.5 rounded bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/20 flex items-center space-x-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse"></span>
+              <span>Active Defense Grid</span>
+            </span>
           </h1>
-          <p className="text-xs text-[#7D8A99]">Real-time visibility across endpoints, firewalls, and banking infrastructure</p>
+          <p className="text-xs text-[#7D8A99]">Real-time situational awareness across Ethiopian banking networks, telecom infrastructure, and cloud perimeters</p>
         </div>
 
-        <div className="flex items-center space-x-3 mt-3 sm:mt-0">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Export Briefing Button */}
           <button 
-            onClick={() => setIsStreaming(!isStreaming)}
+            onClick={exportIncidentBriefing}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#111923] text-[#00D9FF] border border-[#1E2A38] hover:border-[#00D9FF]/40 hover:bg-[#00D9FF]/10 transition"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export Incident Dossier</span>
+          </button>
+
+          {/* Stream Pause / Resume */}
+          <button 
+            onClick={() => {
+              setIsStreaming(!isStreaming);
+              soundManager.playClick();
+            }}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition ${
               isStreaming 
                 ? 'bg-[#00D9FF]/10 text-[#00D9FF] border-[#00D9FF]/30 hover:bg-[#00D9FF]/20' 
@@ -49,15 +112,15 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             }`}
           >
             {isStreaming ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            <span>{isStreaming ? 'Pause Live Stream' : 'Resume Live Stream'}</span>
+            <span>{isStreaming ? 'Pause Feed' : 'Resume Feed'}</span>
           </button>
         </div>
       </div>
 
-      {/* 4 Top-level Cards */}
+      {/* 4 Top-level KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Critical Card */}
-        <div className="bg-[#111923] border border-[#FF1744]/40 rounded-xl p-4 relative overflow-hidden group hover:border-[#FF1744] transition-all">
+        <div className="bg-[#111923] border border-[#FF1744]/40 rounded-xl p-4 relative overflow-hidden group hover:border-[#FF1744] transition-all shadow-lg shadow-[#FF1744]/5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[#FF1744] uppercase tracking-wider">Critical Threats</span>
             <div className="p-2 rounded-lg bg-[#FF1744]/10 text-[#FF1744]">
@@ -65,17 +128,19 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold text-white">7</span>
+            <span className="text-3xl font-extrabold text-white">
+              {incidents.filter(i => i.severity === 'CRITICAL').length}
+            </span>
             <span className="text-[11px] text-[#FF1744] ml-2 font-medium">Require immediate containment</span>
           </div>
           <div className="mt-2 text-[10px] text-[#7D8A99] flex items-center justify-between">
             <span>+2 in last hour</span>
-            <span className="text-[#FF1744]">Highest Risk</span>
+            <span className="text-[#FF1744] font-semibold">Highest Priority</span>
           </div>
         </div>
 
         {/* High Risk Card */}
-        <div className="bg-[#111923] border border-[#F59E0B]/40 rounded-xl p-4 relative overflow-hidden group hover:border-[#F59E0B] transition-all">
+        <div className="bg-[#111923] border border-[#F59E0B]/40 rounded-xl p-4 relative overflow-hidden group hover:border-[#F59E0B] transition-all shadow-lg shadow-[#F59E0B]/5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[#F59E0B] uppercase tracking-wider">High Risk Alerts</span>
             <div className="p-2 rounded-lg bg-[#F59E0B]/10 text-[#F59E0B]">
@@ -88,12 +153,12 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
           <div className="mt-2 text-[10px] text-[#7D8A99] flex items-center justify-between">
             <span>Baseline variance: +14%</span>
-            <span className="text-[#F59E0B]">Needs Review</span>
+            <span className="text-[#F59E0B] font-semibold">Under Investigation</span>
           </div>
         </div>
 
         {/* Active Incidents Card */}
-        <div className="bg-[#111923] border border-[#00D9FF]/40 rounded-xl p-4 relative overflow-hidden group hover:border-[#00D9FF] transition-all">
+        <div className="bg-[#111923] border border-[#00D9FF]/40 rounded-xl p-4 relative overflow-hidden group hover:border-[#00D9FF] transition-all shadow-lg shadow-[#00D9FF]/5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[#00D9FF] uppercase tracking-wider">Active Incidents</span>
             <div className="p-2 rounded-lg bg-[#00D9FF]/10 text-[#00D9FF]">
@@ -101,32 +166,36 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold text-white">12</span>
+            <span className="text-3xl font-extrabold text-white">{incidents.length}</span>
             <span className="text-[11px] text-[#00D9FF] ml-2 font-medium">3 In Forensics</span>
           </div>
           <div className="mt-2 text-[10px] text-[#7D8A99] flex items-center justify-between">
             <span>Avg MTTR: 28 min</span>
-            <span className="text-[#00D9FF]">AI Correlated</span>
+            <span className="text-[#00D9FF] font-semibold">AI Correlated</span>
           </div>
         </div>
 
         {/* Events Card */}
-        <div className="bg-[#111923] border border-[#1E2A38] rounded-xl p-4 relative overflow-hidden group hover:border-[#7D8A99] transition-all">
+        <div className="bg-[#111923] border border-[#1E2A38] rounded-xl p-4 relative overflow-hidden group hover:border-[#7D8A99] transition-all shadow-lg">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#7D8A99] uppercase tracking-wider">Events Processed</span>
+            <span className="text-xs font-semibold text-[#7D8A99] uppercase tracking-wider">Events Ingested</span>
             <div className="p-2 rounded-lg bg-[#1E2A38] text-white">
               <Activity className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold text-white">284,921</span>
+            <span className="text-3xl font-extrabold text-white">51,240</span>
+            <span className="text-[11px] text-[#22C55E] ml-2 font-mono">EPS Peak</span>
           </div>
           <div className="mt-2 text-[10px] text-[#7D8A99] flex items-center justify-between">
-            <span>Ingestion Rate: 4,210 eps</span>
-            <span className="text-[#22C55E]">Healthy</span>
+            <span>Sliding window: 60s</span>
+            <span className="text-[#22C55E] font-semibold">100% Normalized</span>
           </div>
         </div>
       </div>
+
+      {/* NEW: Ethiopian Critical Infrastructure Defense Radar Component */}
+      <EthiopiaCyberRadar />
 
       {/* Threat Activity & Top Threats Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -140,7 +209,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               </h2>
               <p className="text-xs text-[#7D8A99]">Normalized event velocity, correlated alert spikes & threat detections</p>
             </div>
-            <div className="flex items-center space-x-4 text-xs">
+            <div className="flex items-center space-x-4 text-xs font-mono">
               <div className="flex items-center space-x-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-[#00D9FF]"></span>
                 <span className="text-[#7D8A99]">Events (x10k)</span>
@@ -213,20 +282,58 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
 
           <div className="mt-4 pt-3 border-t border-[#1E2A38] flex justify-between items-center text-xs text-[#7D8A99]">
             <span>Feed Source: Ethio-CERT / INSA</span>
-            <span className="text-[#00D9FF] cursor-pointer hover:underline">View MITRE Matrix →</span>
+            <span className="text-[#00D9FF] cursor-pointer hover:underline font-mono">MITRE ATT&CK Matrix →</span>
           </div>
         </div>
       </div>
 
-      {/* Active Incidents Table */}
-      <div className="bg-[#111923] border border-[#1E2A38] rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-[#1E2A38] flex justify-between items-center">
+      {/* Priority Incident Queue with Interactive Filters & Search */}
+      <div className="bg-[#111923] border border-[#1E2A38] rounded-xl overflow-hidden shadow-xl">
+        <div className="p-4 border-b border-[#1E2A38] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
             <h2 className="text-sm font-bold text-white flex items-center space-x-2">
               <Flame className="w-4 h-4 text-[#FF1744]" />
               <span>Priority Incident Queue</span>
+              <span className="text-xs font-mono px-2 py-0.5 rounded bg-[#FF1744]/10 text-[#FF1744] border border-[#FF1744]/30">
+                {filteredIncidents.length} Visible
+              </span>
             </h2>
-            <p className="text-xs text-[#7D8A99]">Correlated security incidents requiring analyst triage and response</p>
+            <p className="text-xs text-[#7D8A99]">Correlated security incidents requiring analyst triage and containment</p>
+          </div>
+
+          {/* Interactive Severity Filter Buttons & Search Input */}
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            {/* Search Input */}
+            <div className="relative flex-1 sm:w-56">
+              <Search className="w-3.5 h-3.5 text-[#7D8A99] absolute left-2.5 top-2.5" />
+              <input 
+                type="text" 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search incident, host, dept..."
+                className="w-full bg-[#0D131C] border border-[#1E2A38] rounded-md py-1.5 pl-8 pr-2 text-xs text-[#E6EDF3] placeholder-[#7D8A99] focus:outline-none focus:border-[#00D9FF]"
+              />
+            </div>
+
+            {/* Severity Pill Switcher */}
+            <div className="flex items-center space-x-1 bg-[#0D131C] p-1 rounded-lg border border-[#1E2A38]">
+              {(['ALL', 'CRITICAL', 'HIGH', 'MEDIUM'] as const).map(sev => (
+                <button
+                  key={sev}
+                  onClick={() => {
+                    setSelectedSeverity(sev);
+                    soundManager.playClick();
+                  }}
+                  className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold transition ${
+                    selectedSeverity === sev 
+                      ? 'bg-[#00D9FF] text-black' 
+                      : 'text-[#7D8A99] hover:text-white'
+                  }`}
+                >
+                  {sev}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -244,77 +351,92 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1E2A38] text-[#E6EDF3]">
-              {incidents.map((inc) => (
-                <tr 
-                  key={inc.id} 
-                  onClick={() => onSelectIncident(inc)}
-                  className="hover:bg-[#0D131C]/60 cursor-pointer transition group"
-                >
-                  <td className="py-3 px-4 font-mono font-bold text-[#00D9FF] flex items-center space-x-1.5">
-                    <span>{inc.incident_number}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition text-[#00D9FF]" />
-                  </td>
-                  <td className="py-3 px-4 max-w-md">
-                    <p className="font-semibold text-white truncate">{inc.title}</p>
-                    <p className="text-[11px] text-[#7D8A99] truncate">{inc.summary}</p>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      inc.severity === 'CRITICAL' ? 'bg-[#FF1744]/15 text-[#FF1744] border border-[#FF1744]/30' :
-                      inc.severity === 'HIGH' ? 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30' :
-                      'bg-[#00D9FF]/15 text-[#00D9FF] border border-[#00D9FF]/30'
-                    }`}>
-                      {inc.severity}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 font-mono font-bold">
-                    <span className={`text-sm ${
-                      inc.risk_score >= 85 ? 'text-[#FF1744]' :
-                      inc.risk_score >= 70 ? 'text-[#F59E0B]' : 'text-[#00D9FF]'
-                    }`}>
-                      {inc.risk_score}
-                    </span>
-                    <span className="text-[#7D8A99] text-[10px]">/100</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center space-x-1.5">
-                      <Server className="w-3.5 h-3.5 text-[#7D8A99]" />
-                      <span className="font-mono text-white">{inc.affected_asset}</span>
-                    </div>
-                    <span className="text-[10px] text-[#7D8A99]">{inc.department}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#111923] border border-[#1E2A38] text-[#E6EDF3]">
-                      {inc.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); onSelectIncident(inc); }}
-                      className="px-2.5 py-1 rounded bg-[#00D9FF]/10 text-[#00D9FF] hover:bg-[#00D9FF] hover:text-black font-semibold text-[11px] transition flex items-center space-x-1"
-                    >
-                      <span>Investigate</span>
-                    </button>
+              {filteredIncidents.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-xs text-[#7D8A99]">
+                    No incidents match the active filter criteria.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredIncidents.map((inc) => (
+                  <tr 
+                    key={inc.id} 
+                    onClick={() => {
+                      soundManager.playClick();
+                      onSelectIncident(inc);
+                    }}
+                    className="hover:bg-[#0D131C]/60 cursor-pointer transition group"
+                  >
+                    <td className="py-3 px-4 font-mono font-bold text-[#00D9FF] flex items-center space-x-1.5">
+                      <span>{inc.incident_number}</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition text-[#00D9FF]" />
+                    </td>
+                    <td className="py-3 px-4 max-w-md">
+                      <p className="font-semibold text-white truncate">{inc.title}</p>
+                      <p className="text-[11px] text-[#7D8A99] truncate">{inc.summary}</p>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        inc.severity === 'CRITICAL' ? 'bg-[#FF1744]/15 text-[#FF1744] border border-[#FF1744]/30' :
+                        inc.severity === 'HIGH' ? 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30' :
+                        'bg-[#00D9FF]/15 text-[#00D9FF] border border-[#00D9FF]/30'
+                      }`}>
+                        {inc.severity}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 font-mono font-bold">
+                      <span className={`text-sm ${
+                        inc.risk_score >= 85 ? 'text-[#FF1744]' :
+                        inc.risk_score >= 70 ? 'text-[#F59E0B]' : 'text-[#00D9FF]'
+                      }`}>
+                        {inc.risk_score}
+                      </span>
+                      <span className="text-[#7D8A99] text-[10px]">/100</span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center space-x-1.5">
+                        <Server className="w-3.5 h-3.5 text-[#7D8A99]" />
+                        <span className="font-mono text-white">{inc.affected_asset}</span>
+                      </div>
+                      <span className="text-[10px] text-[#7D8A99]">{inc.department}</span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#111923] border border-[#1E2A38] text-[#E6EDF3]">
+                        {inc.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <button 
+                        onClick={(e) => { 
+                          e.stopPropagation();
+                          soundManager.playClick();
+                          onSelectIncident(inc); 
+                        }}
+                        className="px-2.5 py-1 rounded bg-[#00D9FF]/10 text-[#00D9FF] hover:bg-[#00D9FF] hover:text-black font-semibold text-[11px] transition flex items-center space-x-1 border border-[#00D9FF]/30"
+                      >
+                        <span>Investigate</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
       {/* Live Security Events Feed Table */}
-      <div className="bg-[#111923] border border-[#1E2A38] rounded-xl overflow-hidden">
+      <div className="bg-[#111923] border border-[#1E2A38] rounded-xl overflow-hidden shadow-xl">
         <div className="p-4 border-b border-[#1E2A38] flex justify-between items-center">
           <div>
             <h2 className="text-sm font-bold text-white flex items-center space-x-2">
               <Activity className="w-4 h-4 text-[#00D9FF]" />
-              <span>Live Security Event Ingestion</span>
+              <span>Live Security Event Ingestion Feed</span>
             </h2>
             <p className="text-xs text-[#7D8A99]">Normalized raw events arriving from endpoint agents and perimeter syslog</p>
           </div>
           <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#0D131C] text-[#7D8A99] border border-[#1E2A38]">
-            Showing latest {events.length} telemetry records
+            {events.length} Telemetry Records Streamed
           </span>
         </div>
 
@@ -334,7 +456,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               {events.map((ev) => (
                 <tr key={ev.event_id} className="hover:bg-[#0D131C]/60 transition">
                   <td className="py-2.5 px-4 text-[#7D8A99] flex items-center space-x-1">
-                    <Clock className="w-3 h-3" />
+                    <Clock className="w-3 h-3 text-[#00D9FF]" />
                     <span>{ev.timestamp}</span>
                   </td>
                   <td className="py-2.5 px-4 font-semibold text-white">{ev.source.hostname}</td>

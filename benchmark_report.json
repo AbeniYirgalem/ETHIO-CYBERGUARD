@@ -1,11 +1,11 @@
 {
   "status": "PASS",
   "target_eps_threshold": 4200,
-  "sustained_eps": 23582.79,
+  "sustained_eps": 6846.86,
   "total_events": 1000,
-  "wall_time_sec": 0.042,
-  "latency_p50_ms": 0.0343,
-  "latency_p95_ms": 0.0698,
-  "latency_p99_ms": 0.1334,
+  "wall_time_sec": 0.146,
+  "latency_p50_ms": 0.1275,
+  "latency_p95_ms": 0.2769,
+  "latency_p99_ms": 0.5772,
   "meets_target": true
 }

@@ -18,6 +18,10 @@ import { UnifiedPipelineView } from './components/UnifiedPipelineView';
 import { ReportsView } from './components/ReportsView';
 import { SettingsView } from './components/SettingsView';
 import { NotificationsModal } from './components/NotificationsModal';
+import { CommandPalette } from './components/CommandPalette';
+import { ToastManager } from './components/ToastManager';
+import type { ToastMessage } from './components/ToastManager';
+import { soundManager } from './utils/sound';
 import { 
   INITIAL_INCIDENTS, 
   INITIAL_EVENTS, 
@@ -40,10 +44,52 @@ export const App: React.FC = () => {
 
   // Identity, Tenant & Notification State
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [language, setLanguage] = useState<'en' | 'am'>('en');
   const [currentOrg, setCurrentOrg] = useState("Commercial Bank of Ethiopia (CBE)");
   const [currentRole, setCurrentRole] = useState("SECURITY_ANALYST");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Toast dispatch and cleanup helper
+  const addToast = (toast: Omit<ToastMessage, 'id' | 'timestamp'>) => {
+    const now = new Date();
+    const timestamp = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' EAT';
+    const newToast: ToastMessage = {
+      id: `toast_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      timestamp,
+      ...toast
+    };
+    setToasts(prev => [newToast, ...prev].slice(0, 5));
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== newToast.id));
+    }, 5000);
+  };
+
+  const dismissToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    soundManager.setEnabled(next);
+    if (next) soundManager.playSuccess();
+  };
+
+  // Keyboard HUD shortcut (⌘K / Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(prev => !prev);
+        soundManager.playClick();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Simulated live telemetry stream
   useEffect(() => {
@@ -102,6 +148,7 @@ export const App: React.FC = () => {
   const switchTab = (tab: TabId) => {
     setActiveTab(tab);
     window.location.hash = tab;
+    soundManager.playClick();
   };
 
   const [showDemoBanner, setShowDemoBanner] = useState(true);
@@ -109,26 +156,51 @@ export const App: React.FC = () => {
   // Action Approval Handlers
   const handleApproveAction = (id: string) => {
     setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'APPROVED' } : a));
+    soundManager.playLockAction();
+    addToast({
+      type: 'success',
+      title: 'SOAR Action Executed',
+      message: `Action ${id} approved & dispatched to target defense cluster.`
+    });
   };
 
   const handleRejectAction = (id: string, reason?: string) => {
     setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'REJECTED', rejection_reason: reason } : a));
+    soundManager.playAlert();
+    addToast({
+      type: 'warning',
+      title: 'Action Dismissed by Analyst',
+      message: `Action ${id} rejected${reason ? `: ${reason}` : '.'}`
+    });
   };
 
   const handleDrilldownIncident = (inc: Incident) => {
     setSelectedIncident(inc);
     setActiveTab('incidents');
+    soundManager.playClick();
   };
 
   // Scenario Simulator Handlers
   const handleInjectEvents = (injected: SecurityEvent[]) => {
     setEvents(prev => [...injected, ...prev.slice(0, 45)]);
+    soundManager.playAlert();
+    addToast({
+      type: 'warning',
+      title: 'Telemetry Surge Injected',
+      message: `${injected.length} synthetic attack events ingested into pipeline.`
+    });
   };
 
   const handleAddIncident = (newInc: Incident) => {
     setIncidents(prev => [newInc, ...prev]);
     setSelectedIncident(newInc);
     setActiveTab('incidents');
+    soundManager.playAlert();
+    addToast({
+      type: 'critical',
+      title: `New Incident Raised: ${newInc.id}`,
+      message: `${newInc.title} (${newInc.severity}) assigned to active queue.`
+    });
   };
 
   const pendingCount = actions.filter(a => a.status === 'PENDING_APPROVAL').length;
@@ -149,6 +221,9 @@ export const App: React.FC = () => {
         currentOrg={currentOrg}
         currentRole={currentRole}
         onToggleMobileMenu={() => setMobileMenuOpen(m => !m)}
+        onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+        soundEnabled={soundEnabled}
+        onToggleSound={toggleSound}
       />
 
       {/* Main App Body */}
@@ -369,6 +444,25 @@ export const App: React.FC = () => {
       <NotificationsModal 
         isOpen={notificationsOpen}
         onClose={() => setNotificationsOpen(false)}
+      />
+
+      {/* Tactical HUD Command Palette (⌘K) */}
+      <CommandPalette 
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        onNavigate={switchTab}
+        incidents={incidents}
+        onSelectIncident={handleDrilldownIncident}
+        onToggleSound={toggleSound}
+        soundEnabled={soundEnabled}
+        onToggleLanguage={() => setLanguage(l => l === 'en' ? 'am' : 'en')}
+        language={language}
+      />
+
+      {/* Floating Tactical Toast Manager */}
+      <ToastManager 
+        toasts={toasts}
+        onDismiss={dismissToast}
       />
     </div>
   );
