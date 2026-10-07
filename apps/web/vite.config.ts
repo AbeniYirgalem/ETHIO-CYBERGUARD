@@ -9,4 +9,21 @@ export default defineConfig({
     tailwindcss(),
   ],
   base: './', // Ensures assets load correctly on GitHub Pages and local builds
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('node_modules')) {
+            if (id.includes('lucide-react')) {
+              return 'lucide'
+            }
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor'
+            }
+          }
+        },
+      },
+    },
+  },
 })
+

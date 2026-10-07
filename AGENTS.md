@@ -28,7 +28,7 @@ ETHIO-CYBERGUARD is an enterprise cybersecurity platform designed for critical n
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4, Lucide Icons, Web Audio API synthesizer.
 - **Backend API**: FastAPI, Uvicorn, Python 3.10+, Pydantic v2, SQLite / PostgreSQL.
 - **Data & Ingestion**: ECS (Elastic Common Schema) JSON events, SIGMA rule evaluator, geo-IP enrichment.
-- **Testing**: `pytest` (54 tests, 100% green pass rate), `tsc -b && vite build`.
+- **Testing**: `pytest` (75 tests, 100% green pass rate), `tsc -b && vite build`.
 - **Security Controls**: Role-Based Access Control (RBAC, 7 tiers), JWT authentication with refresh rotation, dual-custody SOAR approvals.
 
 ---
@@ -100,7 +100,7 @@ npm run build
 All automated tests MUST pass with 100% success before submitting changes or pushing commits.
 
 ```bash
-# Run entire test suite (54 unit, integration, and security tests)
+# Run entire test suite (75 unit, integration, and security tests)
 python -m pytest tests/ -v
 
 # Run targeted test suites

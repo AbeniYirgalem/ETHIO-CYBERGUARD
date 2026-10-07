@@ -155,3 +155,21 @@ def test_reports_endpoints():
     csv_resp = client.get("/api/reports/incident/INC-00042?format=csv")
     assert csv_resp.status_code == 200
     assert "text/csv" in csv_resp.headers["content-type"]
+
+def test_routes_backward_compatibility_aliases():
+    import apps.api.routes as routes
+    assert hasattr(routes, "auth_router")
+    assert hasattr(routes, "incidents_router")
+    assert hasattr(routes, "phishing_router")
+    assert hasattr(routes, "threat_intel_router")
+    assert hasattr(routes, "osint_router")
+    assert hasattr(routes, "typosquat_router")
+    assert hasattr(routes, "awareness_router")
+    assert hasattr(routes, "ai_router")
+    assert hasattr(routes, "response_router")
+    assert hasattr(routes, "dashboard_router")
+    assert hasattr(routes, "reports_router")
+    assert hasattr(routes, "jobs_router")
+    assert hasattr(routes, "connectors_router")
+    assert hasattr(routes, "health_router")
+

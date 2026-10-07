@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
+from contextlib import asynccontextmanager
 import sys
 import os
 
@@ -46,15 +47,17 @@ from services.ingestion.pipeline import ingestion_pipeline
 from apps.api.dependencies import verify_collector_api_key
 from apps.api.config import DEMO_MODE, MAX_PAYLOAD_BYTES
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
 app = FastAPI(
     title="ETHIO-CYBERGUARD Central SOC API",
     description="Centralized Security Operations Center and AI Investigation Platform API",
-    version="1.1.0"
+    version="1.1.0",
+    lifespan=lifespan
 )
-
-@app.on_event("startup")
-def startup_event():
-    init_db()
 
 # Register Modular Routers (Supporting both /api and /api/v1 paths)
 app.include_router(auth_router)

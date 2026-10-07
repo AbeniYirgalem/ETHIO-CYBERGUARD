@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Bot, Send, Sparkles } from 'lucide-react';
 import type { ChatMessage, Incident } from '../types';
 
@@ -28,7 +28,7 @@ export const AssistantView: React.FC<AssistantViewProps> = ({ currentIncident })
     "Summarize executive business impact for CISO"
   ];
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = useCallback((textToSend?: string) => {
     const query = textToSend || input;
     if (!query.trim()) return;
 
@@ -84,7 +84,7 @@ export const AssistantView: React.FC<AssistantViewProps> = ({ currentIncident })
       setMessages(prev => [...prev, botMsg]);
       setIsTyping(false);
     }, 600);
-  };
+  }, [input, currentIncident]);
 
   return (
     <div className="bg-[#111923] border border-[#1E2A38] rounded-xl flex flex-col h-[calc(100vh-8.5rem)]">

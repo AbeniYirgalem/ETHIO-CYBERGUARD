@@ -16,7 +16,7 @@ export interface RegionalNode {
   coords: { x: number; y: number }; // Percentage relative to SVG container
 }
 
-export const ETHIOPIAN_NODES: RegionalNode[] = [
+const ETHIOPIAN_NODES: RegionalNode[] = [
   {
     id: 'node-cbe-hq',
     name: 'CBE Financial Core Tower',

@@ -14,6 +14,9 @@ from apps.api.routers.ai import router as ai_router
 from apps.api.routers.response import router as response_router
 from apps.api.routers.dashboard import router as dashboard_router
 from apps.api.routers.reports import router as reports_router
+from apps.api.routers.jobs import router as jobs_router
+from apps.api.routers.connectors import router as connectors_router
+from apps.api.routers.health import router as health_router
 
 __all__ = [
     "auth_router",
@@ -26,5 +29,8 @@ __all__ = [
     "ai_router",
     "response_router",
     "dashboard_router",
-    "reports_router"
+    "reports_router",
+    "jobs_router",
+    "connectors_router",
+    "health_router"
 ]

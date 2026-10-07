@@ -54,7 +54,9 @@ async def analyze_eml_file(file: UploadFile = File(...)):
 def extract_and_inspect_urls(payload: URLAnalyzeRequest):
     inspected = []
     for u in payload.urls:
-        is_ip = any(char.isdigit() for char in u.split("/")[2:3]) if "://" in u else False
+        host = u.split("/")[2].split(":")[0] if "://" in u and len(u.split("/")) > 2 else ""
+        parts = host.split(".")
+        is_ip = len(parts) == 4 and all(p.isdigit() and 0 <= int(p) <= 255 for p in parts)
         inspected.append({
             "url": u,
             "is_ip_based": is_ip,
