@@ -28,7 +28,7 @@
   <img src="https://img.shields.io/badge/Throughput-51k+_EPS-00D9FF?style=for-the-badge&logo=speedtest" alt="51k+ EPS" />
   <img src="https://img.shields.io/badge/Frontend-React_19_+_Tailwind-22C55E?style=for-the-badge&logo=react" alt="React 19" />
   <img src="https://img.shields.io/badge/Backend-FastAPI_Python_3.10+-F59E0B?style=for-the-badge&logo=fastapi" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/Tests-54%2F54_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
+  <img src="https://img.shields.io/badge/Tests-75%2F75_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="License" /></a>
 </p>
 
@@ -340,8 +340,11 @@ tests/ai-evaluation/test_ai_grounding.py ....... PASSED
 tests/integration/test_pipeline.py ............ PASSED
 tests/integration/test_unified_pipeline.py .... PASSED
 tests/security/test_prompt_injection.py ....... PASSED
+tests/security/test_ssrf_and_scope.py ......... PASSED
+tests/security/test_tenant_isolation.py ....... PASSED
 tests/unit/test_alerting.py ................... PASSED
 tests/unit/test_api_endpoints.py .............. PASSED
+tests/unit/test_api_extended.py ............... PASSED
 tests/unit/test_auth.py ....................... PASSED
 tests/unit/test_awareness.py .................. PASSED
 tests/unit/test_benchmark.py .................. PASSED
@@ -350,12 +353,14 @@ tests/unit/test_normalizer.py ................. PASSED
 tests/unit/test_osint.py ...................... PASSED
 tests/unit/test_phase2_improvements.py ........ PASSED
 tests/unit/test_phishing.py ................... PASSED
+tests/unit/test_platform_hardening.py ......... PASSED
 tests/unit/test_rbac.py ....................... PASSED
 tests/unit/test_risk.py ....................... PASSED
 tests/unit/test_rules.py ...................... PASSED
+tests/unit/test_soar_response.py .............. PASSED
 tests/unit/test_typosquat.py .................. PASSED
 
-============================= 54 passed in 1.12s =============================
+============================= 75 passed in 1.86s =============================
 ```
 
 To test the frontend build and TypeScript compliance:
@@ -378,14 +383,19 @@ While ETHIO-CYBERGUARD provides production-grade components, operators deploying
 ## 🗺️ 14. Project Roadmap
 
 - **v1.1 (Current Release)**:
-  - Full-stack React 19 + FastAPI integration
-  - SQLAlchemy models, Alembic migrations, and persistent repository layer
+  - Full-stack React 19 + FastAPI integration with modernized ASGI `@asynccontextmanager` lifespan
+  - Optimized Vite v8 / Rolldown manual chunk splitting (< 270 kB bundles, sub-second build)
+  - Cryptographically chained SHA-256 immutable SOAR audit trail with tamper detection
+  - Native Ge'ez / Amharic NLP psychological urgency scam detector & Telebirr look-alike protection
+  - SQLAlchemy 2.1+, Alembic 1.20+, and persistent repository layer
   - 7 enterprise RBAC roles with refresh token rotation and lockout protection
   - Asynchronous background worker system (`/api/v1/jobs`)
   - Formal 10-state incident lifecycle state machine
   - Dual-custody SOAR execution with dry-run and rollback
   - STIX 2.1 Threat Intel export and import
   - Health probes (`/health/live`, `/health/ready`) and Prometheus `/metrics`
+  - Comprehensive Technical White Paper ([`docs/ETHIO_CYBERGUARD_TECHNICAL_PAPER.md`](./docs/ETHIO_CYBERGUARD_TECHNICAL_PAPER.md))
+  - 75 automated unit, integration, and security tests (100% green pass rate)
 - **v1.2 (Target: Q3 2026)**:
   - Air-gapped on-premise LLM inference with Ollama and vLLM
   - Pre-built Splunk and Elastic forwarder integrations

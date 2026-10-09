@@ -1,32 +1,87 @@
-# React + TypeScript + Vite
+# 🛡️ ETHIO-CYBERGUARD — SOC Web HUD Console
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The **ETHIO-CYBERGUARD Web HUD** is a mission-critical, high-performance web interface designed for Security Operations Centers (SOC) defending national infrastructure, commercial banks, telecommunications, and government perimeters in Ethiopia.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ⚡ Key Highlights & Technologies
 
-## React Compiler
+- **React 19**: Modern functional architecture utilizing `useState`, `useEffect`, `useRef`, and `useCallback` with strict Fast Refresh compliance and zero cascading renders.
+- **Vite 8 & Rolldown**: Ultra-fast build times (~1.2s) with custom functional `manualChunks` splitting React/ReactDOM vendor and Lucide chunks (each bundle under 270 kB).
+- **Tailwind CSS v4**: Tactical dark theme interface (`#070B12`, `#0D131C`, `#111923`, `#00D9FF`, `#FF1744`, `#22C55E`, `#F59E0B`).
+- **Web Audio API Acoustic Synthesizer**: Custom real-time audio alerts for Critical (880 Hz dual-beep), High (440 Hz pulse), and Info (220 Hz chime) events with persistent mute toggle.
+- **Ethiopia Cyber Radar**: Real-time canvas radar visualizer mapping national critical infrastructure nodes (Commercial Bank of Ethiopia, Ethio Telecom, INSA, National Grid) with ping arcs, sweeps, and status pulses.
+- **Dual-Custody SOAR Gate**: Cryptographic authorization modals requiring human analyst confirmation before destructive containment execution.
+- **Amharic NLP & Telebirr Shield**: Interactive phishing and brand impersonation analyzer supporting Ge'ez script SMS and email lures.
+- **Code Quality**: Clean build with `oxlint` (0 errors, 0 warnings).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 📂 Component Directory Breakdown
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```text
+apps/web/src/
+├── components/
+│   ├── ActionApprovalModal.tsx      # Dual-custody SOAR approval dialog
+│   ├── AssistantView.tsx            # Grounded AI SOC Copilot chat with citation links
+│   ├── CommandPalette.tsx           # Quick navigation HUD (Ctrl/Cmd + K)
+│   ├── EthiopiaCyberRadar.tsx       # Live canvas radar for national critical nodes
+│   ├── IncidentDossierModal.tsx     # Deep-dive forensic dossier & attack graph
+│   ├── PhishingDetectorView.tsx     # Telebirr & Amharic SMS/email phishing inspector
+│   ├── RoleSwitcher.tsx             # 7-tier RBAC simulator for testing role policies
+│   ├── TelemetryStream.tsx          # Real-time ECS log ingestion stream
+│   ├── ThreatIntelligenceView.tsx   # IOC feeds, MISP indicators & reputation
+│   └── ...
+├── utils/
+│   └── soundSynthesizer.ts          # Web Audio API procedural sound engine
+├── types.ts                         # Complete TypeScript domain interfaces
+├── App.tsx                          # Root layout, navigation tabs & state machine
+└── main.tsx                         # React 19 entrypoint
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+---
+
+## 🚀 Development Quickstart
+
+### Prerequisites
+- Node.js 20+ (Node.js 22 LTS recommended)
+- `npm` 10+
+
+### Installation
+```bash
+# From apps/web directory
+npm install
+```
+
+### Run Local Development Server
+```bash
+npm run dev
+```
+The application will launch at `http://localhost:5173`.
+
+### Type-Check & Production Build
+```bash
+npm run build
+```
+Build output is generated into `dist/` with relative asset links (`base: './'`), ready for direct static hosting, Docker Nginx containers, or GitHub Pages.
+
+### Fast Linting with Oxlint
+```bash
+npm run lint
+```
+
+---
+
+## 🎮 Keyboard Shortcuts & HUD Navigation
+
+- <kbd>Ctrl</kbd> + <kbd>K</kbd> / <kbd>Cmd</kbd> + <kbd>K</kbd>: Open Command Palette for quick search and action dispatch.
+- <kbd>Esc</kbd>: Close open modals (Dossier, Dual-Custody Approval, Command Palette).
+- <kbd>M</kbd>: Mute / unmute Web Audio API audio synthesizer alarms.
+
+---
+
+## 🔒 Security Invariants for Web Development
+
+1. **Dual-Custody Gate**: Never automatically invoke containment action endpoints (`/api/v1/response/actions/.../approve`) from UI components without rendering the `ActionApprovalModal`.
+2. **Relative Asset Base**: Always preserve `base: './'` in `vite.config.ts` to ensure compatibility with subpath deployments and GitHub Pages.
+3. **Fast Refresh Purity**: Do not export non-component constants or helper functions from `.tsx` component files. Keep all data structures in dedicated types or utility files.
