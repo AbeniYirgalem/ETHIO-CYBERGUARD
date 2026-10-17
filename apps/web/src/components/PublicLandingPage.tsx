@@ -5,7 +5,9 @@ import {
   Cpu, 
   Lock, 
   Building2, 
-  Mail
+  Mail,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 interface PublicLandingPageProps {
@@ -15,6 +17,29 @@ interface PublicLandingPageProps {
 export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({ onEnterSOC }) => {
   const [currentView, setCurrentView] = useState<'home' | 'about' | 'docs' | 'contact'>('home');
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [loginNotice, setLoginNotice] = useState('');
+
+  const openLoginModal = () => {
+    setLoginNotice('');
+    setShowLoginPassword(false);
+    setShowLoginModal(true);
+  };
+
+  const closeLoginModal = () => {
+    setShowLoginModal(false);
+    setLoginNotice('');
+    setShowLoginPassword(false);
+  };
+
+  const handleLoginSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoginNotice(
+      'The sign-in UI is ready, but authentication is not connected yet. Your credentials were not sent or stored.'
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#070B12] text-[#E6EDF3] flex flex-col font-sans selection:bg-[#00D9FF] selection:text-black">
@@ -23,7 +48,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({ onEnterSOC
         <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setCurrentView('home')}>
           <div className="p-2 bg-[#00D9FF]/10 border border-[#00D9FF]/30 rounded-lg">
             <Shield className="w-5 h-5 text-[#00D9FF]" />
-          </div>
+             </div>
           <div>
             <span className="font-bold tracking-wider text-base text-white">ETHIO-CYBERGUARD</span>
             <span className="hidden sm:inline-block ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#00D9FF]/10 text-[#00D9FF] border border-[#00D9FF]/20">
@@ -61,7 +86,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({ onEnterSOC
 
         <div className="flex items-center space-x-3">
           <button 
-            onClick={() => setShowLoginModal(true)}
+            onClick={openLoginModal}
             className="px-3.5 py-1.5 text-xs text-[#E6EDF3] hover:text-white bg-[#111923] border border-[#1E2A38] hover:border-[#00D9FF]/40 rounded-lg transition"
           >
             Sign In
@@ -73,7 +98,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({ onEnterSOC
             <span>Launch SOC Console</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
-        </div>
+           </div>
       </header>
 
       {/* Main Public Content */}
@@ -123,7 +148,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({ onEnterSOC
                 <p className="text-xs text-[#7D8A99] leading-relaxed">
                   Seven dedicated AI agents collaborate to analyze discrete events, correlate threat intelligence, reconstruct attack chains, compute explainable risk scores, and brief leadership.
                 </p>
-              </div>
+                 </div>
 
               <div className="bg-[#111923] border border-[#1E2A38] rounded-xl p-6 space-y-3 hover:border-[#FF1744]/40 transition">
                 <div className="p-3 bg-[#FF1744]/10 text-[#FF1744] rounded-lg w-fit">
@@ -173,7 +198,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({ onEnterSOC
                   <thead>
                     <tr className="border-b border-[#1E2A38] text-[#7D8A99] font-mono">
                       <th className="py-3 px-3">Feature / Capability</th>
-                      <th className="py-3 px-3 text-center">ThePhish</th>
+                       <th className="py-3 px-3 text-center">ThePhish</th>
                       <th className="py-3 px-3 text-center">openSquat</th>
                       <th className="py-3 px-3 text-center">CyberSatark</th>
                       <th className="py-3 px-3 text-center">SpiderFoot / Sherlock</th>
@@ -223,7 +248,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({ onEnterSOC
                         ✅ Yes (RFC-822 Parser & Auth Audit)
                       </td>
                     </tr>
-                    <tr className="hover:bg-[#0D131C] transition">
+                     <tr className="hover:bg-[#0D131C] transition">
                       <td className="py-3 px-3 font-medium">Typosquatting & Homoglyph Monitoring</td>
                       <td className="py-3 px-3 text-center text-[#FF1744]">❌ No</td>
                       <td className="py-3 px-3 text-center text-[#22C55E]">✅ Yes</td>
@@ -273,7 +298,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({ onEnterSOC
                         ✅ Yes (Dual-Custody Playbooks)
                       </td>
                     </tr>
-                    <tr className="hover:bg-[#0D131C] transition">
+                      <tr className="hover:bg-[#0D131C] transition">
                       <td className="py-3 px-3 font-medium">Zero-Install Interactive Web UI</td>
                       <td className="py-3 px-3 text-center text-[#F59E0B]">⚠️ Complex</td>
                       <td className="py-3 px-3 text-center text-[#FF1744]">❌ CLI Only</td>
@@ -323,7 +348,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({ onEnterSOC
               </div>
               <div className="p-4 bg-[#111923] border border-[#1E2A38] rounded-lg">
                 <span className="font-bold text-white block">docs/api.md</span>
-                <span className="text-[#7D8A99]">FastAPI REST & WebSocket endpoints</span>
+                 <span className="text-[#7D8A99]">FastAPI REST & WebSocket endpoints</span>
               </div>
               <div className="p-4 bg-[#111923] border border-[#1E2A38] rounded-lg">
                 <span className="font-bold text-white block">database/schema.sql</span>
@@ -347,43 +372,119 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({ onEnterSOC
         )}
       </main>
 
-      {/* Role-based Sign In Modal */}
+      {/* Frontend-only Sign In Modal */}
       {showLoginModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="bg-[#111923] border border-[#1E2A38] rounded-xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeLoginModal();
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="login-modal-title"
+            className="bg-[#111923] border border-[#1E2A38] rounded-xl max-w-sm w-full p-6 space-y-5 shadow-2xl"
+          >
             <div className="text-center">
               <Shield className="w-8 h-8 text-[#00D9FF] mx-auto mb-2" />
-              <h3 className="text-base font-bold text-white">Authenticate to SOC Console</h3>
-              <p className="text-[11px] text-[#7D8A99]">Select demo credential role to enter dashboard:</p>
+              <h3 id="login-modal-title" className="text-base font-bold text-white">
+                Sign in to ETHIO-CYBERGUARD
+              </h3>
+              <p className="mt-1 text-[11px] text-[#7D8A99]">
+                Enter your account details to preview the sign-in experience.
+              </p>
             </div>
 
-            <div className="space-y-2">
-              <button
-                onClick={() => { setShowLoginModal(false); onEnterSOC(); }}
-                className="w-full p-3 rounded-lg bg-[#070B12] hover:bg-[#1E2A38] border border-[#00D9FF]/40 text-left transition flex items-center justify-between"
-              >
-                <div>
-                  <p className="text-xs font-bold text-white">Dawit Mengistu</p>
-                  <p className="text-[10px] text-[#00D9FF]">Security Analyst • Tier 2</p>
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+                 <div className="space-y-1.5">
+               <label htmlFor="login-email" className="block text-xs font-medium text-[#E6EDF3]">
+                  Email address
+                </label>
+                <div className="relative">
+                  <Mail
+                    aria-hidden="true"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7D8A99]"
+                  />
+                  <input
+                    id="login-email"
+                    name="email"
+                    type="email"
+                    autoComplete="username"
+                    required
+                    value={loginEmail}
+                    onChange={(event) => {
+                      setLoginEmail(event.target.value);
+                      setLoginNotice('');
+                    }}
+                    placeholder="you@example.com"
+                    className="w-full rounded-lg border border-[#1E2A38] bg-[#070B12] py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-[#526171] outline-none focus:border-[#00D9FF]"
+                  />
                 </div>
-                <ArrowRight className="w-4 h-4 text-[#00D9FF]" />
-              </button>
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="login-password" className="block text-xs font-medium text-[#E6EDF3]">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock
+                    aria-hidden="true"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7D8A99]"
+                  />
+                  <input
+                    id="login-password"
+                    name="password"
+                    type={showLoginPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    required
+                    minLength={8}
+                    value={loginPassword}
+                    onChange={(event) => {
+                      setLoginPassword(event.target.value);
+                      setLoginNotice('');
+                    }}
+                    placeholder="Enter your password"
+                    className="w-full rounded-lg border border-[#1E2A38] bg-[#070B12] py-2.5 pl-10 pr-11 text-sm text-white placeholder:text-[#526171] outline-none focus:border-[#00D9FF]"
+                  />
+                   <button
+                    type="button"
+                    onClick={() => setShowLoginPassword((visible) => !visible)}
+                    aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-[#7D8A99] hover:text-white"
+                  >
+                    {showLoginPassword ? (
+                      <EyeOff aria-hidden="true" className="w-4 h-4" />
+                    ) : (
+                      <Eye aria-hidden="true" className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+                <p className="text-[10px] text-[#7D8A99]">Use at least 8 characters for this form preview.</p>
+              </div>
+
+              {loginNotice && (
+                <p role="status" className="rounded-lg border border-[#F59E0B]/30 bg-[#F59E0B]/10 p-3 text-[11px] leading-relaxed text-[#FCD34D]">
+                  {loginNotice}
+                </p>
+              )}
 
               <button
-                onClick={() => { setShowLoginModal(false); onEnterSOC(); }}
-                className="w-full p-3 rounded-lg bg-[#070B12] hover:bg-[#1E2A38] border border-[#1E2A38] text-left transition flex items-center justify-between"
+                type="submit"
+                className="w-full rounded-lg bg-[#00D9FF] py-2.5 text-xs font-bold text-black transition hover:bg-[#00D9FF]/80"
               >
-                <div>
-                  <p className="text-xs font-bold text-white">Sara Yohannes</p>
-                  <p className="text-[10px] text-[#F59E0B]">SOC Manager • Approval Authority</p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-[#7D8A99]" />
+                Preview sign-in
               </button>
-            </div>
+            </form>
+
+            <p className="text-center text-[10px] leading-relaxed text-[#7D8A99]">
+              Frontend-only preview. Do not enter a real password. Authentication will be implemented when the backend is integrated.
+            </p>
 
             <button
-              onClick={() => setShowLoginModal(false)}
-              className="w-full py-2 text-xs text-[#7D8A99] hover:text-white"
+              type="button"
+              onClick={closeLoginModal}
+              className="w-full py-1 text-xs text-[#7D8A99] hover:text-white"
             >
               Cancel
             </button>
@@ -398,3 +499,4 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({ onEnterSOC
     </div>
   );
 };
+
