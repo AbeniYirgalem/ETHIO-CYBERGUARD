@@ -44,6 +44,24 @@ class SigmaRuleEvaluator:
                 except (OSError, yaml.YAMLError) as exc:
                     logger.warning("Could not load Sigma rule %s: %s", filepath, exc)
 
+    @staticmethod
+    def _get_rule_severity(rule: Dict[str, Any]) -> str:
+        """Normalize custom severity and standard Sigma level."""
+        valid_levels = {"INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"}
+
+        for value in (rule.get("severity"), rule.get("level")):
+            if not isinstance(value, str) or not value.strip():
+                continue
+
+            normalized = value.strip().upper()
+
+            if normalized == "INFORMATIONAL":
+                normalized = "INFO"
+
+            if normalized in valid_levels:
+                return normalized
+
+        return "HIGH"
     def evaluate(self, event: Dict[str, Any]) -> List[Dict[str, Any]]:
         alerts: List[Dict[str, Any]] = []
         for rule in self.rules:
@@ -54,12 +72,12 @@ class SigmaRuleEvaluator:
             if not isinstance(tags, list):
                 tags = []
             techniques = [tag for tag in tags if isinstance(tag, str) and "attack.t" in tag.lower()]
-            severity = rule.get("severity") or "HIGH"
+            severity = self._get_rule_severity(rule)
             alerts.append({
                 "rule_id": rule.get("id"),
                 "title": rule.get("title"),
                 "description": rule.get("description"),
-                "severity": str(severity).upper(),
+                "severity": severity,
                 "tags": tags,
                 "mitre_technique": techniques[:1] or ["T1059"],
                 "false_positives": rule.get("falsepositives", []),
