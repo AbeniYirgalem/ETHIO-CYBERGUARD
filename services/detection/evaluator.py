@@ -62,6 +62,7 @@ class SigmaRuleEvaluator:
                 return normalized
 
         return "HIGH"
+
     def evaluate(self, event: Dict[str, Any]) -> List[Dict[str, Any]]:
         alerts: List[Dict[str, Any]] = []
         for rule in self.rules:
