@@ -10,6 +10,7 @@ from datetime import datetime, timezone, timedelta
 import hashlib
 import hmac
 import base64
+import binascii
 import json
 import os
 
@@ -130,8 +131,11 @@ def _b64url_encode(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).decode("utf-8").rstrip("=")
 
 def _b64url_decode(data: str) -> bytes:
-    padding = "=" * (4 - (len(data) % 4)) if len(data) % 4 != 0 else ""
-    return base64.urlsafe_b64decode(data + padding)
+    """Decode a base64url JWT segment, rejecting invalid characters."""
+    if not isinstance(data, str) or not data:
+        raise ValueError("Empty JWT segment")
+    padding = "=" * ((4 - len(data) % 4) % 4)
+    return base64.b64decode(data + padding, altchars=b"-_", validate=True)
 
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
@@ -166,24 +170,64 @@ def create_refresh_token(data: Dict[str, Any]) -> str:
     return f"{header_b64}.{payload_b64}.{sig_b64}"
 
 def verify_token(token: str, expected_type: str = "access") -> Dict[str, Any]:
+    """Validate JWT structure, algorithm, signature, expiry, and token type.
+
+    Invalid or malformed client tokens consistently produce HTTP 401 instead
+    of leaking parsing exceptions as server errors.
+    """
+    unauthorized = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    if not isinstance(token, str):
+        raise unauthorized
+
     parts = token.split(".")
-    if len(parts) != 3:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token structure")
-    
+    if len(parts) != 3 or any(not part for part in parts):
+        raise unauthorized
+
     header_b64, payload_b64, sig_b64 = parts
-    signing_input = f"{header_b64}.{payload_b64}".encode("utf-8")
-    expected_sig = hmac.new(JWT_SECRET.encode("utf-8"), signing_input, hashlib.sha256).digest()
-    
-    if not hmac.compare_digest(_b64url_decode(sig_b64), expected_sig):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token signature verification failed")
-    
-    payload = json.loads(_b64url_decode(payload_b64).decode("utf-8"))
-    if "exp" in payload and payload["exp"] < int(datetime.now(timezone.utc).timestamp()):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
-    
+    try:
+        header = json.loads(_b64url_decode(header_b64).decode("utf-8"))
+        payload = json.loads(_b64url_decode(payload_b64).decode("utf-8"))
+        supplied_signature = _b64url_decode(sig_b64)
+    except (ValueError, UnicodeDecodeError, json.JSONDecodeError, binascii.Error):
+        raise unauthorized
+
+    # This implementation signs with HMAC-SHA256; never trust the token's
+    # unverified algorithm field to choose a verification method.
+    if not isinstance(header, dict) or header.get("alg") != JWT_ALGORITHM:
+        raise unauthorized
+    if header.get("typ", "JWT") != "JWT" or not isinstance(payload, dict):
+        raise unauthorized
+
+    signing_input = f"{header_b64}.{payload_b64}".encode("ascii")
+    expected_signature = hmac.new(
+        JWT_SECRET.encode("utf-8"), signing_input, hashlib.sha256
+    ).digest()
+    if not hmac.compare_digest(supplied_signature, expected_signature):
+        raise unauthorized
+
+    # Tokens minted by this application always contain exp. Reject tokens
+    # without it or with an unexpected type rather than accepting them forever.
+    expires_at = payload.get("exp")
+    if isinstance(expires_at, bool) or not isinstance(expires_at, (int, float)):
+        raise unauthorized
+    if expires_at <= datetime.now(timezone.utc).timestamp():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     if payload.get("type", "access") != expected_type:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Expected {expected_type} token")
-        
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Expected {expected_type} token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     return payload
 
 def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Dict[str, Any]:
