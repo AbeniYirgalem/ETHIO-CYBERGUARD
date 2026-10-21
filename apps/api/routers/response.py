@@ -6,15 +6,33 @@ Supports /api/response and /api/v1/response.
 """
 
 from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone, timedelta
 import hashlib
+import ipaddress
 import uuid
 
-from ..dependencies import require_permission, get_current_user
+from ..dependencies import require_permission, get_current_user, security
 
 router = APIRouter(tags=["SOAR Containment & Automated Response"])
+
+
+def _require_authenticated_permission(permission: str):
+    """Require a real bearer token as well as the role's permission.
+
+    get_current_user supports a guest fallback for public/demo views, so
+    permission checks alone are not sufficient for sensitive SOAR routes.
+    """
+    def guard(
+        credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+        current_user: Dict[str, Any] = Depends(require_permission(permission)),
+    ) -> Dict[str, Any]:
+        if credentials is None or not credentials.credentials:
+            raise HTTPException(status_code=401, detail="Authentication required for SOAR response operations.")
+        return current_user
+    return guard
 
 # In-Memory Active Response Actions & Immutable Audit Log
 ACTIONS_STORE: List[Dict[str, Any]] = [
@@ -106,178 +124,239 @@ def _record_audit(operator: str, action: str, target: str, result: str, details:
     }
     AUDIT_LOG_STORE.insert(0, entry)
 
+def _operator_name(user: Dict[str, Any]) -> str:
+    """Use the authenticated identity for audit records, never client-supplied names."""
+    return str(user.get("name") or user.get("email") or user.get("id") or "unknown")
+
+
+def _require_reason(reason: Optional[str]) -> str:
+    cleaned = (reason or "").strip()
+    if not cleaned:
+        raise HTTPException(status_code=422, detail="A non-empty reason is required.")
+    if len(cleaned) > 2000:
+        raise HTTPException(status_code=422, detail="Reason must be 2000 characters or fewer.")
+    return cleaned
+
+
+def _validate_ip(value: Optional[str], *, required: bool = False) -> Optional[str]:
+    if value is None or not value.strip():
+        if required:
+            raise HTTPException(status_code=422, detail="A valid IP address is required.")
+        return None
+    try:
+        return str(ipaddress.ip_address(value.strip()))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="Invalid IPv4 or IPv6 address.") from exc
+
+
+def _next_action_id() -> str:
+    numbers = []
+    for action in ACTIONS_STORE:
+        action_id = str(action.get("id", ""))
+        if action_id.startswith("ACT-") and action_id[4:].isdigit():
+            numbers.append(int(action_id[4:]))
+    return f"ACT-{max(numbers, default=0) + 1:03d}"
+
+
+def _find_action(action_id: str) -> Dict[str, Any]:
+    action = next((item for item in ACTIONS_STORE if item.get("id") == action_id), None)
+    if action is None:
+        raise HTTPException(status_code=404, detail=f"Action '{action_id}' not found")
+    return action
+
+
+def _require_pending_action(action: Dict[str, Any]) -> None:
+    if action.get("status") != "PENDING_APPROVAL":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Action cannot be decided from status '{action.get('status', 'UNKNOWN')}'.",
+        )
+    expires_at = action.get("expires_at")
+    if expires_at:
+        try:
+            expiry = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(status_code=500, detail="Action has an invalid expiry timestamp.") from exc
+        if expiry <= datetime.now(timezone.utc):
+            action["status"] = "EXPIRED"
+            _record_audit("system", "ACTION_EXPIRED", str(action.get("target_entity", "")), "EXPIRED", str(action.get("id", "")))
+            raise HTTPException(status_code=409, detail="Action approval has expired. Re-submission required.")
+
+
 @router.get("/api/response/actions")
 @router.get("/api/v1/response/actions")
-def list_response_actions():
+def list_response_actions(
+    current_user: Dict[str, Any] = Depends(_require_authenticated_permission("audit:read")),
+):
     return {"total": len(ACTIONS_STORE), "actions": ACTIONS_STORE}
+
 
 @router.post("/api/response/isolate-host")
 @router.post("/api/v1/response/isolate-host")
-def request_host_isolation(payload: HostIsolationRequest):
-    action_id = f"ACT-{len(ACTIONS_STORE) + 1:03d}"
+def request_host_isolation(
+    payload: HostIsolationRequest,
+    current_user: Dict[str, Any] = Depends(_require_authenticated_permission("response:isolate_host")),
+):
+    hostname = payload.hostname.strip()
+    if not hostname or len(hostname) > 253:
+        raise HTTPException(status_code=422, detail="Hostname must contain 1 to 253 characters.")
+    ip_address = _validate_ip(payload.ip_address)
+    reason = _require_reason(payload.reason)
+    if not payload.require_approval and not payload.dry_run:
+        raise HTTPException(status_code=400, detail="Destructive response actions must require human approval.")
+
     now = datetime.now(timezone.utc)
+    action_id = _next_action_id()
     action = {
         "id": action_id,
         "incident_number": payload.incident_number,
         "action_type": "ISOLATE_HOST",
-        "target_entity": f"{payload.hostname} ({payload.ip_address or 'DHCP'})",
-        "recommended_by": "ANALYST_REQUEST",
-        "reasoning": payload.reason,
+        "target_entity": f"{hostname} ({ip_address or 'DHCP'})",
+        "recommended_by": _operator_name(current_user),
+        "reasoning": reason,
         "confidence": 95,
-        "status": "DRY_RUN_SIMULATED" if payload.dry_run else ("PENDING_APPROVAL" if payload.require_approval else "APPROVED"),
-        "dry_run": payload.dry_run,
+        "status": "DRY_RUN_SIMULATED" if payload.dry_run else "PENDING_APPROVAL",
+        "dry_run": bool(payload.dry_run),
         "expires_at": (now + timedelta(minutes=30)).isoformat(),
-        "created_at": now.isoformat()
+        "created_at": now.isoformat(),
     }
     ACTIONS_STORE.insert(0, action)
-    _record_audit("analyst", f"ISOLATE_HOST_{'DRY_RUN' if payload.dry_run else 'SUBMITTED'}", payload.hostname, "SUCCESS" if payload.dry_run else "PENDING", payload.reason)
-    return {
-        "status": "SIMULATED" if payload.dry_run else ("QUEUED" if payload.require_approval else "EXECUTED"),
-        "dry_run": payload.dry_run,
-        "action_id": action_id,
-        "action": action
-    }
+    operator = _operator_name(current_user)
+    _record_audit(operator, f"ISOLATE_HOST_{'DRY_RUN' if payload.dry_run else 'SUBMITTED'}", hostname, "SIMULATED" if payload.dry_run else "PENDING", reason)
+    return {"status": "SIMULATED" if payload.dry_run else "QUEUED", "dry_run": bool(payload.dry_run), "action_id": action_id, "action": action}
+
 
 @router.post("/api/response/block-ip")
 @router.post("/api/v1/response/block-ip")
-def request_block_ip(payload: BlockIPRequest):
-    action_id = f"ACT-{len(ACTIONS_STORE) + 1:03d}"
+def request_block_ip(
+    payload: BlockIPRequest,
+    current_user: Dict[str, Any] = Depends(_require_authenticated_permission("response:block_ip")),
+):
+    ip_address = _validate_ip(payload.ip_address, required=True)
+    reason = _require_reason(payload.reason)
+    direction = (payload.direction or "BOTH").strip().upper()
+    if direction not in {"INGRESS", "EGRESS", "BOTH"}:
+        raise HTTPException(status_code=422, detail="Direction must be INGRESS, EGRESS, or BOTH.")
+    if not payload.require_approval and not payload.dry_run:
+        raise HTTPException(status_code=400, detail="Destructive response actions must require human approval.")
+
     now = datetime.now(timezone.utc)
+    action_id = _next_action_id()
     action = {
         "id": action_id,
         "incident_number": payload.incident_number,
         "action_type": "BLOCK_IP",
-        "target_entity": payload.ip_address,
-        "recommended_by": "ANALYST_REQUEST",
-        "reasoning": payload.reason,
+        "target_entity": ip_address,
+        "direction": direction,
+        "recommended_by": _operator_name(current_user),
+        "reasoning": reason,
         "confidence": 99,
-        "status": "DRY_RUN_SIMULATED" if payload.dry_run else ("PENDING_APPROVAL" if payload.require_approval else "APPROVED"),
-        "dry_run": payload.dry_run,
+        "status": "DRY_RUN_SIMULATED" if payload.dry_run else "PENDING_APPROVAL",
+        "dry_run": bool(payload.dry_run),
         "expires_at": (now + timedelta(minutes=30)).isoformat(),
-        "created_at": now.isoformat()
+        "created_at": now.isoformat(),
     }
     ACTIONS_STORE.insert(0, action)
-    _record_audit("analyst", f"BLOCK_IP_{'DRY_RUN' if payload.dry_run else 'SUBMITTED'}", payload.ip_address, "SUCCESS" if payload.dry_run else "PENDING", payload.reason)
-    return {
-        "status": "SIMULATED" if payload.dry_run else ("QUEUED" if payload.require_approval else "EXECUTED"),
-        "dry_run": payload.dry_run,
-        "action_id": action_id,
-        "action": action
-    }
+    operator = _operator_name(current_user)
+    _record_audit(operator, f"BLOCK_IP_{'DRY_RUN' if payload.dry_run else 'SUBMITTED'}", ip_address, "SIMULATED" if payload.dry_run else "PENDING", reason)
+    return {"status": "SIMULATED" if payload.dry_run else "QUEUED", "dry_run": bool(payload.dry_run), "action_id": action_id, "action": action}
+
 
 @router.post("/api/response/disable-account")
 @router.post("/api/v1/response/disable-account")
-def request_disable_account(payload: DisableAccountRequest):
-    action_id = f"ACT-{len(ACTIONS_STORE) + 1:03d}"
+def request_disable_account(
+    payload: DisableAccountRequest,
+    current_user: Dict[str, Any] = Depends(_require_authenticated_permission("user:admin")),
+):
+    username = payload.username.strip()
+    domain = (payload.domain or "cbe.internal").strip()
+    if not username or len(username) > 256 or not domain or len(domain) > 253:
+        raise HTTPException(status_code=422, detail="A valid username and domain are required.")
+    reason = _require_reason(payload.reason)
+    if not payload.require_approval and not payload.dry_run:
+        raise HTTPException(status_code=400, detail="Destructive response actions must require human approval.")
+
     now = datetime.now(timezone.utc)
+    action_id = _next_action_id()
+    target = f"{username}@{domain}"
     action = {
         "id": action_id,
         "incident_number": payload.incident_number,
         "action_type": "DISABLE_ACCOUNT",
-        "target_entity": f"{payload.username}@{payload.domain}",
-        "recommended_by": "ANALYST_REQUEST",
-        "reasoning": payload.reason,
+        "target_entity": target,
+        "recommended_by": _operator_name(current_user),
+        "reasoning": reason,
         "confidence": 90,
-        "status": "DRY_RUN_SIMULATED" if payload.dry_run else ("PENDING_APPROVAL" if payload.require_approval else "APPROVED"),
-        "dry_run": payload.dry_run,
+        "status": "DRY_RUN_SIMULATED" if payload.dry_run else "PENDING_APPROVAL",
+        "dry_run": bool(payload.dry_run),
         "expires_at": (now + timedelta(minutes=30)).isoformat(),
-        "created_at": now.isoformat()
+        "created_at": now.isoformat(),
     }
     ACTIONS_STORE.insert(0, action)
-    _record_audit("analyst", f"DISABLE_ACCOUNT_{'DRY_RUN' if payload.dry_run else 'SUBMITTED'}", payload.username, "SUCCESS" if payload.dry_run else "PENDING", payload.reason)
-    return {
-        "status": "SIMULATED" if payload.dry_run else ("QUEUED" if payload.require_approval else "EXECUTED"),
-        "dry_run": payload.dry_run,
-        "action_id": action_id,
-        "action": action
-    }
+    operator = _operator_name(current_user)
+    _record_audit(operator, f"DISABLE_ACCOUNT_{'DRY_RUN' if payload.dry_run else 'SUBMITTED'}", target, "SIMULATED" if payload.dry_run else "PENDING", reason)
+    return {"status": "SIMULATED" if payload.dry_run else "QUEUED", "dry_run": bool(payload.dry_run), "action_id": action_id, "action": action}
+
 
 @router.post("/api/response/actions/{action_id}/approve")
 @router.post("/api/v1/response/actions/{action_id}/approve")
-def approve_action(action_id: str, payload: ActionDecisionPayload):
-    action = next((a for a in ACTIONS_STORE if a["id"] == action_id), None)
-    if not action:
-        raise HTTPException(status_code=404, detail=f"Action '{action_id}' not found")
-    
-    # Check expiration
-    if action.get("expires_at"):
-        exp = datetime.fromisoformat(action["expires_at"])
-        if datetime.now(timezone.utc) > exp:
-            action["status"] = "EXPIRED"
-            raise HTTPException(status_code=400, detail="Action approval has expired. Re-submission required.")
-
+def approve_action(
+    action_id: str,
+    payload: ActionDecisionPayload,
+    current_user: Dict[str, Any] = Depends(_require_authenticated_permission("playbook:execute")),
+):
+    action = _find_action(action_id)
+    _require_pending_action(action)
+    reason = _require_reason(payload.reason)
+    operator = _operator_name(current_user)
     action["status"] = "APPROVED"
     action["executed_at"] = datetime.now(timezone.utc).isoformat()
-    action["reviewed_by"] = payload.operator or "Dawit Mengistu (Security Analyst)"
-    
-    _record_audit(
-        action["reviewed_by"],
-        f"ACTION_APPROVED_{action['action_type']}",
-        action["target_entity"],
-        "SUCCESS",
-        f"Approved for {action['incident_number']}: {payload.reason}"
-    )
-    
-    return {
-        "status": "SUCCESS",
-        "message": f"Action {action_id} ({action['action_type']}) APPROVED and executed by SOAR engine.",
-        "action": action
-    }
+    action["reviewed_by"] = operator
+    _record_audit(operator, f"ACTION_APPROVED_{action['action_type']}", action["target_entity"], "SUCCESS", f"Approved for {action.get('incident_number')}: {reason}")
+    return {"status": "SUCCESS", "message": f"Action {action_id} ({action['action_type']}) approved by the SOAR workflow.", "action": action}
+
 
 @router.post("/api/response/actions/{action_id}/reject")
 @router.post("/api/v1/response/actions/{action_id}/reject")
-def reject_action(action_id: str, payload: ActionDecisionPayload):
-    action = next((a for a in ACTIONS_STORE if a["id"] == action_id), None)
-    if not action:
-        raise HTTPException(status_code=404, detail=f"Action '{action_id}' not found")
-    
+def reject_action(
+    action_id: str,
+    payload: ActionDecisionPayload,
+    current_user: Dict[str, Any] = Depends(_require_authenticated_permission("playbook:execute")),
+):
+    action = _find_action(action_id)
+    _require_pending_action(action)
+    reason = _require_reason(payload.reason)
+    operator = _operator_name(current_user)
     action["status"] = "REJECTED"
-    action["rejection_reason"] = payload.reason
-    action["reviewed_by"] = payload.operator or "Dawit Mengistu (Security Analyst)"
-    
-    _record_audit(
-        action["reviewed_by"],
-        f"ACTION_REJECTED_{action['action_type']}",
-        action["target_entity"],
-        "REJECTED",
-        f"Rejected: {payload.reason}"
-    )
-    
-    return {
-        "status": "SUCCESS",
-        "message": f"Action {action_id} REJECTED.",
-        "action": action
-    }
+    action["rejection_reason"] = reason
+    action["reviewed_by"] = operator
+    action["rejected_at"] = datetime.now(timezone.utc).isoformat()
+    _record_audit(operator, f"ACTION_REJECTED_{action['action_type']}", action["target_entity"], "REJECTED", reason)
+    return {"status": "SUCCESS", "message": f"Action {action_id} rejected.", "action": action}
+
 
 @router.post("/api/response/actions/{action_id}/rollback")
 @router.post("/api/v1/response/actions/{action_id}/rollback")
-def rollback_action(action_id: str, payload: ActionDecisionPayload):
-    action = next((a for a in ACTIONS_STORE if a["id"] == action_id), None)
-    if not action:
-        raise HTTPException(status_code=404, detail=f"Action '{action_id}' not found")
-        
-    if action["status"] != "APPROVED":
-        raise HTTPException(status_code=400, detail="Only executed/approved actions can be rolled back.")
-        
+def rollback_action(
+    action_id: str,
+    payload: ActionDecisionPayload,
+    current_user: Dict[str, Any] = Depends(_require_authenticated_permission("playbook:execute")),
+):
+    action = _find_action(action_id)
+    if action.get("status") != "APPROVED" or action.get("dry_run"):
+        raise HTTPException(status_code=409, detail="Only approved, non-dry-run actions can be rolled back.")
+    reason = _require_reason(payload.reason)
+    operator = _operator_name(current_user)
     action["status"] = "ROLLED_BACK"
     action["rolled_back_at"] = datetime.now(timezone.utc).isoformat()
-    action["rollback_reason"] = payload.reason
-    
-    _record_audit(
-        payload.operator or "Dawit Mengistu (Security Analyst)",
-        f"ACTION_ROLLED_BACK_{action['action_type']}",
-        action["target_entity"],
-        "SUCCESS",
-        f"Rollback reason: {payload.reason}"
-    )
-    
-    return {
-        "status": "SUCCESS",
-        "message": f"Action {action_id} ({action['action_type']}) has been safely rolled back.",
-        "action": action
-    }
+    action["rollback_reason"] = reason
+    _record_audit(operator, f"ACTION_ROLLED_BACK_{action['action_type']}", action["target_entity"], "SUCCESS", reason)
+    return {"status": "SUCCESS", "message": f"Action {action_id} was marked rolled back.", "action": action}
+
 
 @router.get("/api/response/audit-log")
 @router.get("/api/v1/response/audit-log")
-def get_response_audit_log():
+def get_response_audit_log(
+    current_user: Dict[str, Any] = Depends(_require_authenticated_permission("audit:read")),
+):
     return {"total": len(AUDIT_LOG_STORE), "audit_logs": AUDIT_LOG_STORE}
