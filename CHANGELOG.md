@@ -5,6 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.1.2] - 2026-10-22
+
+### Security
+- **Guest access is demo-only.** With `DEMO_MODE=false`, requests without a token now get `401` instead of silently acting as a guest `SECURITY_ANALYST`.
+- **Real dual custody.** The user who requests a containment action can no longer approve it (`403`); a second authorized person must.
+- **Production refuses weak secrets.** With `DEMO_MODE=false` the API will not start with default, short, or placeholder `JWT_SECRET` / `INGEST_API_KEY`.
+- `API_SECRET_KEY` (used by docker-compose and `.env.example`) is now honored as an alias of `JWT_SECRET`; previously the hardcoded default key was always used.
+- Removed unguarded duplicate SOAR routes from `apps/api/main.py` (shadowed by the authenticated router, but misleading).
+
+### Fixed
+- `.gitignore` no longer ignores every `__init__.py` file (a fresh clone was missing them).
+
+### Added
+- `.gitattributes` for consistent LF line endings.
+- `tests/security/test_dual_custody_and_auth.py` (8 tests).
+
+---
+
 ## [1.1.1] - 2026-10-22
 
 ### Security

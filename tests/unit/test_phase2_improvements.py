@@ -146,7 +146,7 @@ def test_incident_lifecycle_and_timeline():
     assert len(timeline["history"]) >= 1
     assert len(timeline["comments"]) >= 1
 
-def test_safe_soar_dry_run_and_rollback(commander_headers):
+def test_safe_soar_dry_run_and_rollback(responder_headers, commander_headers):
     # Dry-run action
     dry_resp = client.post("/api/response/isolate-host", json={
         "hostname": "SERVER-TEST-09",
@@ -169,7 +169,7 @@ def test_safe_soar_dry_run_and_rollback(commander_headers):
         "hostname": "SERVER-TEST-10",
         "reason": "Confirmed lateral movement",
         "dry_run": False
-    }, headers=commander_headers)
+    }, headers=responder_headers)
     assert live_resp.status_code == 200
     action_id = live_resp.json()["action_id"]
 

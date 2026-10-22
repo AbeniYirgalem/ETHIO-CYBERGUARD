@@ -129,6 +129,11 @@ def _operator_name(user: Dict[str, Any]) -> str:
     return str(user.get("name") or user.get("email") or user.get("id") or "unknown")
 
 
+def _user_key(user: Dict[str, Any]) -> str:
+    """Stable identity used for separation-of-duties checks."""
+    return str(user.get("id") or user.get("email") or "unknown")
+
+
 def _require_reason(reason: Optional[str]) -> str:
     cleaned = (reason or "").strip()
     if not cleaned:
@@ -213,6 +218,7 @@ def request_host_isolation(
         "action_type": "ISOLATE_HOST",
         "target_entity": f"{hostname} ({ip_address or 'DHCP'})",
         "recommended_by": _operator_name(current_user),
+        "requested_by_id": _user_key(current_user),
         "reasoning": reason,
         "confidence": 95,
         "status": "DRY_RUN_SIMULATED" if payload.dry_run else "PENDING_APPROVAL",
@@ -249,6 +255,7 @@ def request_block_ip(
         "target_entity": ip_address,
         "direction": direction,
         "recommended_by": _operator_name(current_user),
+        "requested_by_id": _user_key(current_user),
         "reasoning": reason,
         "confidence": 99,
         "status": "DRY_RUN_SIMULATED" if payload.dry_run else "PENDING_APPROVAL",
@@ -285,6 +292,7 @@ def request_disable_account(
         "action_type": "DISABLE_ACCOUNT",
         "target_entity": target,
         "recommended_by": _operator_name(current_user),
+        "requested_by_id": _user_key(current_user),
         "reasoning": reason,
         "confidence": 90,
         "status": "DRY_RUN_SIMULATED" if payload.dry_run else "PENDING_APPROVAL",
@@ -307,6 +315,11 @@ def approve_action(
 ):
     action = _find_action(action_id)
     _require_pending_action(action)
+    if action.get("requested_by_id") and action["requested_by_id"] == _user_key(current_user):
+        raise HTTPException(
+            status_code=403,
+            detail="Dual-custody control: the requester cannot approve their own action.",
+        )
     reason = _require_reason(payload.reason)
     operator = _operator_name(current_user)
     action["status"] = "APPROVED"

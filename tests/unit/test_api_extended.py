@@ -11,7 +11,7 @@ from services.websocket.manager import ChannelSubscriptionManager
 
 client = TestClient(app)
 
-def test_response_extended_endpoints(admin_headers):
+def test_response_extended_endpoints(admin_headers, commander_headers):
     # 1. List actions
     actions_res = client.get("/api/v1/response/actions", headers=admin_headers)
     assert actions_res.status_code == 200
@@ -59,7 +59,7 @@ def test_response_extended_endpoints(admin_headers):
 
     approve_res = client.post(f"/api/v1/response/actions/{disable_act_id}/approve", json={
         "reason": "Credential stuffing confirmed by SOC"
-    }, headers=admin_headers)
+    }, headers=commander_headers)
     assert approve_res.status_code == 200
     assert approve_res.json()["action"]["status"] == "APPROVED"
 

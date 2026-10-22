@@ -39,6 +39,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-ecg_admin}:${POSTGRES_PASSWORD:-SecOpsPassw0rd_2026!}@postgres:5432/${POSTGRES_DB:-ethio_cyberguard}
       REDIS_URL: redis://redis:6379/0
       API_SECRET_KEY: ${API_SECRET_KEY:-ecg_development_jwt_secret_key_change_in_prod}
+      JWT_SECRET: ${JWT_SECRET:-}
+      INGEST_API_KEY: ${INGEST_API_KEY:-ecg-collector-secure-api-key-2026}
+      DEMO_MODE: ${DEMO_MODE:-true}
     depends_on:
       - postgres
       - redis

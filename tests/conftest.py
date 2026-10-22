@@ -88,3 +88,9 @@ def admin_headers() -> Dict[str, str]:
 def commander_headers() -> Dict[str, str]:
     """Bearer headers for INCIDENT_COMMANDER (isolate, block, approve)."""
     return _login_headers("commander@cbe.com.et", "Commander@2026!")
+
+
+@pytest.fixture(scope="session")
+def responder_headers() -> Dict[str, str]:
+    """Bearer headers for INCIDENT_RESPONDER (can request actions, cannot approve)."""
+    return _login_headers("responder@cbe.com.et", "Responder@2026!")

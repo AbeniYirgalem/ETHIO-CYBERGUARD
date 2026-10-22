@@ -235,7 +235,13 @@ def verify_token(token: str, expected_type: str = "access") -> Dict[str, Any]:
 
 def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Dict[str, Any]:
     if not credentials or not credentials.credentials:
-        # Fallback to guest analyst for local dev / unauthenticated public views
+        if not DEMO_MODE:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        # Demo sandbox only: unauthenticated visitors act as a low-privilege guest analyst
         return {
             "id": "usr_guest",
             "email": "analyst@cbe.com.et",

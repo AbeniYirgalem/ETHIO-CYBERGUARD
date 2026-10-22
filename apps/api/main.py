@@ -45,10 +45,11 @@ from database.connection import init_db
 from services.websocket.manager import ws_manager
 from services.ingestion.pipeline import ingestion_pipeline
 from apps.api.dependencies import verify_collector_api_key
-from apps.api.config import DEMO_MODE, MAX_PAYLOAD_BYTES
+from apps.api.config import DEMO_MODE, MAX_PAYLOAD_BYTES, validate_production_config
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_production_config()
     init_db()
     yield
 
@@ -343,37 +344,7 @@ def chat_with_assistant(payload: AssistantQueryRequest):
     answer = assistant_agent.answer_query(payload.query, inc)
     return answer
 
-@app.get("/api/v1/response/actions")
-def list_response_actions():
-    return {"actions": mock_response_actions}
-
-@app.post("/api/v1/response/actions/{action_id}/approve")
-def approve_action(action_id: str, payload: ActionDecisionPayload):
-    action = next((a for a in mock_response_actions if a["id"] == action_id), None)
-    if not action:
-        raise HTTPException(status_code=404, detail="Action not found")
-    action["status"] = "APPROVED"
-    action["executed_at"] = datetime.now(timezone.utc).isoformat()
-    action["reviewed_by"] = "Dawit Mengistu (Security Analyst)"
-    return {
-        "status": "SUCCESS",
-        "message": f"Action {action_id} APPROVED and executed by response engine.",
-        "action": action
-    }
-
-@app.post("/api/v1/response/actions/{action_id}/reject")
-def reject_action(action_id: str, payload: ActionDecisionPayload):
-    action = next((a for a in mock_response_actions if a["id"] == action_id), None)
-    if not action:
-        raise HTTPException(status_code=404, detail="Action not found")
-    action["status"] = "REJECTED"
-    action["rejection_reason"] = payload.reason
-    action["reviewed_by"] = "Dawit Mengistu (Security Analyst)"
-    return {
-        "status": "SUCCESS",
-        "message": f"Action {action_id} REJECTED.",
-        "action": action
-    }
+# NOTE: SOAR response routes live in apps/api/routers/response.py (authenticated, RBAC + audit).
 
 # --- Phishing Email Analyzer (ThePhish / NLP Engine) ---
 @app.post("/api/v1/phishing/analyze")
