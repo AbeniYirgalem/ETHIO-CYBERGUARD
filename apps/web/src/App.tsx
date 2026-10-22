@@ -19,9 +19,14 @@ import { ReportsView } from './components/ReportsView';
 import { SettingsView } from './components/SettingsView';
 import { NotificationsModal } from './components/NotificationsModal';
 import { CommandPalette } from './components/CommandPalette';
+import { LoginModal } from './components/LoginModal';
 import { ToastManager } from './components/ToastManager';
 import type { ToastMessage } from './components/ToastManager';
 import { soundManager } from './utils/sound';
+import {
+  ApiError, getSession, login, logout, fetchIncidents, fetchActions, decideAction,
+} from './api/client';
+import type { Session } from './api/client';
 import { 
   INITIAL_INCIDENTS, 
   INITIAL_EVENTS, 
@@ -52,6 +57,11 @@ export const App: React.FC = () => {
   const [currentRole, setCurrentRole] = useState("SECURITY_ANALYST");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Real backend session. No session (or backend offline) = simulated demo data.
+  const [session, setSession] = useState<Session | null>(() => getSession());
+  const [liveMode, setLiveMode] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+
   // Toast dispatch and cleanup helper
   const addToast = (toast: Omit<ToastMessage, 'id' | 'timestamp'>) => {
     const now = new Date();
@@ -70,6 +80,76 @@ export const App: React.FC = () => {
   const dismissToast = (id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
+
+  const fallBackToDemo = (message: string) => {
+    logout();
+    setSession(null);
+    setLiveMode(false);
+    setIncidents(INITIAL_INCIDENTS);
+    setSelectedIncident(INITIAL_INCIDENTS[0]);
+    setActions(INITIAL_ACTIONS);
+    setCurrentRole('SECURITY_ANALYST');
+    addToast({ type: 'warning', title: 'Using demo data', message });
+  };
+
+  const handleLogin = async (email: string, password: string) => {
+    const next = await login(email, password);
+    setSession(next);
+    setCurrentRole(next.user.role);
+    soundManager.playSuccess();
+    addToast({ type: 'success', title: 'Signed in', message: `${next.user.name} (${next.user.role})` });
+  };
+
+  const handleLogout = () => {
+    logout();
+    setSession(null);
+    setLiveMode(false);
+    setIncidents(INITIAL_INCIDENTS);
+    setSelectedIncident(INITIAL_INCIDENTS[0]);
+    setActions(INITIAL_ACTIONS);
+    setCurrentRole('SECURITY_ANALYST');
+    addToast({ type: 'info', title: 'Signed out', message: 'Showing simulated demo data.' });
+  };
+
+  const reportApiError = (err: unknown, title: string) => {
+    if (err instanceof ApiError && err.status === 401) {
+      fallBackToDemo('Session expired. Please sign in again.');
+      return;
+    }
+    soundManager.playAlert();
+    addToast({
+      type: 'critical',
+      title,
+      message: err instanceof Error ? err.message : 'Unexpected error',
+    });
+  };
+
+  // Load live incidents and SOAR actions whenever a real session exists
+  useEffect(() => {
+    if (!session) return;
+    let cancelled = false;
+    (async () => {
+      const [inc, act] = await Promise.allSettled([fetchIncidents(), fetchActions()]);
+      if (cancelled) return;
+      if (inc.status === 'rejected' && act.status === 'rejected') {
+        const reason = inc.reason;
+        if (reason instanceof ApiError && reason.status === 401) {
+          fallBackToDemo('Session expired. Please sign in again.');
+        } else {
+          setLiveMode(false);
+          addToast({ type: 'warning', title: 'Backend unreachable', message: 'Showing simulated demo data.' });
+        }
+        return;
+      }
+      if (inc.status === 'fulfilled' && inc.value.length > 0) {
+        setIncidents(inc.value);
+        setSelectedIncident(inc.value[0]);
+      }
+      if (act.status === 'fulfilled') setActions(act.value);
+      setLiveMode(true);
+    })();
+    return () => { cancelled = true; };
+  }, [session]);
 
   const toggleSound = () => {
     const next = !soundEnabled;
@@ -153,25 +233,55 @@ export const App: React.FC = () => {
 
   const [showDemoBanner, setShowDemoBanner] = useState(true);
 
-  // Action Approval Handlers
-  const handleApproveAction = (id: string) => {
-    setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'APPROVED' } : a));
-    soundManager.playLockAction();
-    addToast({
-      type: 'success',
-      title: 'SOAR Action Executed',
-      message: `Action ${id} approved & dispatched to target defense cluster.`
-    });
+  // Action Approval Handlers (live API when signed in, local simulation otherwise)
+  const handleApproveAction = async (id: string, reason?: string) => {
+    if (!liveMode) {
+      setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'APPROVED' } : a));
+      soundManager.playLockAction();
+      addToast({
+        type: 'success',
+        title: 'SOAR Action Executed (demo)',
+        message: `Action ${id} approved in simulated mode.`
+      });
+      return;
+    }
+    try {
+      const updated = await decideAction(id, 'approve', reason || 'Approved via SOC console');
+      setActions(prev => prev.map(a => a.id === id ? { ...a, ...updated } : a));
+      soundManager.playLockAction();
+      addToast({
+        type: 'success',
+        title: 'SOAR Action Approved',
+        message: `Action ${id} approved and recorded in the audit log.`
+      });
+    } catch (err) {
+      reportApiError(err, 'Approval refused');
+    }
   };
 
-  const handleRejectAction = (id: string, reason?: string) => {
-    setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'REJECTED', rejection_reason: reason } : a));
-    soundManager.playAlert();
-    addToast({
-      type: 'warning',
-      title: 'Action Dismissed by Analyst',
-      message: `Action ${id} rejected${reason ? `: ${reason}` : '.'}`
-    });
+  const handleRejectAction = async (id: string, reason?: string) => {
+    if (!liveMode) {
+      setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'REJECTED', rejection_reason: reason } : a));
+      soundManager.playAlert();
+      addToast({
+        type: 'warning',
+        title: 'Action Dismissed by Analyst (demo)',
+        message: `Action ${id} rejected${reason ? `: ${reason}` : '.'}`
+      });
+      return;
+    }
+    try {
+      const updated = await decideAction(id, 'reject', reason || 'Rejected via SOC console');
+      setActions(prev => prev.map(a => a.id === id ? { ...a, ...updated } : a));
+      soundManager.playAlert();
+      addToast({
+        type: 'warning',
+        title: 'Action Rejected',
+        message: `Action ${id} rejected${reason ? `: ${reason}` : '.'}`
+      });
+    } catch (err) {
+      reportApiError(err, 'Rejection refused');
+    }
   };
 
   const handleDrilldownIncident = (inc: Incident) => {
@@ -241,7 +351,7 @@ export const App: React.FC = () => {
         {/* Dynamic Main Workspace Content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#070B12] space-y-6">
           {/* Demo Mode Alert Banner */}
-          {showDemoBanner && (
+          {showDemoBanner && !liveMode && (
             <div className="bg-[#FF9100]/10 border border-[#FF9100]/30 rounded-lg p-3 px-4 flex items-center justify-between text-xs text-[#FF9100]">
               <div className="flex items-center space-x-2">
                 <span className="font-bold flex items-center">
@@ -264,13 +374,25 @@ export const App: React.FC = () => {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#0D131C] border border-[#1E2A38] px-4 py-2 rounded-lg text-xs gap-2">
             <span className="text-[#7D8A99]">
               Active Tenant: <strong className="text-white">{currentOrg}</strong> • Role: <span className="font-mono text-[#00D9FF]">{currentRole}</span>
+              {' '}• Data:{' '}
+              <span className={liveMode ? 'text-[#22C55E] font-bold' : 'text-[#FF9100] font-bold'}>
+                {liveMode ? 'LIVE API' : 'SIMULATED'}
+              </span>
+              {session && <span className="text-[#7D8A99]"> • {session.user.name}</span>}
             </span>
-            <button
-              onClick={() => setInPublicPortal(true)}
-              className="text-[#00D9FF] hover:underline flex items-center space-x-1"
-            >
-              <span>Switch to Public Portal View →</span>
-            </button>
+            <div className="flex items-center space-x-4">
+              {session ? (
+                <button onClick={handleLogout} className="text-[#FF9100] hover:underline">Sign out</button>
+              ) : (
+                <button onClick={() => setLoginOpen(true)} className="text-[#22C55E] hover:underline font-bold">Sign in</button>
+              )}
+              <button
+                onClick={() => setInPublicPortal(true)}
+                className="text-[#00D9FF] hover:underline flex items-center space-x-1"
+              >
+                <span>Switch to Public Portal View →</span>
+              </button>
+            </div>
           </div>
 
           {/* Interactive Scenario Simulator */}
@@ -439,6 +561,12 @@ export const App: React.FC = () => {
           )}
         </main>
       </div>
+
+      <LoginModal
+        isOpen={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        onSubmit={handleLogin}
+      />
 
       {/* Notifications Drawer Modal */}
       <NotificationsModal 

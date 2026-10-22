@@ -1,6 +1,18 @@
 export type Severity = 'INFO' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-export type IncidentStatus = 'OPEN' | 'INVESTIGATING' | 'CONTAINED' | 'RESOLVED' | 'CLOSED';
-export type ActionStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'EXECUTED';
+export type IncidentStatus =
+  | 'OPEN' | 'NEW' | 'TRIAGED' | 'ASSIGNED' | 'INVESTIGATING' | 'CONTAINMENT_PENDING'
+  | 'CONTAINED' | 'ERADICATION' | 'RECOVERY' | 'RESOLVED' | 'CLOSED' | 'REOPENED';
+export type ActionStatus =
+  | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'EXECUTED'
+  | 'EXPIRED' | 'ROLLED_BACK' | 'DRY_RUN_SIMULATED';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  department?: string;
+}
 
 export interface SecurityEvent {
   event_id: string;
@@ -78,6 +90,10 @@ export interface ResponseAction {
   status: ActionStatus;
   created_at: string;
   rejection_reason?: string;
+  reviewed_by?: string;
+  requested_by_id?: string;
+  dry_run?: boolean;
+  expires_at?: string;
 }
 
 export interface ChatMessage {

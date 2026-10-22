@@ -4,8 +4,8 @@ import type { ResponseAction } from '../types';
 
 interface ResponseViewProps {
   actions: ResponseAction[];
-  onApproveAction: (id: string) => void;
-  onRejectAction: (id: string, reason?: string) => void;
+  onApproveAction: (id: string, reason?: string) => void | Promise<void>;
+  onRejectAction: (id: string, reason?: string) => void | Promise<void>;
 }
 
 export const ResponseView: React.FC<ResponseViewProps> = ({
@@ -16,6 +16,7 @@ export const ResponseView: React.FC<ResponseViewProps> = ({
   const [selectedActionForModal, setSelectedActionForModal] = useState<ResponseAction | null>(null);
   const [modalMode, setModalMode] = useState<'approve' | 'reject'>('approve');
   const [rejectReason, setRejectReason] = useState('');
+  const [approveReason, setApproveReason] = useState('');
 
   const pending = actions.filter(a => a.status === 'PENDING_APPROVAL');
   const history = actions.filter(a => a.status !== 'PENDING_APPROVAL');
@@ -24,14 +25,20 @@ export const ResponseView: React.FC<ResponseViewProps> = ({
     setSelectedActionForModal(act);
     setModalMode(mode);
     setRejectReason('');
+    setApproveReason('');
+  };
+
+  const formatTime = (iso: string) => {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? iso : d.toLocaleString();
   };
 
   const handleConfirmDecision = () => {
     if (!selectedActionForModal) return;
     if (modalMode === 'approve') {
-      onApproveAction(selectedActionForModal.id);
+      void onApproveAction(selectedActionForModal.id, approveReason.trim() || undefined);
     } else {
-      onRejectAction(selectedActionForModal.id, rejectReason || 'Rejected by Tier-2 Security Analyst');
+      void onRejectAction(selectedActionForModal.id, rejectReason.trim() || 'Rejected by Tier-2 Security Analyst');
     }
     setSelectedActionForModal(null);
   };
@@ -97,7 +104,7 @@ export const ResponseView: React.FC<ResponseViewProps> = ({
 
                   <div className="flex items-center space-x-4 text-[11px] text-[#7D8A99] pt-1">
                     <span>Confidence: <strong className="text-[#22C55E]">{act.confidence}%</strong></span>
-                    <span>Queued: <strong className="text-white">{act.created_at}</strong></span>
+                    <span>Queued: <strong className="text-white">{formatTime(act.created_at)}</strong></span>
                   </div>
                 </div>
 
@@ -156,7 +163,7 @@ export const ResponseView: React.FC<ResponseViewProps> = ({
                       {act.status}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-[#7D8A99] font-sans">Dawit Mengistu</td>
+                  <td className="py-3 px-4 text-[#7D8A99] font-sans">{act.reviewed_by ?? '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -199,6 +206,19 @@ export const ResponseView: React.FC<ResponseViewProps> = ({
                 <span className="text-[10px] text-[#7D8A99] uppercase font-mono block">AI Justification:</span>
                 <p className="text-white mt-1 leading-relaxed">{selectedActionForModal.reasoning}</p>
               </div>
+
+              {modalMode === 'approve' && (
+                <div className="mt-3">
+                  <label className="text-[11px] text-[#7D8A99] block mb-1">Approval note (recorded in audit log):</label>
+                  <textarea
+                    value={approveReason}
+                    onChange={(e) => setApproveReason(e.target.value)}
+                    placeholder="e.g. Verified C2 beacon in EDR; isolation approved."
+                    className="w-full bg-[#070B12] border border-[#1E2A38] rounded-lg p-2 text-xs text-white placeholder-[#7D8A99] focus:outline-none focus:border-[#22C55E]"
+                    rows={2}
+                  />
+                </div>
+              )}
 
               {modalMode === 'reject' && (
                 <div className="mt-3">

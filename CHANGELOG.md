@@ -5,6 +5,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.1.3] - 2026-10-22
+
+### Added
+- Web app talks to the real backend: sign-in via `/api/auth/login`, live incidents and SOAR approvals (`apps/web/src/api/client.ts`).
+- Login modal with demo-account hints; session kept in `sessionStorage` with automatic token refresh.
+- `VITE_API_URL` setting (default `http://localhost:8000`).
+- Approval note field; reviewer name and queue time now come from the API.
+
+### Changed
+- When signed out or when the backend is offline, the UI falls back to the built-in simulated data (GitHub Pages demo still works). A header strip shows `LIVE API` or `SIMULATED`.
+- Approve/reject errors from the server (for example the dual-custody `403`) are shown to the user.
+
+### Removed
+- `apps/api/routes/response.py`: an old insecure duplicate of the SOAR router that nothing imported.
+
+---
+
 ## [1.1.2] - 2026-10-22
 
 ### Security

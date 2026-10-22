@@ -409,7 +409,7 @@ def health_check():
         "status": "healthy",
         "service": "ETHIO-CYBERGUARD-API",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "active_websockets": len(ws_manager.active_connections)
+        "active_websockets": ws_manager.get_active_count()
     }
 
 @app.get("/api/v1/ready")
