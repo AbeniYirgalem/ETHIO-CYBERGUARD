@@ -5,6 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.1.4] - 2026-10-22
+
+### Security
+- All incident routes now require a login (`401` without a token when `DEMO_MODE=false`). Previously `GET /api/incidents` and most write routes were open to anyone.
+- Incident writes (create, update, transition, comments, tasks, evidence) now require the `incident:assign` permission, so `AUDITOR`, `READ_ONLY` and `THREAT_HUNTER` can read but not change incidents.
+
+### Changed
+- Settings: the "Simulated RBAC Role" switcher is read-only while signed in to the live API (the role comes from the server). It still works in simulated demo mode.
+
+### Added
+- `tests/security/test_incidents_auth.py`.
+
+---
+
 ## [1.1.3] - 2026-10-22
 
 ### Added

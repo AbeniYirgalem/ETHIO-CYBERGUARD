@@ -11,7 +11,12 @@ from datetime import datetime, timezone
 import uuid
 import hashlib
 
-from ..dependencies import get_current_user
+from ..dependencies import get_current_user, require_permission
+
+# Reads need any valid login (guest allowed only in DEMO_MODE).
+# Writes need the incident:assign permission (blocks AUDITOR, READ_ONLY, THREAT_HUNTER).
+_READ = Depends(get_current_user)
+_WRITE = Depends(require_permission("incident:assign"))
 
 router = APIRouter(tags=["Incident Management & Investigation"])
 
@@ -148,7 +153,8 @@ class AttachEvidencePayload(BaseModel):
 def list_all_incidents(
     status_filter: Optional[str] = Query(None, alias="status"),
     severity: Optional[str] = None,
-    sector: Optional[str] = None
+    sector: Optional[str] = None,
+    _user: Dict[str, Any] = _READ,
 ):
     results = INCIDENTS_STORE
     if status_filter:
@@ -163,7 +169,7 @@ def list_all_incidents(
     }
 
 @router.get("/api/incidents/{incident_id}")
-def get_incident_by_id(incident_id: str):
+def get_incident_by_id(incident_id: str, _user: Dict[str, Any] = _READ):
     inc = next(
         (i for i in INCIDENTS_STORE if i["id"] == incident_id or i["incident_number"].upper() == incident_id.upper()), 
         None
@@ -188,7 +194,7 @@ def get_incident_by_id(incident_id: str):
 
 @router.post("/api/incidents", status_code=status.HTTP_201_CREATED)
 @router.post("/api/v1/incidents", status_code=status.HTTP_201_CREATED)
-def create_incident(payload: CreateIncidentPayload):
+def create_incident(payload: CreateIncidentPayload, _user: Dict[str, Any] = _WRITE):
     new_inc_num = f"INC-{len(INCIDENTS_STORE) + 43:05d}"
     now_str = datetime.now(timezone.utc).isoformat()
     
@@ -226,7 +232,7 @@ def create_incident(payload: CreateIncidentPayload):
 def transition_incident_status(
     incident_id: str, 
     payload: TransitionStatusPayload, 
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = _WRITE
 ):
     inc = next(
         (i for i in INCIDENTS_STORE if i["id"] == incident_id or i["incident_number"].upper() == incident_id.upper()), 
@@ -268,7 +274,7 @@ def transition_incident_status(
 
 @router.get("/api/incidents/{incident_id}/comments")
 @router.get("/api/v1/incidents/{incident_id}/comments")
-def list_incident_comments(incident_id: str):
+def list_incident_comments(incident_id: str, _user: Dict[str, Any] = _READ):
     inc = next((i for i in INCIDENTS_STORE if i["id"] == incident_id or i["incident_number"].upper() == incident_id.upper()), None)
     if not inc:
         raise HTTPException(status_code=404, detail="Incident not found")
@@ -279,7 +285,7 @@ def list_incident_comments(incident_id: str):
 def add_incident_comment(
     incident_id: str, 
     payload: AddCommentPayload, 
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = _WRITE
 ):
     inc = next((i for i in INCIDENTS_STORE if i["id"] == incident_id or i["incident_number"].upper() == incident_id.upper()), None)
     if not inc:
@@ -298,7 +304,7 @@ def add_incident_comment(
 
 @router.post("/api/incidents/{incident_id}/tasks", status_code=status.HTTP_201_CREATED)
 @router.post("/api/v1/incidents/{incident_id}/tasks", status_code=status.HTTP_201_CREATED)
-def add_incident_task(incident_id: str, payload: AddTaskPayload):
+def add_incident_task(incident_id: str, payload: AddTaskPayload, _user: Dict[str, Any] = _WRITE):
     inc = next((i for i in INCIDENTS_STORE if i["id"] == incident_id or i["incident_number"].upper() == incident_id.upper()), None)
     if not inc:
         raise HTTPException(status_code=404, detail="Incident not found")
@@ -314,7 +320,7 @@ def add_incident_task(incident_id: str, payload: AddTaskPayload):
 
 @router.patch("/api/incidents/{incident_id}/tasks/{task_id}")
 @router.patch("/api/v1/incidents/{incident_id}/tasks/{task_id}")
-def update_incident_task(incident_id: str, task_id: str, payload: UpdateTaskPayload):
+def update_incident_task(incident_id: str, task_id: str, payload: UpdateTaskPayload, _user: Dict[str, Any] = _WRITE):
     inc = next((i for i in INCIDENTS_STORE if i["id"] == incident_id or i["incident_number"].upper() == incident_id.upper()), None)
     if not inc:
         raise HTTPException(status_code=404, detail="Incident not found")
@@ -327,7 +333,7 @@ def update_incident_task(incident_id: str, task_id: str, payload: UpdateTaskPayl
 
 @router.patch("/api/incidents/{incident_id}")
 @router.patch("/api/v1/incidents/{incident_id}")
-def update_incident(incident_id: str, payload: UpdateIncidentPayload):
+def update_incident(incident_id: str, payload: UpdateIncidentPayload, _user: Dict[str, Any] = _WRITE):
     inc = next(
         (i for i in INCIDENTS_STORE if i["id"] == incident_id or i["incident_number"].upper() == incident_id.upper()), 
         None
@@ -348,7 +354,7 @@ def update_incident(incident_id: str, payload: UpdateIncidentPayload):
     return {"status": "UPDATED", "incident": inc}
 
 @router.post("/api/incidents/{incident_id}/evidence")
-def attach_incident_evidence(incident_id: str, payload: AttachEvidencePayload):
+def attach_incident_evidence(incident_id: str, payload: AttachEvidencePayload, _user: Dict[str, Any] = _WRITE):
     inc = next(
         (i for i in INCIDENTS_STORE if i["id"] == incident_id or i["incident_number"].upper() == incident_id.upper()), 
         None
@@ -375,7 +381,7 @@ def attach_incident_evidence(incident_id: str, payload: AttachEvidencePayload):
 
 @router.get("/api/incidents/{incident_id}/timeline")
 @router.get("/api/v1/incidents/{incident_id}/timeline")
-def get_incident_timeline(incident_id: str):
+def get_incident_timeline(incident_id: str, _user: Dict[str, Any] = _READ):
     inc = next((i for i in INCIDENTS_STORE if i["id"] == incident_id or i["incident_number"].upper() == incident_id.upper()), None)
     if not inc:
         raise HTTPException(status_code=404, detail="Incident not found")

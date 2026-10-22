@@ -520,6 +520,7 @@ export const App: React.FC = () => {
               setCurrentOrg={setCurrentOrg}
               language={language}
               setLanguage={setLanguage}
+              roleLocked={liveMode}
             />
           )}
 
