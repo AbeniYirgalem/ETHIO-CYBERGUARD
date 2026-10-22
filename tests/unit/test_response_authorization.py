@@ -1,9 +1,10 @@
 """Authorization tests for SOAR response endpoints."""
 
 from fastapi import FastAPI
+from fastapi.security import HTTPAuthorizationCredentials
 from fastapi.testclient import TestClient
 
-from apps.api.dependencies import get_current_user
+from apps.api.dependencies import get_current_user, security
 from apps.api.routers.response import router
 
 
@@ -16,6 +17,10 @@ def make_client(role: str) -> TestClient:
         "name": "Test User",
         "role": role,
     }
+    # SOAR routes demand a real bearer token; simulate one being present.
+    app.dependency_overrides[security] = lambda: HTTPAuthorizationCredentials(
+        scheme="Bearer", credentials="test-token"
+    )
     return TestClient(app)
 
 

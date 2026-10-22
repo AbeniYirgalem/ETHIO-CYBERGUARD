@@ -37,15 +37,18 @@ ROLES = [
 ROLE_PERMISSIONS: Dict[str, List[str]] = {
     "SUPER_ADMIN": [
         "incident:assign", "evidence:delete", "rules:edit", "playbook:execute",
-        "response:isolate_host", "response:block_ip", "user:admin", "data:export", "audit:read"
+        "response:isolate_host", "response:block_ip", "response:approve",
+        "user:admin", "data:export", "audit:read"
     ],
     "SOC_MANAGER": [
         "incident:assign", "rules:edit", "playbook:execute",
-        "response:isolate_host", "response:block_ip", "data:export", "audit:read"
+        "response:isolate_host", "response:block_ip", "response:approve",
+        "data:export", "audit:read"
     ],
     "INCIDENT_COMMANDER": [
         "incident:assign", "rules:edit", "playbook:execute",
-        "response:isolate_host", "response:block_ip", "data:export", "audit:read"
+        "response:isolate_host", "response:block_ip", "response:approve",
+        "data:export", "audit:read"
     ],
     "INCIDENT_RESPONDER": [
         "incident:assign", "playbook:execute", "response:isolate_host", "response:block_ip", "audit:read"

@@ -146,29 +146,43 @@ def test_incident_lifecycle_and_timeline():
     assert len(timeline["history"]) >= 1
     assert len(timeline["comments"]) >= 1
 
-def test_safe_soar_dry_run_and_rollback():
+def test_safe_soar_dry_run_and_rollback(commander_headers):
     # Dry-run action
     dry_resp = client.post("/api/response/isolate-host", json={
         "hostname": "SERVER-TEST-09",
         "reason": "Simulated containment test",
         "dry_run": True
-    })
+    }, headers=commander_headers)
     assert dry_resp.status_code == 200
     assert dry_resp.json()["dry_run"] is True
     assert dry_resp.json()["status"] == "SIMULATED"
-    action_id = dry_resp.json()["action_id"]
+    dry_action_id = dry_resp.json()["action_id"]
 
-    # Approve action
+    # Dry-run (simulated) actions can never be approved
+    dry_appr = client.post(f"/api/response/actions/{dry_action_id}/approve", json={
+        "reason": "Should be refused"
+    }, headers=commander_headers)
+    assert dry_appr.status_code == 409
+
+    # Live action: queued for approval, then approved
+    live_resp = client.post("/api/response/isolate-host", json={
+        "hostname": "SERVER-TEST-10",
+        "reason": "Confirmed lateral movement",
+        "dry_run": False
+    }, headers=commander_headers)
+    assert live_resp.status_code == 200
+    action_id = live_resp.json()["action_id"]
+
     appr_resp = client.post(f"/api/response/actions/{action_id}/approve", json={
         "reason": "Confirmed threat containment"
-    })
+    }, headers=commander_headers)
     assert appr_resp.status_code == 200
     assert appr_resp.json()["action"]["status"] == "APPROVED"
 
     # Rollback action
     roll_resp = client.post(f"/api/response/actions/{action_id}/rollback", json={
         "reason": "Containment period elapsed, returning host to normal operations"
-    })
+    }, headers=commander_headers)
     assert roll_resp.status_code == 200
     assert roll_resp.json()["action"]["status"] == "ROLLED_BACK"
 

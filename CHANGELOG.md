@@ -5,6 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.1.1] - 2026-10-22
+
+### Security
+- Added a dedicated `response:approve` permission. Approving, rejecting, and rolling back SOAR containment actions is now limited to `SUPER_ADMIN`, `SOC_MANAGER`, and `INCIDENT_COMMANDER`. `SECURITY_ANALYST` and `INCIDENT_RESPONDER` can request actions but can no longer approve them (previously any role holding `playbook:execute` could).
+
+### Fixed
+- Repaired 6 stale tests that were failing after the SOAR routes started requiring a real bearer token. Tests now log in through shared `admin_headers` / `commander_headers` fixtures in `tests/conftest.py`.
+- Updated SOAR tests to match the hardened workflow (live actions require approval, dry-run actions cannot be approved).
+
+### Changed
+- Documented test count is now 112 (README, AGENTS.md).
+
+---
+
 ## [1.1.0] - 2026-10-09
 
 ### Added

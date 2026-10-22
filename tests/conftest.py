@@ -63,3 +63,28 @@ def sample_ecs_powershell_event() -> Dict[str, Any]:
             "command_line": "powershell.exe -NoP -NonI -W Hidden -Enc SQBFAFgA"
         }
     }
+
+
+# ---------------------------------------------------------------------------
+# Authenticated API headers (SOAR routes reject the unauthenticated guest user)
+# ---------------------------------------------------------------------------
+
+def _login_headers(email: str, password: str) -> Dict[str, str]:
+    from fastapi.testclient import TestClient
+    from apps.api.main import app
+
+    resp = TestClient(app).post("/api/auth/login", json={"email": email, "password": password})
+    assert resp.status_code == 200, f"Demo login failed for {email}: {resp.text}"
+    return {"Authorization": f"Bearer {resp.json()['access_token']}"}
+
+
+@pytest.fixture(scope="session")
+def admin_headers() -> Dict[str, str]:
+    """Bearer headers for SUPER_ADMIN (all permissions)."""
+    return _login_headers("admin@cbe.com.et", "EthioCyber@2026!")
+
+
+@pytest.fixture(scope="session")
+def commander_headers() -> Dict[str, str]:
+    """Bearer headers for INCIDENT_COMMANDER (isolate, block, approve)."""
+    return _login_headers("commander@cbe.com.et", "Commander@2026!")

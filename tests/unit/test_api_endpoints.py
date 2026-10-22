@@ -129,19 +129,19 @@ def test_dashboard_stats_endpoint():
     assert data["metrics"]["events_per_second"] > 0
     assert "sector_profiles" in data
 
-def test_response_endpoints():
+def test_response_endpoints(commander_headers):
     iso_resp = client.post("/api/response/isolate-host", json={
         "hostname": "SERVER-04",
         "reason": "Active C2 beaconing observed",
         "incident_number": "INC-00042"
-    })
+    }, headers=commander_headers)
     assert iso_resp.status_code == 200
     act_id = iso_resp.json()["action_id"]
 
     # Approve action
     app_resp = client.post(f"/api/response/actions/{act_id}/approve", json={
         "reason": "Analyst verified Beacon signature"
-    })
+    }, headers=commander_headers)
     assert app_resp.status_code == 200
     assert app_resp.json()["action"]["status"] == "APPROVED"
 

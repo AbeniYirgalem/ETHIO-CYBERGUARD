@@ -303,7 +303,7 @@ def request_disable_account(
 def approve_action(
     action_id: str,
     payload: ActionDecisionPayload,
-    current_user: Dict[str, Any] = Depends(_require_authenticated_permission("playbook:execute")),
+    current_user: Dict[str, Any] = Depends(_require_authenticated_permission("response:approve")),
 ):
     action = _find_action(action_id)
     _require_pending_action(action)
@@ -321,7 +321,7 @@ def approve_action(
 def reject_action(
     action_id: str,
     payload: ActionDecisionPayload,
-    current_user: Dict[str, Any] = Depends(_require_authenticated_permission("playbook:execute")),
+    current_user: Dict[str, Any] = Depends(_require_authenticated_permission("response:approve")),
 ):
     action = _find_action(action_id)
     _require_pending_action(action)
@@ -340,7 +340,7 @@ def reject_action(
 def rollback_action(
     action_id: str,
     payload: ActionDecisionPayload,
-    current_user: Dict[str, Any] = Depends(_require_authenticated_permission("playbook:execute")),
+    current_user: Dict[str, Any] = Depends(_require_authenticated_permission("response:approve")),
 ):
     action = _find_action(action_id)
     if action.get("status") != "APPROVED" or action.get("dry_run"):
