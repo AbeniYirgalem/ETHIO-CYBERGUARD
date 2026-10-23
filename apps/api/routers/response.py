@@ -5,7 +5,7 @@ host isolation, IP blocking, account disablement, and immutable SHA-256 audit lo
 Supports /api/response and /api/v1/response.
 """
 
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, Request, status
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
@@ -15,8 +15,23 @@ import ipaddress
 import uuid
 
 from ..dependencies import require_permission, get_current_user, security
+from ..config import DEMO_MODE
+from database import state_store
 
-router = APIRouter(tags=["SOAR Containment & Automated Response"])
+def _persist_response_writes(request: Request):
+    """After any state-changing request, snapshot actions and the audit log to the database."""
+    try:
+        yield
+    finally:
+        if request.method != "GET":
+            state_store.save("response_actions")
+            state_store.save("audit_log")
+
+
+router = APIRouter(
+    tags=["SOAR Containment & Automated Response"],
+    dependencies=[Depends(_persist_response_writes)],
+)
 
 
 def _require_authenticated_permission(permission: str):
@@ -373,3 +388,59 @@ def get_response_audit_log(
     current_user: Dict[str, Any] = Depends(_require_authenticated_permission("audit:read")),
 ):
     return {"total": len(AUDIT_LOG_STORE), "audit_logs": AUDIT_LOG_STORE}
+
+
+@router.get("/api/response/audit-log/verify")
+@router.get("/api/v1/response/audit-log/verify")
+def verify_response_audit_log(
+    current_user: Dict[str, Any] = Depends(_require_authenticated_permission("audit:read")),
+):
+    """Recompute the SHA-256 hash chain and report any tampered or re-ordered entries."""
+    return verify_audit_chain(AUDIT_LOG_STORE)
+
+
+def verify_audit_chain(entries: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Verify an audit log stored newest-first. The oldest entry is the genesis anchor."""
+    ordered = list(reversed(entries))
+    broken: List[str] = []
+    for index, entry in enumerate(ordered):
+        if index == 0:
+            continue
+        previous = ordered[index - 1]
+        expected = hashlib.sha256(
+            "|".join(
+                [
+                    str(entry.get("prev_hash")),
+                    str(entry.get("operator")),
+                    str(entry.get("action")),
+                    str(entry.get("target")),
+                    str(entry.get("result")),
+                    str(entry.get("timestamp")),
+                ]
+            ).encode("utf-8")
+        ).hexdigest()
+        if entry.get("prev_hash") != previous.get("integrity_hash") or entry.get("integrity_hash") != expected:
+            broken.append(str(entry.get("id")))
+    return {"valid": not broken, "entries": len(entries), "broken_entries": broken}
+
+
+_DEMO_SEED_ACTION_IDS = {"ACT-001", "ACT-002"}
+
+
+def _rearm_demo_seed_actions() -> None:
+    """Demo only: keep untouched seed recommendations approvable after a restart."""
+    if not DEMO_MODE:
+        return
+    for action in ACTIONS_STORE:
+        if (
+            action.get("id") in _DEMO_SEED_ACTION_IDS
+            and action.get("status") in ("PENDING_APPROVAL", "EXPIRED")
+            and not action.get("reviewed_by")
+        ):
+            action["status"] = "PENDING_APPROVAL"
+            action["expires_at"] = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
+
+
+# Durable storage: restored at API startup (see database/state_store.py)
+state_store.register("response_actions", ACTIONS_STORE)
+state_store.register("audit_log", AUDIT_LOG_STORE)

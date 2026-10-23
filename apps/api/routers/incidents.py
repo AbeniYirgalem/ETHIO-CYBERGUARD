@@ -4,7 +4,7 @@ Provides complete incident lifecycle management, transitions, comments, tasks, e
 Supports both /api/incidents and /api/v1/incidents paths.
 """
 
-from fastapi import APIRouter, HTTPException, Depends, status, Query
+from fastapi import APIRouter, HTTPException, Depends, Request, status, Query
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
@@ -12,13 +12,26 @@ import uuid
 import hashlib
 
 from ..dependencies import get_current_user, require_permission
+from database import state_store
 
 # Reads need any valid login (guest allowed only in DEMO_MODE).
 # Writes need the incident:assign permission (blocks AUDITOR, READ_ONLY, THREAT_HUNTER).
 _READ = Depends(get_current_user)
 _WRITE = Depends(require_permission("incident:assign"))
 
-router = APIRouter(tags=["Incident Management & Investigation"])
+def _persist_incident_writes(request: Request):
+    """After any state-changing request, snapshot the incident store to the database."""
+    try:
+        yield
+    finally:
+        if request.method != "GET":
+            state_store.save("incidents")
+
+
+router = APIRouter(
+    tags=["Incident Management & Investigation"],
+    dependencies=[Depends(_persist_incident_writes)],
+)
 
 # Formal Incident Status Lifecycle State Machine
 VALID_STATUSES = [
@@ -169,6 +182,7 @@ def list_all_incidents(
     }
 
 @router.get("/api/incidents/{incident_id}")
+@router.get("/api/v1/incidents/{incident_id}")
 def get_incident_by_id(incident_id: str, _user: Dict[str, Any] = _READ):
     inc = next(
         (i for i in INCIDENTS_STORE if i["id"] == incident_id or i["incident_number"].upper() == incident_id.upper()), 
@@ -391,3 +405,7 @@ def get_incident_timeline(incident_id: str, _user: Dict[str, Any] = _READ):
         "comments": inc.get("comments", []),
         "evidence": inc.get("evidence", [])
     }
+
+
+# Durable storage: restored at API startup (see database/state_store.py)
+state_store.register("incidents", INCIDENTS_STORE)

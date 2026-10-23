@@ -5,6 +5,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.1.6] - 2026-10-23
+
+### Added
+- **Persistence.** Incidents, SOAR actions and the SHA-256 audit log now survive API restarts (`database/state_store.py`). SQLite by default, PostgreSQL when `DATABASE_URL` points to it. Disable with `PERSISTENCE_ENABLED=false`.
+- `GET /api/v1/response/audit-log/verify` recomputes the audit hash chain and reports tampered entries.
+- `GET /api/v1/incidents/{id}` (authenticated) in the incidents router.
+- `database/migrations/003_state_documents.sql` and `tests/unit/test_persistence.py` (8 tests).
+
+### Security
+- Removed the unauthenticated `GET /api/v1/incidents/{incident_number}` route from `main.py` (it served mock data to anyone).
+- Removed 10 dead duplicate routes and the mock incident/action lists from `main.py`; the authenticated routers own these paths.
+
+### Fixed
+- Docker: added `psycopg2-binary` to both requirements files. Previously a `postgresql://` `DATABASE_URL` crashed the API at startup.
+- Tests always run on a throw-away SQLite database and can never touch a real one.
+- Demo seed recommendations (ACT-001/002) are re-armed on startup so they stay approvable after a restart (demo mode only).
+
+---
+
 ## [1.1.5] - 2026-10-23
 
 ### Added

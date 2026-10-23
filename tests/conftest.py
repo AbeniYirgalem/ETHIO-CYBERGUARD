@@ -2,6 +2,16 @@
 Pytest Central Configuration & Fixtures for ETHIO-CYBERGUARD Test Suite
 """
 
+import os
+import tempfile
+from pathlib import Path
+
+# Tests must NEVER touch a developer's or production database: force a throw-away
+# SQLite file *before* any application module is imported.
+_TEST_DB_DIR = tempfile.mkdtemp(prefix="ecg-tests-")
+os.environ["DATABASE_URL"] = f"sqlite:///{(Path(_TEST_DB_DIR) / 'test.db').as_posix()}"
+os.environ["PERSISTENCE_ENABLED"] = "true"
+
 import pytest
 from typing import Dict, Any
 

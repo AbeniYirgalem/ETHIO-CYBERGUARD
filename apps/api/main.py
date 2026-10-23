@@ -42,6 +42,8 @@ from apps.api.routers.jobs import router as jobs_router
 from apps.api.routers.connectors import router as connectors_router
 from apps.api.routers.health import router as health_router
 from database.connection import init_db
+from database import state_store
+from apps.api.routers import response as response_module
 from services.websocket.manager import ws_manager
 from services.ingestion.pipeline import ingestion_pipeline
 from apps.api.dependencies import verify_collector_api_key
@@ -51,6 +53,8 @@ from apps.api.config import DEMO_MODE, MAX_PAYLOAD_BYTES, validate_production_co
 async def lifespan(app: FastAPI):
     validate_production_config()
     init_db()
+    state_store.restore_all()
+    response_module._rearm_demo_seed_actions()
     yield
 
 app = FastAPI(
@@ -106,81 +110,6 @@ alert_notifier = AlertNotifier()
 
 # Production Channel-based WebSocket Manager imported from services.websocket.manager
 
-# In-Memory State for Demonstration & Local Running
-mock_incidents = [
-    {
-        "id": "e0000000-0000-0000-0000-000000000001",
-        "incident_number": "INC-00042",
-        "title": "Suspicious Obfuscated PowerShell Activity & C2 Beaconing",
-        "severity": "CRITICAL",
-        "status": "INVESTIGATING",
-        "risk_score": 92,
-        "affected_asset": "SERVER-04",
-        "asset_ip": "10.10.1.24",
-        "department": "Core Banking Infrastructure",
-        "first_seen": "2026-09-30 10:42:00+03:00",
-        "last_activity": "2026-09-30 11:18:00+03:00",
-        "assigned_analyst": "Dawit Mengistu",
-        "summary": "Privileged service account initiated hidden PowerShell with base64 encoded command, establishing outbound beaconing to known malicious C2 IP 185.220.101.5."
-    },
-    {
-        "id": "e0000000-0000-0000-0000-000000000002",
-        "incident_number": "INC-00021",
-        "title": "Perimeter Gateway Distributed SSH & RDP Brute Force",
-        "severity": "HIGH",
-        "status": "OPEN",
-        "risk_score": 78,
-        "affected_asset": "FW-PERIMETER-01",
-        "asset_ip": "197.156.70.1",
-        "department": "Network Security",
-        "first_seen": "2026-09-30 09:15:00+03:00",
-        "last_activity": "2026-09-30 09:22:00+03:00",
-        "assigned_analyst": "Sara Yohannes",
-        "summary": "Over 1,200 failed authentication attempts detected within 4 minutes originating from distributed IP ranges targeting perimeter firewall management interface."
-    },
-    {
-        "id": "e0000000-0000-0000-0000-000000000003",
-        "incident_number": "INC-00019",
-        "title": "Unusual Off-Hours Privileged SWIFT Access from Remote IP",
-        "severity": "MEDIUM",
-        "status": "INVESTIGATING",
-        "risk_score": 64,
-        "affected_asset": "LAPTOP-FINANCE-22",
-        "asset_ip": "10.10.4.88",
-        "department": "Treasury & SWIFT Processing",
-        "first_seen": "2026-09-30 03:14:00+03:00",
-        "last_activity": "2026-09-30 03:45:00+03:00",
-        "assigned_analyst": "Dawit Mengistu",
-        "summary": "Treasury workstation user logged in at 03:14 AM EAT from unmanaged residential IP subnet, accessing SWIFT payment file transfer directory."
-    }
-]
-
-mock_response_actions = [
-    {
-        "id": "ACT-001",
-        "incident_number": "INC-00042",
-        "action_type": "ISOLATE_HOST",
-        "target_entity": "SERVER-04 (10.10.1.24)",
-        "recommended_by": "AI_RISK_AGENT",
-        "reasoning": "Potential active malware / C2 beaconing. Host isolation cuts lateral traversal while maintaining forensic link to SOC.",
-        "confidence": 94,
-        "status": "PENDING_APPROVAL",
-        "created_at": "2026-09-30T10:45:00Z"
-    },
-    {
-        "id": "ACT-002",
-        "incident_number": "INC-00042",
-        "action_type": "BLOCK_IP",
-        "target_entity": "185.220.101.5",
-        "recommended_by": "AI_THREAT_INTEL_AGENT",
-        "reasoning": "Confirmed Cobalt Strike C2 server on Ethio-CERT blacklist. Egress and ingress drop recommended.",
-        "confidence": 98,
-        "status": "PENDING_APPROVAL",
-        "created_at": "2026-09-30T10:46:00Z"
-    }
-]
-
-# Pydantic Schemas
 class EventIngestPayload(BaseModel):
     event_uid: Optional[str] = None
     timestamp: Optional[str] = None
@@ -225,29 +154,6 @@ def root():
         "docs_url": "/docs"
     }
 
-@app.get("/api/v1/stats/overview")
-def get_soc_overview():
-    return {
-        "metrics": {
-            "critical_alerts": 7,
-            "high_risk_alerts": 23,
-            "active_incidents": 12,
-            "events_processed_today": 284921
-        },
-        "top_threats": [
-            {"name": "Distributed Brute Force", "count": 1420, "severity": "HIGH"},
-            {"name": "Obfuscated PowerShell Execution", "count": 18, "severity": "CRITICAL"},
-            {"name": "Off-Hours SWIFT Directory Access", "count": 3, "severity": "MEDIUM"},
-            {"name": "Known Malicious C2 Beaconing", "count": 12, "severity": "CRITICAL"}
-        ],
-        "system_health": {
-            "ingestion_pipeline": "HEALTHY (4,210 eps)",
-            "detection_engine": "ACTIVE (148 rules)",
-            "correlation_engine": "RUNNING",
-            "ai_agents_cluster": "ONLINE (7/7 Agents Ready)"
-        }
-    }
-
 @app.get("/api/system/mode")
 @app.get("/api/v1/system/mode")
 def get_system_mode():
@@ -277,108 +183,12 @@ def ingest_event(
         "alerts": alerts
     }
 
-@app.get("/api/v1/incidents")
-def list_incidents():
-    return {"incidents": mock_incidents}
-
-@app.get("/api/v1/incidents/{incident_number}")
-def get_incident(incident_number: str):
-    inc = next((i for i in mock_incidents if i["incident_number"] == incident_number), None)
-    if not inc:
-        raise HTTPException(status_code=404, detail="Incident not found")
-    
-    # Enrich with timeline, attack graph, and multi-agent AI data
-    correlated = correlation_engine.correlate_alerts([], asset_name=inc["affected_asset"])
-    investigation = ai_orchestrator.run_investigation_pipeline(inc, [])
-    
-    return {
-        "incident": inc,
-        "timeline": correlated["timeline"],
-        "attack_graph": correlated["attack_graph"],
-        "ai_investigation": investigation["pipeline_results"]
-    }
-
-@app.get("/api/v1/threat-intelligence")
-def get_threat_indicators():
-    return {
-        "indicators": [
-            {
-                "indicator": "185.220.101.5",
-                "type": "IPV4",
-                "reputation": "MALICIOUS",
-                "confidence": 96,
-                "first_seen": "2026-04-12",
-                "threat_actor": "APT-CobaltStrike-Actor",
-                "malware": "Cobalt Strike Beacon",
-                "country": "Germany",
-                "related_incidents": ["INC-00042", "INC-00021"]
-            },
-            {
-                "indicator": "update-winsec-cloud.com",
-                "type": "DOMAIN",
-                "reputation": "MALICIOUS",
-                "confidence": 92,
-                "first_seen": "2026-08-19",
-                "threat_actor": "Fin-Threat Cluster",
-                "malware": "Empire C2 Stager",
-                "country": "Russia",
-                "related_incidents": ["INC-00019"]
-            },
-            {
-                "indicator": "7d4b29c9103a89e924a2734ef0350d24fb4b3e6480c55ffc06a928db6928e469",
-                "type": "SHA256",
-                "reputation": "MALICIOUS",
-                "confidence": 99,
-                "first_seen": "2026-01-10",
-                "threat_actor": "Lazarus Group",
-                "malware": "Mimikatz LSASS Infiltrator",
-                "country": "North Korea",
-                "related_incidents": ["INC-00042"]
-            }
-        ]
-    }
-
-@app.post("/api/v1/ai/assistant/chat")
-def chat_with_assistant(payload: AssistantQueryRequest):
-    inc = next((i for i in mock_incidents if i["incident_number"] == payload.incident_number), mock_incidents[0])
-    answer = assistant_agent.answer_query(payload.query, inc)
-    return answer
-
 # NOTE: SOAR response routes live in apps/api/routers/response.py (authenticated, RBAC + audit).
 
 # --- Phishing Email Analyzer (ThePhish / NLP Engine) ---
-@app.post("/api/v1/phishing/analyze")
-def analyze_phishing_email(payload: PhishingAnalyzeRequest):
-    result = phishing_analyzer.analyze(
-        raw_content=payload.raw_content,
-        subject=payload.subject,
-        sender=payload.sender
-    )
-    return result
-
 # --- Typosquatting & Brand Defense Monitor (openSquat Engine) ---
-@app.get("/api/v1/typosquat/scan")
-def scan_typosquats(target: str = "telebirr.et", limit: int = 40):
-    return typosquat_monitor.scan_domain(domain_or_brand=target, limit=limit)
-
 # --- OSINT & Attack Surface Recon (SpiderFoot / Sherlock Engine) ---
-@app.get("/api/v1/osint/scan")
-def scan_attack_surface(target: str = "ethiotelecom.et"):
-    return osint_recon.scan_target(target=target)
-
 # --- Security Awareness & Training (CyberSatark Engine) ---
-@app.get("/api/v1/awareness/campaigns")
-def list_awareness_campaigns():
-    return {"campaigns": awareness_simulator.get_campaigns()}
-
-@app.get("/api/v1/awareness/metrics")
-def get_awareness_metrics():
-    return awareness_simulator.get_org_metrics()
-
-@app.post("/api/v1/awareness/launch")
-def launch_awareness_simulation(payload: AwarenessLaunchRequest):
-    return awareness_simulator.launch_simulation(campaign_id=payload.campaign_id, department=payload.department)
-
 # --- Common Security Graph Unified Pipeline Engine ---
 @app.post("/api/v1/pipeline/execute-slice")
 def execute_unified_pipeline_slice(payload: UnifiedPipelineRequest):
