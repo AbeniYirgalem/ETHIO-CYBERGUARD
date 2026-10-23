@@ -5,6 +5,7 @@ Supports both /api/auth and /api/v1/auth routes.
 """
 
 from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone, timedelta
@@ -18,6 +19,7 @@ from ..config import DEMO_MODE, PASSWORD_RESET_ENABLED
 from ..dependencies import (
     DEMO_USERS, LOGIN_ATTEMPTS, create_access_token,
     create_refresh_token, verify_token, get_current_user, require_permission,
+    revoke_token_payload, persist_users, security,
     ROLES, ROLE_PERMISSIONS
 )
 from services.security.passwords import hash_password, verify_password, validate_password_policy
@@ -53,6 +55,9 @@ class PasswordResetRequest(BaseModel):
 class PasswordResetConfirmRequest(BaseModel):
     reset_token: str
     new_password: str
+
+class LogoutRequest(BaseModel):
+    refresh_token: Optional[str] = None
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -124,7 +129,8 @@ def login_for_access_token(payload: LoginRequest):
         "id": user["id"],
         "name": user["name"],
         "role": user["role"],
-        "department": user["department"]
+        "department": user["department"],
+        "tv": user.get("token_version", 0)
     }
 
     access_token = create_access_token(token_payload)
@@ -152,13 +158,20 @@ def refresh_token(payload: RefreshRequest):
     user = DEMO_USERS.get(email)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if int(token_data.get("tv", 0) or 0) != int(user.get("token_version", 0) or 0):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session is no longer valid. Please sign in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     token_payload = {
         "sub": user["email"],
         "id": user["id"],
         "name": user["name"],
         "role": user["role"],
-        "department": user["department"]
+        "department": user["department"],
+        "tv": user.get("token_version", 0)
     }
     new_access_token = create_access_token(token_payload)
     new_refresh_token = create_refresh_token(token_payload)
@@ -205,6 +218,7 @@ def register_user(
         "password_hash": hash_password(payload.password),
     }
     DEMO_USERS[email] = new_user
+    persist_users()
 
     return {
         "status": "CREATED",
@@ -264,6 +278,9 @@ def confirm_password_reset(payload: PasswordResetConfirmRequest):
     if user is None:
         raise invalid
     user["password_hash"] = hash_password(payload.new_password)
+    # Retire every session issued before the reset (access and refresh tokens carry the old version)
+    user["token_version"] = int(user.get("token_version", 0) or 0) + 1
+    persist_users()
 
     # The token is single-use; revoke every other pending token and clear any lockout
     for key in [k for k, v in PASSWORD_RESET_TOKENS.items() if v["email"] == email]:
@@ -273,8 +290,29 @@ def confirm_password_reset(payload: PasswordResetConfirmRequest):
 
 @router.post("/api/auth/logout")
 @router.post("/api/v1/auth/logout")
-def logout_user():
-    return {"status": "SUCCESS", "message": "Session invalidated."}
+def logout_user(
+    payload: Optional[LogoutRequest] = None,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+):
+    """Revoke the presented access token and, if supplied, the refresh token.
+
+    Idempotent: expired, malformed or already-revoked tokens are ignored, so signing out
+    never fails because a session had already ended."""
+    candidates = (
+        (credentials.credentials if credentials else None, "access"),
+        (payload.refresh_token if payload else None, "refresh"),
+    )
+    revoked = 0
+    for token, kind in candidates:
+        if not token:
+            continue
+        try:
+            data = verify_token(token, expected_type=kind)
+        except HTTPException:
+            continue
+        if revoke_token_payload(data):
+            revoked += 1
+    return {"status": "SUCCESS", "message": "Session invalidated.", "revoked_tokens": revoked}
 
 @router.get("/api/auth/me")
 @router.get("/api/v1/auth/me")

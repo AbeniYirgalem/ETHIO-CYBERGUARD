@@ -13,6 +13,7 @@ import base64
 import binascii
 import json
 import os
+import uuid
 
 from .config import (
     JWT_SECRET, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, 
@@ -20,6 +21,7 @@ from .config import (
     BOOTSTRAP_ADMIN_EMAIL, BOOTSTRAP_ADMIN_PASSWORD
 )
 from services.security.passwords import hash_password
+from database import state_store
 
 security = HTTPBearer(auto_error=False)
 
@@ -119,6 +121,82 @@ DEMO_USERS: Dict[str, Dict[str, Any]] = _build_user_directory(
 # In-memory account lockout tracker: email -> {"failed_attempts": int, "lockout_until": datetime}
 LOGIN_ATTEMPTS: Dict[str, Dict[str, Any]] = {}
 
+# ---------------------------------------------------------------------------
+# Session revocation (logout) and durable user accounts
+# ---------------------------------------------------------------------------
+# Every token carries a unique "jti". Logging out adds it to this list until the token's own
+# expiry, so a stolen token stops working. The list is persisted so a restart cannot undo it.
+REVOKED_TOKENS_STORE: List[Dict[str, Any]] = []   # [{"jti": str, "exp": float}]
+_revoked_jtis: set = set()
+
+
+def _prune_revoked() -> None:
+    """Drop entries whose token has expired anyway and rebuild the lookup index."""
+    now = datetime.now(timezone.utc).timestamp()
+    REVOKED_TOKENS_STORE[:] = [e for e in REVOKED_TOKENS_STORE if float(e.get("exp", 0)) > now]
+    _revoked_jtis.clear()
+    _revoked_jtis.update(str(e["jti"]) for e in REVOKED_TOKENS_STORE if e.get("jti"))
+
+
+def is_token_revoked(payload: Dict[str, Any]) -> bool:
+    jti = payload.get("jti")
+    return bool(jti) and str(jti) in _revoked_jtis
+
+
+def revoke_token_payload(payload: Dict[str, Any]) -> bool:
+    """Revoke an already-verified token payload. Returns True if it was newly revoked."""
+    jti, exp = payload.get("jti"), payload.get("exp")
+    if not jti or isinstance(exp, bool) or not isinstance(exp, (int, float)):
+        return False
+    if str(jti) in _revoked_jtis:
+        return False
+    REVOKED_TOKENS_STORE.append({"jti": str(jti), "exp": float(exp)})
+    _prune_revoked()
+    state_store.save("revoked_tokens")
+    return True
+
+
+# User accounts live in DEMO_USERS (email -> user). They are saved after every change.
+USERS_STORE: List[Dict[str, Any]] = []
+_BOOTSTRAP_ADMIN_ID = "usr_bootstrap_admin"
+
+
+def persist_users() -> None:
+    state_store.save("users", list(DEMO_USERS.values()))
+
+
+def restore_users(directory: Optional[Dict[str, Dict[str, Any]]] = None, demo_mode: Optional[bool] = None) -> int:
+    """Merge saved users into the live directory. Returns how many were restored.
+
+    * Default demo accounts are never resurrected from the database in production.
+    * The bootstrap administrator always comes from the environment, never from the database.
+    """
+    target = DEMO_USERS if directory is None else directory
+    demo = DEMO_MODE if demo_mode is None else demo_mode
+    demo_ids = {account[1] for account in _DEMO_ACCOUNTS}
+    restored = 0
+    for user in USERS_STORE:
+        email = str(user.get("email") or "").strip().lower()
+        if not email or not user.get("password_hash"):
+            continue
+        if user.get("id") == _BOOTSTRAP_ADMIN_ID:
+            continue
+        if not demo and user.get("id") in demo_ids:
+            continue
+        target[email] = dict(user)
+        restored += 1
+    return restored
+
+
+def after_state_restore() -> None:
+    """Called once at API startup, right after state_store.restore_all()."""
+    restore_users()
+    _prune_revoked()
+
+
+state_store.register("users", USERS_STORE)
+state_store.register("revoked_tokens", REVOKED_TOKENS_STORE)
+
 def _b64url_encode(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).decode("utf-8").rstrip("=")
 
@@ -134,6 +212,7 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode["exp"] = int(expire.timestamp())
     to_encode["type"] = "access"
+    to_encode["jti"] = uuid.uuid4().hex
     
     header = {"alg": JWT_ALGORITHM, "typ": "JWT"}
     header_b64 = _b64url_encode(json.dumps(header).encode("utf-8"))
@@ -150,6 +229,7 @@ def create_refresh_token(data: Dict[str, Any]) -> str:
     expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode["exp"] = int(expire.timestamp())
     to_encode["type"] = "refresh"
+    to_encode["jti"] = uuid.uuid4().hex
     
     header = {"alg": JWT_ALGORITHM, "typ": "JWT"}
     header_b64 = _b64url_encode(json.dumps(header).encode("utf-8"))
@@ -220,6 +300,13 @@ def verify_token(token: str, expected_type: str = "access") -> Dict[str, Any]:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    if is_token_revoked(payload):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been revoked",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     return payload
 
 def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Dict[str, Any]:
@@ -240,9 +327,24 @@ def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depen
     
     payload = verify_token(credentials.credentials, expected_type="access")
     user_email = payload.get("sub")
-    if user_email in DEMO_USERS:
-        return DEMO_USERS[user_email]
-    
+    known_user = DEMO_USERS.get(user_email)
+    if known_user is not None:
+        # A password reset bumps token_version, which retires every session issued before it.
+        if int(payload.get("tv", 0) or 0) != int(known_user.get("token_version", 0) or 0):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session is no longer valid. Please sign in again.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return known_user
+
+    if not DEMO_MODE:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unknown account.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     return {
         "id": payload.get("id", "usr_external"),
         "email": user_email,

@@ -5,6 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.1.8] - 2026-10-23
+
+### Security
+- **Logout now really ends the session.** `POST /api/auth/logout` revokes the presented access token and (if sent) the refresh token. Every token carries a unique `jti`; revoked IDs are persisted until the token expires, so a restart cannot undo a logout. Logout is idempotent and never fails on an expired or malformed token.
+- **Password reset retires old sessions.** Each user has a `token_version`; resetting a password bumps it, so access and refresh tokens issued earlier stop working immediately.
+- Production mode rejects tokens whose account no longer exists (`401`), instead of trusting the role written in the token.
+
+### Added
+- **User accounts persist** across restarts (including password changes and token versions). Default demo accounts are never restored into a production database, and the bootstrap administrator always comes from the environment.
+- Web app: administrators get a **User Management** panel in Settings (create users with role and password policy checks). Signing out now revokes the session on the server.
+- `tests/security/test_session_revocation.py` (11 tests).
+
+---
+
 ## [1.1.7] - 2026-10-23
 
 ### Security (critical)

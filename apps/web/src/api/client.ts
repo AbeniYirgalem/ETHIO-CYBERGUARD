@@ -138,7 +138,50 @@ export async function login(email: string, password: string): Promise<Session> {
 }
 
 export function logout(): void {
+  const session = getSession();
   saveSession(null);
+  if (!session) return;
+  // Best effort: ask the server to revoke both tokens so a copied token stops working.
+  void rawRequest(
+    '/api/auth/logout',
+    { method: 'POST', body: JSON.stringify({ refresh_token: session.refreshToken }) },
+    session.accessToken,
+  ).catch(() => undefined);
+}
+
+export interface NewUserPayload {
+  email: string;
+  password: string;
+  full_name: string;
+  role: string;
+  department?: string;
+  organization?: string;
+}
+
+/** Create a user account. The server only allows this for administrators. */
+export async function createUser(payload: NewUserPayload): Promise<AuthUser> {
+  const data = await authedRequest<{ user: AuthUser }>('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return data.user;
+}
+
+export const FALLBACK_ROLES: string[] = [
+  'SUPER_ADMIN', 'SOC_MANAGER', 'INCIDENT_COMMANDER', 'SECURITY_ANALYST',
+  'INCIDENT_RESPONDER', 'THREAT_HUNTER', 'AUDITOR', 'READ_ONLY',
+];
+
+/** Roles the backend knows about (public endpoint); falls back to a built-in list when offline. */
+export async function fetchRoles(): Promise<string[]> {
+  try {
+    const res = await rawRequest('/api/auth/roles', { method: 'GET' });
+    if (!res.ok) return FALLBACK_ROLES;
+    const body = (await res.json()) as { roles?: string[] };
+    return Array.isArray(body.roles) && body.roles.length > 0 ? body.roles : FALLBACK_ROLES;
+  } catch {
+    return FALLBACK_ROLES;
+  }
 }
 
 // ---------- data ----------

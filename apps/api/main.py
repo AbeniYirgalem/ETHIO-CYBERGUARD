@@ -46,7 +46,7 @@ from database import state_store
 from apps.api.routers import response as response_module
 from services.websocket.manager import ws_manager
 from services.ingestion.pipeline import ingestion_pipeline
-from apps.api.dependencies import verify_collector_api_key, require_permission, verify_token
+from apps.api.dependencies import verify_collector_api_key, require_permission, verify_token, after_state_restore
 from apps.api.config import DEMO_MODE, MAX_PAYLOAD_BYTES, validate_production_config
 
 @asynccontextmanager
@@ -54,6 +54,7 @@ async def lifespan(app: FastAPI):
     validate_production_config()
     init_db()
     state_store.restore_all()
+    after_state_restore()
     response_module._rearm_demo_seed_actions()
     yield
 

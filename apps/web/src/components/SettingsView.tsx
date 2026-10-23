@@ -7,6 +7,8 @@ import {
   CheckCircle2, 
   Globe
 } from 'lucide-react';
+import { getSession } from '../api/client';
+import { UserAdminPanel } from './UserAdminPanel';
 
 interface SettingsViewProps {
   currentRole: string;
@@ -29,6 +31,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   roleLocked = false
 }) => {
   const [saveNotice, setSaveNotice] = useState(false);
+  // Shown only for a signed-in administrator; the server enforces this independently.
+  const isAdminSession = roleLocked && getSession()?.user.role === 'SUPER_ADMIN';
 
   const handleSave = () => {
     setSaveNotice(true);
@@ -176,7 +180,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* 4. Localization Preferences */}
+      {/* 4. User management (administrators, live API only) */}
+      {isAdminSession && <UserAdminPanel />}
+
+      {/* 5. Localization Preferences */}
       <div className="bg-[#111923] border border-[#1E2A38] rounded-xl p-5 space-y-4">
         <h2 className="text-sm font-bold text-white flex items-center space-x-2">
           <Globe className="w-4 h-4 text-[#00D9FF]" />
