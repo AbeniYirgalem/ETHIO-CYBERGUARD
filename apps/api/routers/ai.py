@@ -12,6 +12,10 @@ from typing import Optional, List, Dict, Any
 from services.ai.orchestrator import MultiAgentOrchestrator
 from services.ai.assistant_agent import SecurityAssistantAgent
 from .incidents import INCIDENTS_STORE
+from ..dependencies import get_current_user
+
+# Every AI route needs a valid login (guest allowed only in DEMO_MODE).
+_READ = Depends(get_current_user)
 
 router = APIRouter(tags=["Multi-Agent AI & Copilot"])
 
@@ -28,7 +32,7 @@ class AIChatRequest(BaseModel):
 
 @router.post("/api/ai/investigate")
 @router.post("/api/v1/ai/investigate")
-def run_ai_investigation(payload: InvestigateRequest):
+def run_ai_investigation(payload: InvestigateRequest, _user: Dict[str, Any] = _READ):
     inc = next(
         (i for i in INCIDENTS_STORE if i["incident_number"].upper() == payload.incident_number.upper()), 
         INCIDENTS_STORE[0]
@@ -43,7 +47,7 @@ def run_ai_investigation(payload: InvestigateRequest):
 @router.post("/api/ai/chat")
 @router.post("/api/v1/ai/chat")
 @router.post("/api/v1/ai/assistant/chat")
-def chat_with_copilot(payload: AIChatRequest):
+def chat_with_copilot(payload: AIChatRequest, _user: Dict[str, Any] = _READ):
     inc = next(
         (i for i in INCIDENTS_STORE if i["incident_number"].upper() == (payload.incident_number or "INC-00042").upper()), 
         INCIDENTS_STORE[0]
@@ -52,7 +56,7 @@ def chat_with_copilot(payload: AIChatRequest):
 
 @router.get("/api/ai/agents")
 @router.get("/api/v1/ai/agents")
-def list_ai_agents():
+def list_ai_agents(_user: Dict[str, Any] = _READ):
     return {
         "cluster_status": "ONLINE",
         "total_agents": 7,

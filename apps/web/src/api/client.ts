@@ -1,4 +1,6 @@
-import type { Incident, ResponseAction, AuthUser } from '../types';
+import type {
+  Incident, ResponseAction, AuthUser, ThreatIndicator, AuditLogEntry, AssistantReply,
+} from '../types';
 
 /**
  * API client for the ETHIO-CYBERGUARD backend.
@@ -149,6 +151,37 @@ export async function fetchIncidents(): Promise<Incident[]> {
 export async function fetchActions(): Promise<ResponseAction[]> {
   const data = await authedRequest<{ actions: ResponseAction[] }>('/api/response/actions');
   return data.actions;
+}
+
+export async function fetchThreatIntel(): Promise<ThreatIndicator[]> {
+  const data = await authedRequest<{ indicators: Array<Partial<ThreatIndicator>> }>(
+    '/api/threat-intelligence',
+  );
+  // The API record may omit optional fields, so fill safe defaults for the UI.
+  return data.indicators.map((i) => ({
+    indicator: i.indicator ?? 'unknown',
+    type: i.type ?? 'IPV4',
+    reputation: i.reputation ?? 'SUSPICIOUS',
+    confidence: i.confidence ?? 0,
+    first_seen: i.first_seen ?? '',
+    threat_actor: i.threat_actor ?? 'Unknown',
+    malware: i.malware ?? 'Unknown',
+    country: i.country ?? 'Unknown',
+    related_incidents: i.related_incidents ?? [],
+  }));
+}
+
+export async function fetchAuditLog(): Promise<AuditLogEntry[]> {
+  const data = await authedRequest<{ audit_logs: AuditLogEntry[] }>('/api/response/audit-log');
+  return data.audit_logs;
+}
+
+export async function askAssistant(query: string, incidentNumber: string): Promise<AssistantReply> {
+  const data = await authedRequest<{ reply: string; citations?: AssistantReply['citations'] }>(
+    '/api/ai/chat',
+    { method: 'POST', body: JSON.stringify({ query, incident_number: incidentNumber }) },
+  );
+  return { reply: data.reply, citations: data.citations ?? [] };
 }
 
 export async function decideAction(

@@ -5,6 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.1.5] - 2026-10-23
+
+### Added
+- Web app now loads threat intelligence and the SOAR audit log from the API when signed in.
+- Security Assistant sends questions to `/api/ai/chat` when signed in (local scripted replies when offline).
+- Incidents "Audit Log" tab shows the real hash-chained audit trail (with SHA-256 prefix) in live mode.
+- `tests/security/test_ai_threatintel_auth.py`.
+
+### Security
+- Threat-intelligence routes and all AI routes now require a login (`401` when `DEMO_MODE=false`).
+- Importing indicators now requires the `rules:edit` permission.
+
+---
+
 ## [1.1.4] - 2026-10-22
 
 ### Security

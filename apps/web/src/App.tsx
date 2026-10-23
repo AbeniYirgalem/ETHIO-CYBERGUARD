@@ -25,6 +25,7 @@ import type { ToastMessage } from './components/ToastManager';
 import { soundManager } from './utils/sound';
 import {
   ApiError, getSession, login, logout, fetchIncidents, fetchActions, decideAction,
+  fetchThreatIntel, fetchAuditLog,
 } from './api/client';
 import type { Session } from './api/client';
 import { 
@@ -34,7 +35,7 @@ import {
   INITIAL_ACTIONS, 
   INITIAL_TIMELINE 
 } from './mockData';
-import type { Incident, SecurityEvent, ResponseAction } from './types';
+import type { Incident, SecurityEvent, ResponseAction, AuditLogEntry } from './types';
 
 export const App: React.FC = () => {
   const [inPublicPortal, setInPublicPortal] = useState(false);
@@ -42,7 +43,8 @@ export const App: React.FC = () => {
   const [incidents, setIncidents] = useState<Incident[]>(INITIAL_INCIDENTS);
   const [selectedIncident, setSelectedIncident] = useState<Incident>(INITIAL_INCIDENTS[0]);
   const [events, setEvents] = useState<SecurityEvent[]>(INITIAL_EVENTS);
-  const [indicators] = useState(INITIAL_INDICATORS);
+  const [indicators, setIndicators] = useState(INITIAL_INDICATORS);
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [actions, setActions] = useState<ResponseAction[]>(INITIAL_ACTIONS);
   const [isStreaming, setIsStreaming] = useState(true);
   const [liveCount, setLiveCount] = useState(4210);
@@ -88,6 +90,8 @@ export const App: React.FC = () => {
     setIncidents(INITIAL_INCIDENTS);
     setSelectedIncident(INITIAL_INCIDENTS[0]);
     setActions(INITIAL_ACTIONS);
+    setIndicators(INITIAL_INDICATORS);
+    setAuditLogs([]);
     setCurrentRole('SECURITY_ANALYST');
     addToast({ type: 'warning', title: 'Using demo data', message });
   };
@@ -107,6 +111,8 @@ export const App: React.FC = () => {
     setIncidents(INITIAL_INCIDENTS);
     setSelectedIncident(INITIAL_INCIDENTS[0]);
     setActions(INITIAL_ACTIONS);
+    setIndicators(INITIAL_INDICATORS);
+    setAuditLogs([]);
     setCurrentRole('SECURITY_ANALYST');
     addToast({ type: 'info', title: 'Signed out', message: 'Showing simulated demo data.' });
   };
@@ -129,7 +135,9 @@ export const App: React.FC = () => {
     if (!session) return;
     let cancelled = false;
     (async () => {
-      const [inc, act] = await Promise.allSettled([fetchIncidents(), fetchActions()]);
+      const [inc, act, ti, aud] = await Promise.allSettled([
+        fetchIncidents(), fetchActions(), fetchThreatIntel(), fetchAuditLog(),
+      ]);
       if (cancelled) return;
       if (inc.status === 'rejected' && act.status === 'rejected') {
         const reason = inc.reason;
@@ -146,6 +154,8 @@ export const App: React.FC = () => {
         setSelectedIncident(inc.value[0]);
       }
       if (act.status === 'fulfilled') setActions(act.value);
+      if (ti.status === 'fulfilled' && ti.value.length > 0) setIndicators(ti.value);
+      if (aud.status === 'fulfilled') setAuditLogs(aud.value);
       setLiveMode(true);
     })();
     return () => { cancelled = true; };
@@ -457,6 +467,7 @@ export const App: React.FC = () => {
               actions={actions}
               onApproveAction={handleApproveAction}
               onRejectAction={handleRejectAction}
+              auditLogs={liveMode ? auditLogs : undefined}
             />
           )}
 
@@ -473,6 +484,7 @@ export const App: React.FC = () => {
               actions={actions}
               onApproveAction={handleApproveAction}
               onRejectAction={handleRejectAction}
+              auditLogs={liveMode ? auditLogs : undefined}
             />
           )}
 
@@ -493,7 +505,7 @@ export const App: React.FC = () => {
           )}
 
           {activeTab === 'assistant' && (
-            <AssistantView currentIncident={selectedIncident} />
+            <AssistantView currentIncident={selectedIncident} live={liveMode} />
           )}
 
           {activeTab === 'risk' && (

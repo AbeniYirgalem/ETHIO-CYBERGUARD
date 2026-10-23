@@ -79,6 +79,23 @@ export interface ThreatIndicator {
   related_incidents: string[];
 }
 
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  operator: string;
+  action: string;
+  target: string;
+  result: string;
+  details: string;
+  prev_hash: string;
+  integrity_hash: string;
+}
+
+export interface AssistantReply {
+  reply: string;
+  citations: Array<{ source: string; entity: string }>;
+}
+
 export interface ResponseAction {
   id: string;
   incident_number: string;

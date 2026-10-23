@@ -119,7 +119,7 @@ def test_phishing_upload_and_url_extraction():
     )
     assert bad_upload.status_code == 400
 
-def test_threat_intel_extended_endpoints():
+def test_threat_intel_extended_endpoints(admin_headers):
     # 1. Filter indicators by type and reputation
     filtered_res = client.get("/api/v1/threat-intelligence?type=ipv4-addr&reputation=MALICIOUS")
     assert filtered_res.status_code == 200
@@ -144,7 +144,7 @@ def test_threat_intel_extended_endpoints():
         "source": "Ethio-CERT Flash Alert",
         "confidence": 95,
         "expires_in_days": 30
-    })
+    }, headers=admin_headers)
     assert import_res.status_code == 201
     assert import_res.json()["status"] == "IMPORTED"
 

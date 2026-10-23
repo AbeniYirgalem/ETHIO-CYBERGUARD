@@ -1,12 +1,15 @@
 import React, { useState, useCallback } from 'react';
+import { askAssistant } from '../api/client';
 import { Bot, Send, Sparkles } from 'lucide-react';
 import type { ChatMessage, Incident } from '../types';
 
 interface AssistantViewProps {
   currentIncident: Incident;
+  /** True when signed in to the live API: questions go to the backend assistant. */
+  live?: boolean;
 }
 
-export const AssistantView: React.FC<AssistantViewProps> = ({ currentIncident }) => {
+export const AssistantView: React.FC<AssistantViewProps> = ({ currentIncident, live = false }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'm1',
@@ -42,6 +45,29 @@ export const AssistantView: React.FC<AssistantViewProps> = ({ currentIncident })
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
+
+    if (live) {
+      askAssistant(query, currentIncident.incident_number)
+        .then(res => {
+          setMessages(prev => [...prev, {
+            id: `b_${Date.now()}`,
+            sender: 'assistant',
+            text: res.reply,
+            timestamp: new Date().toLocaleTimeString(),
+            citations: res.citations
+          }]);
+        })
+        .catch(err => {
+          setMessages(prev => [...prev, {
+            id: `b_${Date.now()}`,
+            sender: 'assistant',
+            text: `The assistant could not answer: ${err instanceof Error ? err.message : 'unexpected error'}`,
+            timestamp: new Date().toLocaleTimeString()
+          }]);
+        })
+        .finally(() => setIsTyping(false));
+      return;
+    }
 
     // Grounded response generator
     setTimeout(() => {
@@ -84,7 +110,7 @@ export const AssistantView: React.FC<AssistantViewProps> = ({ currentIncident })
       setMessages(prev => [...prev, botMsg]);
       setIsTyping(false);
     }, 600);
-  }, [input, currentIncident]);
+  }, [input, currentIncident, live]);
 
   return (
     <div className="bg-[#111923] border border-[#1E2A38] rounded-xl flex flex-col h-[calc(100vh-8.5rem)]">
