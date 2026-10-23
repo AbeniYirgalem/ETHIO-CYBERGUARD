@@ -26,7 +26,7 @@
 | Method | Endpoint | Description | Required RBAC Role |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/auth/login` | Authenticate with email & password; returns JWT access + refresh tokens | Anonymous |
-| `POST` | `/auth/register` | Register a new analyst account (governed by tenant invitation) | `SUPER_ADMIN` / `ORG_ADMIN` |
+| `POST` | `/auth/register` | Create a user account (administrators only; role must be valid, password policy enforced, no tokens returned) | `SUPER_ADMIN` / `ORG_ADMIN` |
 | `POST` | `/auth/refresh` | Rotate expired access token using valid refresh token | Authenticated |
 | `POST` | `/auth/logout` | Revoke current user session and invalidate refresh tokens | Authenticated |
 | `GET` | `/auth/me` | Fetch active user profile, tenant UUID, and assigned RBAC permissions | Authenticated |

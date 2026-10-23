@@ -42,6 +42,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:-}
       INGEST_API_KEY: ${INGEST_API_KEY:-ecg-collector-secure-api-key-2026}
       DEMO_MODE: ${DEMO_MODE:-true}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
     depends_on:
       - postgres
       - redis

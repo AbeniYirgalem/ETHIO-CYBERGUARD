@@ -5,6 +5,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.1.7] - 2026-10-23
+
+### Security (critical)
+- **Closed an anonymous admin takeover.** `POST /api/auth/register` was public and honored a client-supplied `role`, so anyone could create a `SUPER_ADMIN` and receive tokens. Registration now requires the `user:admin` permission, validates the role, enforces the password policy, and returns no tokens.
+- **Closed account takeover via password reset.** `POST /api/auth/password-reset` returned the reset token to the caller for any email. The token is now delivered out-of-band (server log until email/SMS is connected), stored only as a SHA-256 digest, single-use, limited to 3 live tokens per account, and the endpoint answers identically for known and unknown emails.
+- **Passwords:** salted PBKDF2-SHA256 (random salt, versioned format) with constant-time verification, replacing unsalted SHA-256 for API users and a fixed global salt in `database/connection.py`. Legacy database hashes still verify. New policy: 12+ characters mixing three character classes.
+- **No default accounts in production.** With `DEMO_MODE=false` the demo users are not created (in memory or in the database), `/api/auth/demo-credentials` returns 404, and the app requires `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` to start.
+- Login spends equal time for unknown users to avoid revealing which emails exist.
+- `POST /api/v1/alerts/notify`, `POST /api/v1/pipeline/execute-slice` and `GET /api/v1/benchmark/run` now require a login (benchmark: administrators only, `events` limited to 100–50000). Alert payloads are validated (`channel` limited to `webhook`/`email`, bounded lengths and scores).
+- WebSocket `/ws/live-events`: an invalid token is rejected (previously silently downgraded to guest) and production mode requires a token.
+
+### Added
+- `services/security/passwords.py`, `scripts/hash_password.py`, `tests/security/test_auth_hardening.py` (21 tests).
+
+### Changed
+- Registration is administrator-only and no longer returns tokens. Users created through the API live in memory until user persistence ships.
+
+---
+
 ## [1.1.6] - 2026-10-23
 
 ### Added

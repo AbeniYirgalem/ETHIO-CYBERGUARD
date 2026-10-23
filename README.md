@@ -28,7 +28,7 @@
   <img src="https://img.shields.io/badge/Throughput-51k+_EPS-00D9FF?style=for-the-badge&logo=speedtest" alt="51k+ EPS" />
   <img src="https://img.shields.io/badge/Frontend-React_19_+_Tailwind-22C55E?style=for-the-badge&logo=react" alt="React 19" />
   <img src="https://img.shields.io/badge/Backend-FastAPI_Python_3.10+-F59E0B?style=for-the-badge&logo=fastapi" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/Tests-148%2F148_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
+  <img src="https://img.shields.io/badge/Tests-169%2F169_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="License" /></a>
 </p>
 
@@ -299,7 +299,7 @@ Configure these in `.env` or your Kubernetes ConfigMaps / Secrets:
 | **Authentication** | `POST` | `/api/auth/login` | Authenticate with credentials and receive access + refresh JWTs. |
 | | `POST` | `/api/auth/refresh` | Rotate expired access token using valid refresh token. |
 | | `GET` | `/api/auth/me` | Fetch authenticated user profile and assigned RBAC permissions. |
-| | `POST` | `/api/auth/password-reset` | Initiate secure self-service password reset. |
+| | `POST` | `/api/auth/password-reset` | Initiate self-service password reset (one-time token is delivered out-of-band, never returned in the response). |
 | **Ingestion** | `POST` | `/api/v1/events/ingest` | High-throughput collector ingestion with deduplication & DLQ. |
 | **Incidents** | `GET` | `/api/incidents` | List incidents with filtering by severity, status, and tenant. |
 | | `GET` | `/api/incidents/{id}` | Detailed incident record including timeline and attack graph. |
@@ -360,7 +360,7 @@ tests/unit/test_rules.py ...................... PASSED
 tests/unit/test_soar_response.py .............. PASSED
 tests/unit/test_typosquat.py .................. PASSED
 
-============================= 148 passed in 1.65s =============================
+============================= 169 passed in 2.47s =============================
 ```
 
 To test the frontend build and TypeScript compliance:
@@ -395,7 +395,7 @@ While ETHIO-CYBERGUARD provides production-grade components, operators deploying
   - STIX 2.1 Threat Intel export and import
   - Health probes (`/health/live`, `/health/ready`) and Prometheus `/metrics`
   - Comprehensive Technical White Paper ([`docs/ETHIO_CYBERGUARD_TECHNICAL_PAPER.md`](./docs/ETHIO_CYBERGUARD_TECHNICAL_PAPER.md))
-  - 148 automated unit, integration, and security tests (100% green pass rate)
+  - 169 automated unit, integration, and security tests (100% green pass rate)
 - **v1.2 (Target: Q3 2026)**:
   - Air-gapped on-premise LLM inference with Ollama and vLLM
   - Pre-built Splunk and Elastic forwarder integrations

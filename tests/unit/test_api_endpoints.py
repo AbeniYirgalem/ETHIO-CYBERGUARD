@@ -11,7 +11,7 @@ from apps.api.main import app
 
 client = TestClient(app)
 
-def test_auth_login_and_register():
+def test_auth_login_and_register(admin_headers):
     # Login with valid demo credentials
     resp = client.post("/api/auth/login", json={
         "email": "analyst@cbe.com.et",
@@ -29,7 +29,7 @@ def test_auth_login_and_register():
         "full_name": "Almaz Bekele",
         "organization": "Ethio Telecom",
         "role": "SECURITY_ANALYST"
-    })
+    }, headers=admin_headers)
     assert reg_resp.status_code == 201
     reg_data = reg_resp.json()
     assert reg_data["user"]["email"] == "newanalyst@telebirr.et"

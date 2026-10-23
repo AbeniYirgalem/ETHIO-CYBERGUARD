@@ -3,10 +3,10 @@ ETHIO-CYBERGUARD Central Backend API Service
 FastAPI REST & WebSocket Gateway for SOC Monitoring, Ingestion, Detection & Multi-Agent AI
 """
 
-from fastapi import FastAPI, HTTPException, Request, Depends, status, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Request, Depends, Query, status, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
+from pydantic import BaseModel, Field
+from typing import List, Dict, Any, Literal, Optional
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 import sys
@@ -46,7 +46,7 @@ from database import state_store
 from apps.api.routers import response as response_module
 from services.websocket.manager import ws_manager
 from services.ingestion.pipeline import ingestion_pipeline
-from apps.api.dependencies import verify_collector_api_key
+from apps.api.dependencies import verify_collector_api_key, require_permission, verify_token
 from apps.api.config import DEMO_MODE, MAX_PAYLOAD_BYTES, validate_production_config
 
 @asynccontextmanager
@@ -191,7 +191,10 @@ def ingest_event(
 # --- Security Awareness & Training (CyberSatark Engine) ---
 # --- Common Security Graph Unified Pipeline Engine ---
 @app.post("/api/v1/pipeline/execute-slice")
-def execute_unified_pipeline_slice(payload: UnifiedPipelineRequest):
+def execute_unified_pipeline_slice(
+    payload: UnifiedPipelineRequest,
+    _user: Dict[str, Any] = Depends(require_permission("incident:assign")),
+):
     default_email = """From: "Telebirr Support" <support@telebirr-bonus.xyz>
 To: dawit.mengistu@cbe.com.et
 Reply-To: phisher-collector@gmail.com
@@ -236,16 +239,21 @@ def readiness_check():
 async def websocket_live_events(websocket: WebSocket, token: Optional[str] = None):
     user_meta = {"role": "SECURITY_ANALYST", "organization": "Commercial Bank of Ethiopia"}
     if token:
+        # A token that is present must be valid; a bad token is never silently downgraded to guest.
         try:
-            from apps.api.dependencies import verify_token
             payload = verify_token(token)
-            user_meta = {
-                "role": payload.get("role", "SECURITY_ANALYST"),
-                "organization": payload.get("organization", "Commercial Bank of Ethiopia"),
-                "email": payload.get("sub")
-            }
         except Exception:
-            pass
+            await websocket.close(code=1008)
+            return
+        user_meta = {
+            "role": payload.get("role", "SECURITY_ANALYST"),
+            "organization": payload.get("organization", "Commercial Bank of Ethiopia"),
+            "email": payload.get("sub")
+        }
+    elif not DEMO_MODE:
+        # Production: the live stream carries security telemetry, so a login is mandatory.
+        await websocket.close(code=1008)
+        return
 
     connected = await ws_manager.connect(websocket, user_meta)
     if not connected:
@@ -270,17 +278,20 @@ async def websocket_live_events(websocket: WebSocket, token: Optional[str] = Non
 
 # --- Multi-Channel Alert Notification Dispatch ---
 class AlertNotifyRequest(BaseModel):
-    incident_id: str
-    severity: str = "HIGH"
-    risk_score: int = 85
-    target_asset: str = "SERVER-04"
-    target_user: Optional[str] = "dawit.mengistu"
-    title_en: Optional[str] = "Security Incident Alert"
-    title_am: Optional[str] = "የደህንነት ማስጠንቀቂያ"
-    channel: str = "webhook"
+    incident_id: str = Field(max_length=64)
+    severity: Literal["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"] = "HIGH"
+    risk_score: int = Field(default=85, ge=0, le=100)
+    target_asset: str = Field(default="SERVER-04", max_length=200)
+    target_user: Optional[str] = Field(default="dawit.mengistu", max_length=200)
+    title_en: Optional[str] = Field(default="Security Incident Alert", max_length=200)
+    title_am: Optional[str] = Field(default="የደህንነት ማስጠንቀቂያ", max_length=200)
+    channel: Literal["webhook", "email"] = "webhook"
 
 @app.post("/api/v1/alerts/notify")
-async def dispatch_alert_notification(payload: AlertNotifyRequest):
+async def dispatch_alert_notification(
+    payload: AlertNotifyRequest,
+    _user: Dict[str, Any] = Depends(require_permission("incident:assign")),
+):
     alert_dict = payload.model_dump()
     result = alert_notifier.dispatch(alert_dict, channel=payload.channel)
     # Broadcast to live SOC console via WebSocket
@@ -293,7 +304,10 @@ async def dispatch_alert_notification(payload: AlertNotifyRequest):
 
 # --- Ingestion & Detection EPS Benchmark Runner ---
 @app.get("/api/v1/benchmark/run")
-def trigger_benchmark(events: int = 5000):
+def trigger_benchmark(
+    events: int = Query(5000, ge=100, le=50000),
+    _user: Dict[str, Any] = Depends(require_permission("user:admin")),
+):
     report = run_benchmark(total_events=events, num_workers=4)
     return report
 

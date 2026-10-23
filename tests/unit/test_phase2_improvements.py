@@ -67,7 +67,18 @@ def test_background_jobs_workflow():
     assert status_resp.status_code == 200
     assert status_resp.json()["job_id"] == job_id
 
-def test_auth_refresh_and_reset():
+def test_auth_refresh_and_reset(monkeypatch):
+    from apps.api.routers import auth as auth_router
+
+    delivered = []
+    monkeypatch.setattr(auth_router, "_deliver_reset_token", lambda email, token: delivered.append((email, token)))
+
+    def request_token():
+        resp = client.post("/api/auth/password-reset", json={"email": "analyst@cbe.com.et"})
+        assert resp.status_code == 200
+        assert "reset_token_simulated" not in resp.json()  # never returned to the caller
+        return delivered[-1][1]
+
     # Login to get refresh token
     login_resp = client.post("/api/auth/login", json={
         "email": "analyst@cbe.com.et",
@@ -83,23 +94,16 @@ def test_auth_refresh_and_reset():
     assert refresh_resp.status_code == 200
     assert "access_token" in refresh_resp.json()
 
-    # Password reset request
-    reset_req = client.post("/api/auth/password-reset", json={
-        "email": "analyst@cbe.com.et"
-    })
-    assert reset_req.status_code == 200
-    reset_token = reset_req.json()["reset_token_simulated"]
-
-    # Confirm reset
+    # Password reset request + confirm (token captured from the out-of-band channel)
     confirm_resp = client.post("/api/auth/password-reset/confirm", json={
-        "reset_token": reset_token,
+        "reset_token": request_token(),
         "new_password": "NewSecurePassword@2026!"
     })
     assert confirm_resp.status_code == 200
 
     # Reset back to original password for other tests
     client.post("/api/auth/password-reset/confirm", json={
-        "reset_token": client.post("/api/auth/password-reset", json={"email": "analyst@cbe.com.et"}).json()["reset_token_simulated"],
+        "reset_token": request_token(),
         "new_password": "Analyst@2026!"
     })
 

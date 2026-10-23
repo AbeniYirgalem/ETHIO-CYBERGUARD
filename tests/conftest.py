@@ -11,6 +11,7 @@ from pathlib import Path
 _TEST_DB_DIR = tempfile.mkdtemp(prefix="ecg-tests-")
 os.environ["DATABASE_URL"] = f"sqlite:///{(Path(_TEST_DB_DIR) / 'test.db').as_posix()}"
 os.environ["PERSISTENCE_ENABLED"] = "true"
+os.environ["PASSWORD_HASH_ITERATIONS"] = "1000"  # fast hashing for users created in tests
 
 import pytest
 from typing import Dict, Any

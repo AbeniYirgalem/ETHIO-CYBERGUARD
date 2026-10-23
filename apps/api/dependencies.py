@@ -16,8 +16,10 @@ import os
 
 from .config import (
     JWT_SECRET, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, 
-    REFRESH_TOKEN_EXPIRE_DAYS, INGEST_API_KEY, DEMO_MODE
+    REFRESH_TOKEN_EXPIRE_DAYS, INGEST_API_KEY, DEMO_MODE,
+    BOOTSTRAP_ADMIN_EMAIL, BOOTSTRAP_ADMIN_PASSWORD
 )
+from services.security.passwords import hash_password
 
 security = HTTPBearer(auto_error=False)
 
@@ -67,65 +69,52 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
     ]
 }
 
-# Seeded Demo Accounts (Role-Based Access)
-DEMO_USERS: Dict[str, Dict[str, Any]] = {
-    "admin@cbe.com.et": {
-        "id": "usr_cbe_admin_01",
-        "email": "admin@cbe.com.et",
-        "name": "Dawit Mengistu",
-        "role": "SUPER_ADMIN",
-        "department": "Security Operations Center",
-        "password_hash": hashlib.sha256("EthioCyber@2026!".encode("utf-8")).hexdigest()
-    },
-    "analyst@cbe.com.et": {
-        "id": "usr_cbe_analyst_02",
-        "email": "analyst@cbe.com.et",
-        "name": "Sara Yohannes",
-        "role": "SECURITY_ANALYST",
-        "department": "Incident Triage",
-        "password_hash": hashlib.sha256("Analyst@2026!".encode("utf-8")).hexdigest()
-    },
-    "commander@cbe.com.et": {
-        "id": "usr_cbe_cmd_03",
-        "email": "commander@cbe.com.et",
-        "name": "Abebe Kebede",
-        "role": "INCIDENT_COMMANDER",
-        "department": "Executive Cyber Command",
-        "password_hash": hashlib.sha256("Commander@2026!".encode("utf-8")).hexdigest()
-    },
-    "responder@cbe.com.et": {
-        "id": "usr_cbe_resp_05",
-        "email": "responder@cbe.com.et",
-        "name": "Kidus Girma",
-        "role": "INCIDENT_RESPONDER",
-        "department": "Incident Response Unit",
-        "password_hash": hashlib.sha256("Responder@2026!".encode("utf-8")).hexdigest()
-    },
-    "hunter@cbe.com.et": {
-        "id": "usr_cbe_th_06",
-        "email": "hunter@cbe.com.et",
-        "name": "Yared Tadesse",
-        "role": "THREAT_HUNTER",
-        "department": "Threat Hunting & Detections",
-        "password_hash": hashlib.sha256("Hunter@2026!".encode("utf-8")).hexdigest()
-    },
-    "auditor@cbe.com.et": {
-        "id": "usr_cbe_audit_04",
-        "email": "auditor@cbe.com.et",
-        "name": "Tigist Haile",
-        "role": "AUDITOR",
-        "department": "Compliance & Forensics",
-        "password_hash": hashlib.sha256("Auditor@2026!".encode("utf-8")).hexdigest()
-    },
-    "readonly@cbe.com.et": {
-        "id": "usr_cbe_ro_07",
-        "email": "readonly@cbe.com.et",
-        "name": "Executive Observer",
-        "role": "READ_ONLY",
-        "department": "Executive Board",
-        "password_hash": hashlib.sha256("ReadOnly@2026!".encode("utf-8")).hexdigest()
-    }
-}
+# Seeded demo accounts. Hashes are precomputed (salted PBKDF2-SHA256, 100k rounds) so
+# importing this module is fast; the demo passwords are public in the README by design.
+# These accounts exist ONLY when DEMO_MODE=true. Generate real hashes with:
+#   python -m scripts.hash_password
+_DEMO_ACCOUNTS = [
+    ("admin@cbe.com.et", "usr_cbe_admin_01", "Dawit Mengistu", "SUPER_ADMIN", "Security Operations Center",
+     "pbkdf2_sha256$100000$vHmcV8qK+kfrVNVgAqMw3w$WnSvjPr4Hgs31woMFAQ43jkuvDiJw/KnGTTU3kle0EI"),
+    ("analyst@cbe.com.et", "usr_cbe_analyst_02", "Sara Yohannes", "SECURITY_ANALYST", "Incident Triage",
+     "pbkdf2_sha256$100000$p7qtZXV0nHwgVeUfOalNVA$zdn6Duydctxse4A7Ch5cABmY6rPsp0EqGqVWNrNRroI"),
+    ("commander@cbe.com.et", "usr_cbe_cmd_03", "Abebe Kebede", "INCIDENT_COMMANDER", "Executive Cyber Command",
+     "pbkdf2_sha256$100000$byaoCOG8mqh06w+ooWXDLw$8x5ZXLkgLuss0LJyIGDdNz6tgai1fm8rv386Aa9Dxw4"),
+    ("responder@cbe.com.et", "usr_cbe_resp_05", "Kidus Girma", "INCIDENT_RESPONDER", "Incident Response Unit",
+     "pbkdf2_sha256$100000$ApDmV8dgi09s3KeksLSWuA$iXc5ZSQ3FFIkKywhtXqdQvh06ExyxzXZ+6uCwwO0R0Q"),
+    ("hunter@cbe.com.et", "usr_cbe_th_06", "Yared Tadesse", "THREAT_HUNTER", "Threat Hunting & Detections",
+     "pbkdf2_sha256$100000$yrEsvrpApVzi9Eorj2sh6A$ShidqO6bs6Hlfd8wQmlloIumoSnHrdRKVwtuMmbOCCA"),
+    ("auditor@cbe.com.et", "usr_cbe_audit_04", "Tigist Haile", "AUDITOR", "Compliance & Forensics",
+     "pbkdf2_sha256$100000$nrwIHo9LgqksHWXIMIzJWw$yYTflWlM4ZlgjqRur++E24/lmMNS9KiM+9xQpVMGOCs"),
+    ("readonly@cbe.com.et", "usr_cbe_ro_07", "Executive Observer", "READ_ONLY", "Executive Board",
+     "pbkdf2_sha256$100000$2ok9xqirNQoOrH3HJsof7w$Uh/vuWww2sQRNkj5vI4eundRqvPWCaO4nnTLMr6SM+A"),
+]
+
+
+def _build_user_directory(demo_mode: bool, bootstrap_email: str, bootstrap_password: str) -> Dict[str, Dict[str, Any]]:
+    """Demo accounts only in demo mode; the bootstrap admin (if configured) in any mode."""
+    users: Dict[str, Dict[str, Any]] = {}
+    if demo_mode:
+        for email, user_id, name, role, department, password_hash in _DEMO_ACCOUNTS:
+            users[email] = {
+                "id": user_id, "email": email, "name": name, "role": role,
+                "department": department, "password_hash": password_hash,
+            }
+    if bootstrap_email and bootstrap_password:
+        users[bootstrap_email] = {
+            "id": "usr_bootstrap_admin",
+            "email": bootstrap_email,
+            "name": "Platform Administrator",
+            "role": "SUPER_ADMIN",
+            "department": "Security Operations Center",
+            "password_hash": hash_password(bootstrap_password),
+        }
+    return users
+
+
+DEMO_USERS: Dict[str, Dict[str, Any]] = _build_user_directory(
+    DEMO_MODE, BOOTSTRAP_ADMIN_EMAIL, BOOTSTRAP_ADMIN_PASSWORD
+)
 
 # In-memory account lockout tracker: email -> {"failed_attempts": int, "lockout_until": datetime}
 LOGIN_ATTEMPTS: Dict[str, Dict[str, Any]] = {}

@@ -87,5 +87,8 @@ def test_production_rejects_default_secrets():
 
 
 def test_production_accepts_strong_secrets_and_demo_skips_checks():
-    validate_production_config(demo_mode=False, jwt_secret=STRONG_SECRET, ingest_key=STRONG_SECRET)
+    validate_production_config(
+        demo_mode=False, jwt_secret=STRONG_SECRET, ingest_key=STRONG_SECRET,
+        bootstrap_email="root@cbe.com.et", bootstrap_password="Str0ng-Bootstrap-Pass!",
+    )
     validate_production_config(demo_mode=True, jwt_secret="weak", ingest_key="weak")

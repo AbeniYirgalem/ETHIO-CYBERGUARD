@@ -4,10 +4,10 @@ Configures PostgreSQL (production) or SQLite (dev/test fallback) with SQLAlchemy
 """
 
 import os
-import hashlib
 from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
+from services.security.passwords import hash_password as _hash_password, verify_password as _verify_password
 from database.models import Base, Organization, User, Incident, Asset, DetectionRule, ThreatIntelligence
 
 DATABASE_URL = os.getenv(
@@ -27,12 +27,12 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def hash_password(password: str) -> str:
-    """Secure PBKDF2-SHA256 password hash."""
-    salt = "ecg_salt_2026_ethiopia"
-    return hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100000).hex()
+    """Salted PBKDF2-SHA256 hash (random salt per password). See services/security/passwords.py."""
+    return _hash_password(password)
 
 def verify_password(password: str, hashed: str) -> bool:
-    return hash_password(password) == hashed
+    """Constant-time verification; also accepts legacy fixed-salt hashes from older databases."""
+    return _verify_password(password, hashed)
 
 def init_db():
     """Initializes tables and populates baseline seed records if empty."""
@@ -64,6 +64,11 @@ def init_db():
             )
             db.add_all([cbe, telebirr, insa])
             db.commit()
+
+            # Demo accounts, assets and the sample incident are seeded ONLY in demo mode, so a
+            # production database never contains well-known default passwords.
+            if os.getenv("DEMO_MODE", "true").lower() not in ("true", "1", "yes"):
+                return
 
             # Seed default users
             analyst = User(
