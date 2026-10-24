@@ -5,6 +5,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.5.0] - 2026-10-24
+
+### Added
+- **Shared security state through Redis** (`services/security/shared_state.py`). The per-IP login rate limit, revoked access/refresh token ids, revoked session families and used refresh tokens are now visible to every API worker, so a logout or a refresh-token replay on one worker is enforced on all of them. Refresh-token first-use is decided atomically (`SET NX`).
+- `SHARED_STATE_BACKEND` (`auto` | `redis` | `memory`). `auto` uses Redis only in production (`DEMO_MODE=false`) with `REDIS_URL` set and the `redis` package installed; demo mode and tests stay in memory. `docker-compose.prod.yml` sets it to `redis`.
+- `/health/ready` reports `shared_state` (`backend`, `multi_worker_safe`).
+- Saved revocations are re-published to Redis at startup, so a flushed or new Redis does not forget a logout.
+- `tests/security/test_shared_state.py` (12 tests, two workers simulated with one shared client).
+
+### Changed
+- Redis trouble never stops the API: a failing call is logged once and answered from the process-local fallback, and Redis is not retried for 15 s so requests do not wait on timeouts.
+- Rate limiting through Redis uses a fixed one-minute window (a client can briefly send up to twice the limit across a window boundary).
+- CI coverage gate raised from 40 to 75 (measured coverage: 83%). `.coverage` and other coverage output are no longer tracked by git.
+- New dependency: `redis>=5.0.0`.
+
+### Known limit
+- Incidents, SOAR actions, the audit log, telemetry and the user list are still saved as JSON snapshots that one worker writes at a time. Keep **one API worker per database** until those collections move to relational tables; only the security state above is multi-worker ready.
+
+---
+
 ## [1.4.0] - 2026-10-24
 
 ### Security

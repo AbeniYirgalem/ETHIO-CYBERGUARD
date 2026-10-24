@@ -28,7 +28,7 @@
   <img src="https://img.shields.io/badge/Throughput-51k+_EPS-00D9FF?style=for-the-badge&logo=speedtest" alt="51k+ EPS" />
   <img src="https://img.shields.io/badge/Frontend-React_19_+_Tailwind-22C55E?style=for-the-badge&logo=react" alt="React 19" />
   <img src="https://img.shields.io/badge/Backend-FastAPI_Python_3.10+-F59E0B?style=for-the-badge&logo=fastapi" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/Tests-240%2F240_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
+  <img src="https://img.shields.io/badge/Tests-269%2F269_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="License" /></a>
 </p>
 
@@ -302,6 +302,7 @@ Configure these in `.env` or your Kubernetes ConfigMaps / Secrets:
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | JWT access token lifespan. |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Refresh token lifespan for session rotation. |
 | `REFRESH_REUSE_GRACE_SECONDS` | `10` | A used refresh token presented again within this time is tolerated; later reuse revokes the whole login session. |
+| `SHARED_STATE_BACKEND` | `auto` | `auto` uses Redis in production when `REDIS_URL` is set (login rate limit, token revocation and refresh-token marks are then shared by every API worker); `memory` forces single-process; `redis` forces Redis. |
 | `MAX_PAYLOAD_BYTES` | `5242880` (5 MB) | Maximum accepted JSON event payload size to prevent DoS. |
 | `INGEST_API_KEY` | `ecg_collector_secret_key` | Shared API key required for endpoint telemetry ingestion. |
 | `RATE_LIMIT_PER_MINUTE` | `120` | Max API requests permitted per client IP per minute. |
@@ -376,7 +377,7 @@ tests/unit/test_rules.py ...................... PASSED
 tests/unit/test_soar_response.py .............. PASSED
 tests/unit/test_typosquat.py .................. PASSED
 
-============================= 240 passed in 21.27s =============================
+============================= 269 passed =============================
 ```
 
 To test the frontend build and TypeScript compliance:
@@ -411,7 +412,7 @@ While ETHIO-CYBERGUARD provides production-grade components, operators deploying
   - STIX 2.1 Threat Intel export and import
   - Health probes (`/health/live`, `/health/ready`) and Prometheus `/metrics`
   - Comprehensive Technical White Paper ([`docs/ETHIO_CYBERGUARD_TECHNICAL_PAPER.md`](./docs/ETHIO_CYBERGUARD_TECHNICAL_PAPER.md))
-  - 240 automated unit, integration, and security tests (100% green pass rate)
+  - 269 automated unit, integration, and security tests (100% green pass rate)
 - **v1.2 (Target: Q3 2026)**:
   - Air-gapped on-premise LLM inference with Ollama and vLLM
   - Pre-built Splunk and Elastic forwarder integrations

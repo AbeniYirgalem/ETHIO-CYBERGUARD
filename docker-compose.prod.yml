@@ -56,6 +56,8 @@ services:
       # POSTGRES_PASSWORD is placed inside this URL, so use URL-safe characters (letters, digits, - _ .).
       DATABASE_URL: postgresql://${POSTGRES_USER:-ecg_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ethio_cyberguard}
       REDIS_URL: redis://redis:6379/0
+      # Login rate limit and token revocation are shared through Redis.
+      SHARED_STATE_BACKEND: redis
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET (32+ random characters) in .env}
       INGEST_API_KEY: ${INGEST_API_KEY:?Set INGEST_API_KEY (16+ random characters) in .env}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:?Set BOOTSTRAP_ADMIN_EMAIL in .env}

@@ -22,6 +22,7 @@ from .config import (
     BOOTSTRAP_ADMIN_EMAIL, BOOTSTRAP_ADMIN_PASSWORD, REFRESH_REUSE_GRACE_SECONDS
 )
 from services.security.passwords import hash_password
+from services.security.shared_state import get_shared_state
 from database import state_store
 
 security = HTTPBearer(auto_error=False)
@@ -139,9 +140,19 @@ def _prune_revoked() -> None:
     _revoked_jtis.update(str(e["jti"]) for e in REVOKED_TOKENS_STORE if e.get("jti"))
 
 
+def _ttl_until(exp: float) -> int:
+    return max(1, int(exp - datetime.now(timezone.utc).timestamp()) + 1)
+
+
 def is_token_revoked(payload: Dict[str, Any]) -> bool:
     jti = payload.get("jti")
-    return bool(jti) and str(jti) in _revoked_jtis
+    if not jti:
+        return False
+    if str(jti) in _revoked_jtis:
+        return True
+    # Another worker may have revoked it (only consulted when Redis is in use).
+    shared = get_shared_state()
+    return shared.distributed and shared.has_flag(f"jti:{jti}")
 
 
 def revoke_token_payload(payload: Dict[str, Any]) -> bool:
@@ -154,6 +165,9 @@ def revoke_token_payload(payload: Dict[str, Any]) -> bool:
     REVOKED_TOKENS_STORE.append({"jti": str(jti), "exp": float(exp)})
     _prune_revoked()
     state_store.save("revoked_tokens")
+    shared = get_shared_state()
+    if shared.distributed:
+        shared.set_flag(f"jti:{jti}", _ttl_until(float(exp)))
     return True
 
 
@@ -183,7 +197,12 @@ def _prune_rotation() -> None:
 
 def is_family_revoked(payload: Dict[str, Any]) -> bool:
     fid = payload.get("fid")
-    return bool(fid) and str(fid) in _revoked_fids
+    if not fid:
+        return False
+    if str(fid) in _revoked_fids:
+        return True
+    shared = get_shared_state()
+    return shared.distributed and shared.has_flag(f"fid:{fid}")
 
 
 def revoke_family(payload: Dict[str, Any]) -> bool:
@@ -199,6 +218,9 @@ def revoke_family(payload: Dict[str, Any]) -> bool:
         REVOKED_FAMILIES_STORE.append({"fid": str(fid), "exp": keep_until})
         _prune_rotation()
     state_store.save("revoked_families")
+    shared = get_shared_state()
+    if shared.distributed:
+        shared.set_flag(f"fid:{fid}", _ttl_until(keep_until))
     return True
 
 
@@ -212,18 +234,26 @@ def consume_refresh_token(payload: Dict[str, Any], now: Optional[float] = None) 
     if not jti or isinstance(exp, bool) or not isinstance(exp, (int, float)):
         return "ok"
     current = datetime.now(timezone.utc).timestamp() if now is None else now
+    shared = get_shared_state()
+    used_at: Optional[float] = None  # None means "first use"
+    if shared.distributed and not shared.set_once(f"used:{jti}", repr(current), _ttl_until(float(exp))):
+        # Another request (possibly on another worker) already spent this token.
+        try:
+            used_at = float(shared.get_once(f"used:{jti}") or current)
+        except ValueError:
+            used_at = current
     with _rotation_lock:
-        used_at = _used_refresh.get(str(jti))
+        local_used_at = _used_refresh.get(str(jti))
         if used_at is None:
+            used_at = local_used_at
+        if local_used_at is None:
             REFRESH_USED_STORE.append(
                 {"jti": str(jti), "fid": str(payload.get("fid") or ""), "used_at": current, "exp": float(exp)}
             )
             _prune_rotation()
-            first_use = True
-        else:
-            first_use = False
-    if first_use:
+    if local_used_at is None:
         state_store.save("refresh_used")
+    if used_at is None:
         return "ok"
     if current - used_at <= REFRESH_REUSE_GRACE_SECONDS:
         return "grace"
@@ -263,11 +293,25 @@ def restore_users(directory: Optional[Dict[str, Dict[str, Any]]] = None, demo_mo
     return restored
 
 
+def _sync_revocations_to_shared() -> None:
+    """Re-publish saved revocations to Redis (it may have been flushed or be brand new)."""
+    shared = get_shared_state()
+    if not shared.distributed:
+        return
+    for entry in REVOKED_TOKENS_STORE:
+        shared.set_flag(f"jti:{entry['jti']}", _ttl_until(float(entry["exp"])))
+    for entry in REVOKED_FAMILIES_STORE:
+        shared.set_flag(f"fid:{entry['fid']}", _ttl_until(float(entry["exp"])))
+    for entry in REFRESH_USED_STORE:
+        shared.set_once(f"used:{entry['jti']}", repr(float(entry.get("used_at", 0))), _ttl_until(float(entry["exp"])))
+
+
 def after_state_restore() -> None:
     """Called once at API startup, right after state_store.restore_all()."""
     restore_users()
     _prune_revoked()
     _prune_rotation()
+    _sync_revocations_to_shared()
 
 
 state_store.register("users", USERS_STORE)

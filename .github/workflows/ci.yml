@@ -47,7 +47,7 @@ jobs:
       - name: Run Pytest Test Suite (with coverage gate)
         env:
           # Raise this number as coverage grows. Run `python -m pytest --cov` locally to see the current value.
-          COVERAGE_MIN: '40'
+          COVERAGE_MIN: '75'
         run: |
           python -m pytest tests/ -q \
             --cov=apps --cov=services --cov=detection --cov=database \

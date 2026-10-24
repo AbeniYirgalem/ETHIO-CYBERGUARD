@@ -54,3 +54,9 @@ Desktop.ini
 
 # Archives (batch zips etc.)
 *.zip
+
+# Coverage output
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml

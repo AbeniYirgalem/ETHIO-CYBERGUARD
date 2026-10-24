@@ -17,6 +17,8 @@ from typing import Callable, Deque, Dict, Tuple
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from services.security.shared_state import get_shared_state
+
 from . import config
 
 # Credential endpoints that get the per-IP limit (POST only).
@@ -116,9 +118,17 @@ def _apply_headers(request: Request, response) -> None:
         headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 
 
+def _check_rate(ip: str) -> Tuple[bool, int]:
+    """Count a credential attempt. Shared across workers when Redis is in use, else per process."""
+    shared = get_shared_state()
+    if shared.distributed:
+        return shared.rate_check(f"auth:{ip}", config.AUTH_RATE_LIMIT_PER_MINUTE, 60)
+    return auth_limiter.check(ip)
+
+
 async def security_middleware(request: Request, call_next):
     if request.method == "POST" and request.url.path in _LIMITED_PATHS and _limiter_enabled():
-        allowed, retry_after = auth_limiter.check(client_ip(request))
+        allowed, retry_after = _check_rate(client_ip(request))
         if not allowed:
             blocked = JSONResponse(
                 status_code=429,
