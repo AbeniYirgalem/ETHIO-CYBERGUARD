@@ -1,6 +1,6 @@
 import type {
   Incident, ResponseAction, AuthUser, ThreatIndicator, AuditLogEntry, AssistantReply,
-  DashboardStats, SecurityEvent, Severity,
+  DashboardStats, SecurityEvent, Severity, TimelineBucket,
 } from '../types';
 
 /**
@@ -256,6 +256,7 @@ export interface StreamAlert {
 export interface StreamStats {
   events_per_second: number;
   events_processed_today: number;
+  timeline?: TimelineBucket[];
 }
 
 export interface LiveStreamHandlers {

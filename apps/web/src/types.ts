@@ -79,6 +79,20 @@ export interface ThreatIndicator {
   related_incidents: string[];
 }
 
+export interface TimelineBucket {
+  hour: string; // ISO, start of the UTC hour
+  events: number;
+  critical: number;
+  alerts: number;
+}
+
+export interface SectorProfile {
+  active_alerts: number;
+  critical: number;
+  high: number;
+  max_severity: string;
+}
+
 export interface DashboardStats {
   metrics: {
     events_per_second: number;
@@ -94,6 +108,10 @@ export interface DashboardStats {
     mean_time_to_respond_minutes: number | null;
   };
   top_threats: Array<{ name: string; count: number; severity: string; tactic?: string | null; source: string }>;
+  /** Hourly event history, last 24 UTC hours, oldest first. */
+  timeline?: TimelineBucket[];
+  /** Active incidents per sector (Banking, Telecom, ...). */
+  sector_profiles?: Record<string, SectorProfile>;
   system_health: { ingestion_pipeline: string; live_stream_clients: number };
 }
 

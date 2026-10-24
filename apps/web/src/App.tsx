@@ -244,6 +244,7 @@ export const App: React.FC = () => {
               events_per_second: streamStats.events_per_second,
               events_processed_today: streamStats.events_processed_today,
             },
+            timeline: streamStats.timeline ?? prev.timeline,
           } : prev);
         }
         if (alerts.length > 0) {

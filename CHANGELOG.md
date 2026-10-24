@@ -5,6 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.2.1] - 2026-10-24
+
+### Added
+- **Real Threat Activity Timeline.** `/api/dashboard/stats` (and the WebSocket snapshot) now include `timeline`: events, critical events and detections per UTC hour for the last 24 hours. The Overview chart draws these instead of fixed bars, labelled in the viewer's local time, with an empty-state message when nothing has been ingested.
+- **Event statistics survive restarts.** Today's counters, severity mix, top detections and the hourly history are saved through the state store (at most every 5 s, and flushed at shutdown) and restored at startup. Corrupt saved data is ignored; a failing database never blocks ingestion.
+- `sector_profiles` in the dashboard payload now carries `critical`, `high` and `max_severity` per sector.
+- `tests/unit/test_telemetry_history.py`.
+
+### Changed
+- **Top Threat Vectors** shows real detections (or, before any telemetry, open incidents) when signed in.
+- **Ethiopia radar** in live mode places open incidents on nodes by asset IP range, shows sector totals, and no longer displays invented throughput, latency, firewall or compliance values (it says "Not monitored"). Signed out, it keeps the simulated grid and is now labelled `SIMULATED`.
+
+---
+
 ## [1.2.0] - 2026-10-24
 
 ### Added

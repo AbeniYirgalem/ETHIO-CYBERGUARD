@@ -45,11 +45,13 @@ from database.connection import init_db
 from database import state_store
 from apps.api.routers import response as response_module
 from services.websocket.manager import ws_manager
-from services.telemetry.stats import telemetry_stats
+from services.telemetry.stats import telemetry_stats, register_persistence, restore_from_store
 from services.ingestion.pipeline import ingestion_pipeline
 from apps.api.dependencies import verify_collector_api_key, require_permission, verify_token, after_state_restore
 from apps.api.config import DEMO_MODE, MAX_PAYLOAD_BYTES, validate_production_config
 from apps.api.security_middleware import install_security_middleware
+
+register_persistence()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -57,8 +59,10 @@ async def lifespan(app: FastAPI):
     init_db()
     state_store.restore_all()
     after_state_restore()
+    restore_from_store()  # event counters and hourly history survive restarts
     response_module._rearm_demo_seed_actions()
     yield
+    telemetry_stats.flush()  # save the last few seconds of counts
 
 app = FastAPI(
     title="ETHIO-CYBERGUARD Central SOC API",

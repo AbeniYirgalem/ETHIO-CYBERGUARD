@@ -28,6 +28,47 @@ interface OverviewViewProps {
   streamConnected?: boolean;
 }
 
+interface TimelineBar {
+  label: string;
+  title: string;
+  events: number;
+  critical: number;
+  eventsPx: number;
+  criticalPx: number;
+}
+
+const SIMULATED_TIMELINE = [
+  { time: '00:00', events: 35, alerts: 1 },
+  { time: '02:00', events: 20, alerts: 0 },
+  { time: '03:14', events: 65, alerts: 6 },
+  { time: '06:00', events: 45, alerts: 2 },
+  { time: '08:00', events: 80, alerts: 3 },
+  { time: '10:00', events: 95, alerts: 8 },
+  { time: '11:30', events: 70, alerts: 4 },
+];
+
+const MAX_BAR_PX = 100;
+
+/** Bars for the real hourly history (labels in the viewer's local time). */
+function liveTimelineBars(timeline: NonNullable<DashboardStats['timeline']>): TimelineBar[] {
+  const max = Math.max(1, ...timeline.map(b => b.events));
+  return timeline.map((b, i) => {
+    const when = new Date(b.hour);
+    const hh = when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    return {
+      label: i % 4 === 0 || i === timeline.length - 1 ? hh : '',
+      title: `${hh}: ${b.events.toLocaleString()} events, ${b.critical} critical, ${b.alerts} detections`,
+      events: b.events,
+      critical: b.critical,
+      eventsPx: b.events > 0 ? Math.max(3, Math.round((b.events / max) * MAX_BAR_PX)) : 0,
+      criticalPx: b.critical > 0 ? Math.max(3, Math.round((b.critical / max) * MAX_BAR_PX)) : 0,
+    };
+  });
+}
+
+const severityBar = (severity: string): string =>
+  severity === 'CRITICAL' || severity === 'HIGH' ? 'bg-[#FF1744]' : severity === 'MEDIUM' ? 'bg-[#F59E0B]' : 'bg-[#00D9FF]';
+
 export const OverviewView: React.FC<OverviewViewProps> = ({
   incidents,
   events,
@@ -51,6 +92,21 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
       inc.department.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSev && matchesQuery;
   });
+
+  const liveTimeline = stats?.timeline ?? null;
+  const timelineBars: TimelineBar[] = liveTimeline
+    ? liveTimelineBars(liveTimeline)
+    : SIMULATED_TIMELINE.map(b => ({
+        label: b.time,
+        title: `${b.events}k events, ${b.alerts} critical alerts`,
+        events: b.events,
+        critical: b.alerts,
+        eventsPx: Math.round(b.events * 0.9),
+        criticalPx: b.alerts * 8,
+      }));
+  const timelineEmpty = liveTimeline !== null && liveTimeline.every(b => b.events === 0);
+  const liveThreats = stats?.top_threats ?? null;
+  const maxThreat = Math.max(1, ...(liveThreats ?? []).map(t => t.count));
 
   // Export incident queue report as downloadable JSON/briefing
   const exportIncidentBriefing = () => {
@@ -204,7 +260,11 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
       </div>
 
       {/* NEW: Ethiopian Critical Infrastructure Defense Radar Component */}
-      <EthiopiaCyberRadar />
+      <EthiopiaCyberRadar
+        live={liveMode}
+        incidents={incidents}
+        sectorProfiles={stats?.sector_profiles ?? null}
+      />
 
       {/* Threat Activity & Top Threats Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -214,51 +274,58 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <div>
               <h2 className="text-sm font-bold text-white flex items-center space-x-2">
                 <span>Threat Activity Timeline</span>
-                <span className="text-[10px] font-normal text-[#7D8A99]">(24h rolling window)</span>
+                <span className="text-[10px] font-normal text-[#7D8A99]">
+                  {liveTimeline ? '(last 24 hours, your local time)' : '(24h rolling window)'}
+                </span>
               </h2>
-              <p className="text-xs text-[#7D8A99]">Normalized event velocity, correlated alert spikes & threat detections</p>
+              <p className="text-xs text-[#7D8A99]">
+                {liveTimeline
+                  ? 'Events received by the ingest endpoint, per hour'
+                  : 'Normalized event velocity, correlated alert spikes & threat detections'}
+              </p>
             </div>
             <div className="flex items-center space-x-4 text-xs font-mono">
               <div className="flex items-center space-x-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-[#00D9FF]"></span>
-                <span className="text-[#7D8A99]">Events (x10k)</span>
+                <span className="text-[#7D8A99]">{liveTimeline ? 'Events / hour' : 'Events (x10k)'}</span>
               </div>
               <div className="flex items-center space-x-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-[#FF1744]"></span>
-                <span className="text-[#7D8A99]">Critical Alerts</span>
+                <span className="text-[#7D8A99]">{liveTimeline ? 'Critical events' : 'Critical Alerts'}</span>
               </div>
             </div>
           </div>
 
-          {/* SVG Activity Visualization */}
-          <div className="h-44 w-full flex items-end justify-between pt-4 pb-2 px-2 border-b border-[#1E2A38]">
-            {[
-              { time: '00:00', events: 35, alerts: 1 },
-              { time: '02:00', events: 20, alerts: 0 },
-              { time: '03:14', events: 65, alerts: 6 },
-              { time: '06:00', events: 45, alerts: 2 },
-              { time: '08:00', events: 80, alerts: 3 },
-              { time: '10:00', events: 95, alerts: 8 },
-              { time: '11:30', events: 70, alerts: 4 }
-            ].map((bar, i) => (
-              <div key={i} className="flex flex-col items-center flex-1 group">
-                <div className="w-full max-w-[28px] flex flex-col items-center justify-end h-32 relative">
-                  {bar.alerts > 0 && (
-                    <div 
-                      className="w-full bg-[#FF1744] rounded-t-sm mb-0.5 transition-all group-hover:brightness-125"
-                      style={{ height: `${bar.alerts * 8}px` }}
-                      title={`${bar.alerts} critical alerts`}
+          {/* Activity visualization */}
+          <div className="relative">
+            <div className="h-44 w-full flex items-end justify-between pt-4 pb-2 px-2 border-b border-[#1E2A38]">
+              {timelineBars.map((bar, i) => (
+                <div key={i} className="flex flex-col items-center flex-1 group">
+                  <div className="w-full max-w-[28px] flex flex-col items-center justify-end h-32 relative">
+                    {bar.criticalPx > 0 && (
+                      <div
+                        className="w-full bg-[#FF1744] rounded-t-sm mb-0.5 transition-all group-hover:brightness-125"
+                        style={{ height: `${bar.criticalPx}px` }}
+                        title={bar.title}
+                      ></div>
+                    )}
+                    <div
+                      className="w-full bg-[#00D9FF]/40 rounded-sm group-hover:bg-[#00D9FF] transition-all"
+                      style={{ height: `${bar.eventsPx}px` }}
+                      title={bar.title}
                     ></div>
-                  )}
-                  <div 
-                    className="w-full bg-[#00D9FF]/40 rounded-sm group-hover:bg-[#00D9FF] transition-all"
-                    style={{ height: `${bar.events * 0.9}px` }}
-                    title={`${bar.events}k events`}
-                  ></div>
+                  </div>
+                  <span className="text-[10px] font-mono text-[#7D8A99] mt-2 h-3">{bar.label}</span>
                 </div>
-                <span className="text-[10px] font-mono text-[#7D8A99] mt-2">{bar.time}</span>
+              ))}
+            </div>
+            {timelineEmpty && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <p className="text-xs text-[#7D8A99] bg-[#111923]/90 px-3 py-1.5 rounded border border-[#1E2A38]">
+                  No events received in the last 24 hours. Start a collector or run scripts/demo/send_events.py.
+                </p>
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -269,13 +336,24 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <p className="text-xs text-[#7D8A99] mb-4">Classified attack patterns targeting our infrastructure</p>
 
             <div className="space-y-3.5">
-              {[
-                { name: 'Distributed SSH / RDP Brute Force', count: 1420, percent: 74, color: 'bg-[#FF1744]' },
-                { name: 'Obfuscated PowerShell Execution', count: 18, percent: 55, color: 'bg-[#FF1744]' },
-                { name: 'Off-Hours SWIFT Directory Access', count: 3, percent: 38, color: 'bg-[#F59E0B]' },
-                { name: 'Known Malicious C2 Beaconing', count: 12, percent: 45, color: 'bg-[#FF1744]' },
-                { name: 'Privilege Escalation via Sudo', count: 9, percent: 22, color: 'bg-[#00D9FF]' },
-              ].map((item, idx) => (
+              {liveThreats !== null && liveThreats.length === 0 && (
+                <p className="text-xs text-[#7D8A99]">No detections or open incidents yet.</p>
+              )}
+              {(liveThreats !== null
+                ? liveThreats.map(t => ({
+                    name: t.name,
+                    count: t.count,
+                    percent: Math.max(4, Math.round((t.count / maxThreat) * 100)),
+                    color: severityBar(String(t.severity).toUpperCase()),
+                  }))
+                : [
+                    { name: 'Distributed SSH / RDP Brute Force', count: 1420, percent: 74, color: 'bg-[#FF1744]' },
+                    { name: 'Obfuscated PowerShell Execution', count: 18, percent: 55, color: 'bg-[#FF1744]' },
+                    { name: 'Off-Hours SWIFT Directory Access', count: 3, percent: 38, color: 'bg-[#F59E0B]' },
+                    { name: 'Known Malicious C2 Beaconing', count: 12, percent: 45, color: 'bg-[#FF1744]' },
+                    { name: 'Privilege Escalation via Sudo', count: 9, percent: 22, color: 'bg-[#00D9FF]' },
+                  ]
+              ).map((item, idx) => (
                 <div key={idx}>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-white font-medium">{item.name}</span>
@@ -290,7 +368,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
 
           <div className="mt-4 pt-3 border-t border-[#1E2A38] flex justify-between items-center text-xs text-[#7D8A99]">
-            <span>Feed Source: Ethio-CERT / INSA</span>
+            <span>{liveThreats ? 'Source: detections from ingested events, else open incidents' : 'Feed Source: Ethio-CERT / INSA'}</span>
             <span className="text-[#00D9FF] cursor-pointer hover:underline font-mono">MITRE ATT&CK Matrix →</span>
           </div>
         </div>

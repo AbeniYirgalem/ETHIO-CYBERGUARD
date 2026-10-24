@@ -55,8 +55,17 @@ def get_dashboard_stats(_user: Dict[str, Any] = Depends(get_current_user)):
     sector_profiles: Dict[str, Dict[str, Any]] = {}
     for inc in active:
         sector = inc.get("sector") or "Unassigned"
-        profile = sector_profiles.setdefault(sector, {"active_alerts": 0})
+        severity = str(inc.get("severity", "")).upper()
+        profile = sector_profiles.setdefault(
+            sector, {"active_alerts": 0, "critical": 0, "high": 0, "max_severity": "INFO"}
+        )
         profile["active_alerts"] += 1
+        if severity == "CRITICAL":
+            profile["critical"] += 1
+        elif severity == "HIGH":
+            profile["high"] += 1
+        if _SEVERITY_RANK.get(severity, 0) > _SEVERITY_RANK.get(profile["max_severity"], 0):
+            profile["max_severity"] = severity
 
     eps = telemetry["events_per_second"]
     return {
@@ -79,6 +88,8 @@ def get_dashboard_stats(_user: Dict[str, Any] = Depends(get_current_user)):
             "events_in_window": telemetry["events_in_window"],
             "by_severity": telemetry["by_severity"],
         },
+        # Hourly history for the Overview timeline (UTC hours, oldest first, last 24 h).
+        "timeline": telemetry["timeline"],
         "top_threats": top_threats,
         "sector_profiles": sector_profiles,
         "system_health": {
