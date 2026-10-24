@@ -42,6 +42,18 @@ MAX_PAYLOAD_BYTES: int = int(os.getenv("MAX_PAYLOAD_BYTES", str(2 * 1024 * 1024)
 RATE_LIMIT_REQUESTS_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE", "120"))
 INGEST_API_KEY: str = os.getenv("INGEST_API_KEY", _DEFAULT_INGEST_API_KEY)
 
+# HTTP hardening (see apps/api/security_middleware.py)
+# Per-IP limit on login / refresh / password-reset. Default: ON in production, OFF in demo mode.
+_rl_env = os.getenv("AUTH_RATE_LIMIT_ENABLED")
+AUTH_RATE_LIMIT_ENABLED: Optional[bool] = None if _rl_env is None else _rl_env.lower() in ("true", "1", "yes")
+AUTH_RATE_LIMIT_PER_MINUTE: int = int(os.getenv("AUTH_RATE_LIMIT_PER_MINUTE", "10"))
+# Set TRUST_PROXY=true only when the API sits behind a reverse proxy you control
+# (it then reads the client IP from X-Forwarded-For).
+TRUST_PROXY: bool = os.getenv("TRUST_PROXY", "false").lower() in ("true", "1", "yes")
+# Strict-Transport-Security header. Default: ON in production, OFF in demo mode.
+_hsts_env = os.getenv("ENABLE_HSTS")
+ENABLE_HSTS: Optional[bool] = None if _hsts_env is None else _hsts_env.lower() in ("true", "1", "yes")
+
 # CORS Origins
 ALLOWED_ORIGINS: List[str] = [
     origin.strip() 

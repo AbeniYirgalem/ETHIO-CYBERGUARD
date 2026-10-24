@@ -28,7 +28,7 @@
   <img src="https://img.shields.io/badge/Throughput-51k+_EPS-00D9FF?style=for-the-badge&logo=speedtest" alt="51k+ EPS" />
   <img src="https://img.shields.io/badge/Frontend-React_19_+_Tailwind-22C55E?style=for-the-badge&logo=react" alt="React 19" />
   <img src="https://img.shields.io/badge/Backend-FastAPI_Python_3.10+-F59E0B?style=for-the-badge&logo=fastapi" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/Tests-180%2F180_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
+  <img src="https://img.shields.io/badge/Tests-191%2F191_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="License" /></a>
 </p>
 
@@ -244,11 +244,19 @@ The web dashboard will be accessible at `http://localhost:5173`.
 
 ## 🐳 9. Docker & Kubernetes Deployment
 
-### Production Docker Compose
-Run the complete production multi-container stack (PostgreSQL, Redis, FastAPI, Nginx Web Frontend):
+### Demo Docker Compose
+Runs the full stack (PostgreSQL, Redis, FastAPI, Nginx web) in `DEMO_MODE` with guest access and simulated data:
 ```bash
-docker-compose up --build -d
+docker compose up --build -d
 ```
+
+### Production Docker Compose
+`docker-compose.prod.yml` runs with `DEMO_MODE=false`. Every secret is required, PostgreSQL and Redis are not published to the host, and the API only listens on `127.0.0.1:8000`. Put a TLS reverse proxy (Caddy, nginx, a cloud load balancer) in front, because the compose file does not terminate HTTPS itself.
+```bash
+cp .env.example .env     # set JWT_SECRET, INGEST_API_KEY, POSTGRES_PASSWORD, BOOTSTRAP_ADMIN_*, ALLOWED_ORIGINS, PUBLIC_API_URL
+docker compose -f docker-compose.prod.yml up --build -d
+```
+In production the API also rate-limits login, refresh and password-reset per IP (`AUTH_RATE_LIMIT_PER_MINUTE`, default 10), adds security headers, and turns off `/docs`.
 
 ### Local Development Docker Compose (with Hot-Reloading)
 ```bash
@@ -360,7 +368,7 @@ tests/unit/test_rules.py ...................... PASSED
 tests/unit/test_soar_response.py .............. PASSED
 tests/unit/test_typosquat.py .................. PASSED
 
-============================= 180 passed in 2.38s =============================
+============================= 191 passed in 2.38s =============================
 ```
 
 To test the frontend build and TypeScript compliance:
@@ -395,7 +403,7 @@ While ETHIO-CYBERGUARD provides production-grade components, operators deploying
   - STIX 2.1 Threat Intel export and import
   - Health probes (`/health/live`, `/health/ready`) and Prometheus `/metrics`
   - Comprehensive Technical White Paper ([`docs/ETHIO_CYBERGUARD_TECHNICAL_PAPER.md`](./docs/ETHIO_CYBERGUARD_TECHNICAL_PAPER.md))
-  - 180 automated unit, integration, and security tests (100% green pass rate)
+  - 191 automated unit, integration, and security tests (100% green pass rate)
 - **v1.2 (Target: Q3 2026)**:
   - Air-gapped on-premise LLM inference with Ollama and vLLM
   - Pre-built Splunk and Elastic forwarder integrations

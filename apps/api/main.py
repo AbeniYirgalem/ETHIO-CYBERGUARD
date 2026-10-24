@@ -48,6 +48,7 @@ from services.websocket.manager import ws_manager
 from services.ingestion.pipeline import ingestion_pipeline
 from apps.api.dependencies import verify_collector_api_key, require_permission, verify_token, after_state_restore
 from apps.api.config import DEMO_MODE, MAX_PAYLOAD_BYTES, validate_production_config
+from apps.api.security_middleware import install_security_middleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -62,7 +63,10 @@ app = FastAPI(
     title="ETHIO-CYBERGUARD Central SOC API",
     description="Centralized Security Operations Center and AI Investigation Platform API",
     version="1.1.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    # Interactive API docs are only exposed in demo mode.
+    docs_url="/docs" if DEMO_MODE else None,
+    redoc_url="/redoc" if DEMO_MODE else None,
 )
 
 # Register Modular Routers (Supporting both /api and /api/v1 paths)
@@ -87,6 +91,9 @@ allowed_origins_env = os.getenv(
     "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000,https://AbeniYirgalem.github.io"
 )
 allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
+
+# Added before CORS so CORS wraps it (429 responses still carry CORS headers).
+install_security_middleware(app)
 
 app.add_middleware(
     CORSMiddleware,

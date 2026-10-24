@@ -51,3 +51,6 @@ Desktop.ini
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+# Archives (batch zips etc.)
+*.zip

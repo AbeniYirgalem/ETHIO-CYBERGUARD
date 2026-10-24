@@ -5,6 +5,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.1.9] - 2026-10-24
+
+### Security
+- **Per-IP rate limit** on login, refresh and password-reset (`AUTH_RATE_LIMIT_PER_MINUTE`, default 10, on by default when `DEMO_MODE=false`). It stops password spraying across many accounts, which the per-account lockout cannot see. Over the limit returns `429` with `Retry-After`.
+- **Security headers** on every response: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, a locked-down `Content-Security-Policy` and, in production, `Strict-Transport-Security`. Auth responses are `no-store`.
+- `X-Forwarded-For` is only trusted when `TRUST_PROXY=true`, and only its last entry (the one the proxy added).
+- Interactive docs (`/docs`, `/redoc`) are disabled when `DEMO_MODE=false`.
+- API container runs as a non-root user.
+
+### Fixed
+- `infrastructure/docker/Dockerfile.api` did not copy `scripts/`, `playbooks/` or `detection-rules/`, so the API container could not start (`main.py` imports `scripts.benchmark_eps`).
+- Removed `apps/api/batch-4-ethio-cyberguard.zip`, which had been committed by mistake; `*.zip` is now ignored.
+
+### Added
+- `docker-compose.prod.yml`: required secrets, `DEMO_MODE=false`, no published database ports, health-checked start order.
+- Health checks and `service_healthy` ordering in `docker-compose.yml`; PostgreSQL and Redis bind to `127.0.0.1` only.
+- Web image: Nginx security headers, immutable asset caching, SPA fallback, health check; `VITE_API_URL` build argument.
+- `.dockerignore` files.
+- CI: Python 3.10 and 3.13 matrix, pip/npm caching, web lint, Docker image builds, compose validation and an API container health check.
+- `tests/security/test_security_middleware.py` (11 tests).
+
+---
+
 ## [1.1.8] - 2026-10-23
 
 ### Security

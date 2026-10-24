@@ -1,0 +1,96 @@
+# ETHIO-CYBERGUARD production stack.
+#
+#   cp .env.example .env     # then fill in the required values below
+#   docker compose -f docker-compose.prod.yml up --build -d
+#
+# Differences from docker-compose.yml:
+#   - DEMO_MODE=false: no guest access, no built-in demo accounts, no /docs.
+#   - Every secret is REQUIRED (compose stops with a clear message if one is missing).
+#   - PostgreSQL and Redis are not published to the host at all.
+#   - The API listens only on 127.0.0.1:8000. Put a TLS reverse proxy you control
+#     (Caddy, nginx, a cloud load balancer) in front of the API and the web container,
+#     and serve both over HTTPS. This file does not terminate TLS itself.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecg_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ecg_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-ethio_cyberguard}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    networks:
+      - ecg_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ecg_redis
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - ecg_network
+
+  api:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.api
+    container_name: ecg_api
+    restart: always
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      DEMO_MODE: "false"
+      # POSTGRES_PASSWORD is placed inside this URL, so use URL-safe characters (letters, digits, - _ .).
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ecg_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ethio_cyberguard}
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET (32+ random characters) in .env}
+      INGEST_API_KEY: ${INGEST_API_KEY:?Set INGEST_API_KEY (16+ random characters) in .env}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:?Set BOOTSTRAP_ADMIN_EMAIL in .env}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:?Set BOOTSTRAP_ADMIN_PASSWORD in .env}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?Set ALLOWED_ORIGINS to the public URL of the web app}
+      # The reverse proxy in front of the API sets X-Forwarded-For.
+      TRUST_PROXY: "true"
+      AUTH_RATE_LIMIT_PER_MINUTE: ${AUTH_RATE_LIMIT_PER_MINUTE:-10}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ecg_network
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: ../../infrastructure/docker/Dockerfile.web
+      args:
+        VITE_API_URL: ${PUBLIC_API_URL:?Set PUBLIC_API_URL to the public HTTPS URL of the API}
+    container_name: ecg_web
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - ecg_network
+
+networks:
+  ecg_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

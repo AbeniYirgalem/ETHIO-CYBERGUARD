@@ -7,12 +7,23 @@ COPY package.json package-lock.json* ./
 RUN npm ci
 
 COPY . .
+
+# Public URL of the API, baked into the bundle at build time
+# (example: https://api.example.org). Defaults to http://localhost:8000.
+ARG VITE_API_URL=""
+ENV VITE_API_URL=${VITE_API_URL}
+
 RUN npm run build
 
-# Production serve stage using Nginx
+# Serve stage: Nginx with security headers
 FROM nginx:alpine
 
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
+
 EXPOSE 80
+
+HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget -q -O /dev/null http://127.0.0.1/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
