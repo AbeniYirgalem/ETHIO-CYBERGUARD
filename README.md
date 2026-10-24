@@ -301,6 +301,7 @@ Configure these in `.env` or your Kubernetes ConfigMaps / Secrets:
 | `ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Strict CORS allowed origins (comma-separated). |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | JWT access token lifespan. |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Refresh token lifespan for session rotation. |
+| `REFRESH_REUSE_GRACE_SECONDS` | `10` | A used refresh token presented again within this time is tolerated; later reuse revokes the whole login session. |
 | `MAX_PAYLOAD_BYTES` | `5242880` (5 MB) | Maximum accepted JSON event payload size to prevent DoS. |
 | `INGEST_API_KEY` | `ecg_collector_secret_key` | Shared API key required for endpoint telemetry ingestion. |
 | `RATE_LIMIT_PER_MINUTE` | `120` | Max API requests permitted per client IP per minute. |

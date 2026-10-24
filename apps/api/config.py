@@ -28,6 +28,9 @@ JWT_SECRET: str = os.getenv("JWT_SECRET") or os.getenv("API_SECRET_KEY") or _DEF
 JWT_ALGORITHM: str = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
+# Refresh tokens are single-use. A token presented a second time within this many seconds is
+# tolerated (two tabs refreshing at once); after that, reuse revokes the whole login session.
+REFRESH_REUSE_GRACE_SECONDS: int = int(os.getenv("REFRESH_REUSE_GRACE_SECONDS", "10"))
 
 # Bootstrap administrator (production). In DEMO_MODE=false the built-in demo accounts do
 # not exist, so this account is the only way to sign in until more users are created.

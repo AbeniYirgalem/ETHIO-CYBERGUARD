@@ -19,7 +19,7 @@ from ..config import DEMO_MODE, PASSWORD_RESET_ENABLED
 from ..dependencies import (
     DEMO_USERS, LOGIN_ATTEMPTS, create_access_token,
     create_refresh_token, verify_token, get_current_user, require_permission,
-    revoke_token_payload, persist_users, security,
+    revoke_token_payload, revoke_family, consume_refresh_token, persist_users, security,
     ROLES, ROLE_PERMISSIONS
 )
 from services.security.passwords import hash_password, verify_password, validate_password_policy
@@ -130,7 +130,8 @@ def login_for_access_token(payload: LoginRequest):
         "name": user["name"],
         "role": user["role"],
         "department": user["department"],
-        "tv": user.get("token_version", 0)
+        "tv": user.get("token_version", 0),
+        "fid": uuid.uuid4().hex,  # login session family, used for refresh-token rotation
     }
 
     access_token = create_access_token(token_payload)
@@ -152,6 +153,7 @@ def login_for_access_token(payload: LoginRequest):
 @router.post("/api/auth/refresh")
 @router.post("/api/v1/auth/refresh")
 def refresh_token(payload: RefreshRequest):
+    """Exchange a refresh token for a new pair. Refresh tokens are single-use (rotation)."""
     token_data = verify_token(payload.refresh_token, expected_type="refresh")
     email = token_data.get("sub")
 
@@ -165,13 +167,24 @@ def refresh_token(payload: RefreshRequest):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Rotation: the presented token is now spent. Replaying it after the grace window means it
+    # was copied, so the whole login session (every token in its family) is revoked.
+    if consume_refresh_token(token_data) == "reuse":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token reuse detected. The session was ended; please sign in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     token_payload = {
         "sub": user["email"],
         "id": user["id"],
         "name": user["name"],
         "role": user["role"],
         "department": user["department"],
-        "tv": user.get("token_version", 0)
+        "tv": user.get("token_version", 0),
+        # Tokens issued before rotation existed have no family: start one now.
+        "fid": token_data.get("fid") or uuid.uuid4().hex,
     }
     new_access_token = create_access_token(token_payload)
     new_refresh_token = create_refresh_token(token_payload)
@@ -302,16 +315,20 @@ def logout_user(
         (credentials.credentials if credentials else None, "access"),
         (payload.refresh_token if payload else None, "refresh"),
     )
-    revoked = 0
+    verified = []
     for token, kind in candidates:
         if not token:
             continue
         try:
-            data = verify_token(token, expected_type=kind)
+            verified.append(verify_token(token, expected_type=kind))
         except HTTPException:
             continue
-        if revoke_token_payload(data):
-            revoked += 1
+    # Revoke each token first, then end the login family; doing it in this order keeps the count
+    # honest (a revoked family would otherwise make the second token look already invalid).
+    revoked = sum(1 for data in verified if revoke_token_payload(data))
+    # Ending the family also kills earlier-rotated tokens of this login.
+    for data in verified:
+        revoke_family(data)
     return {"status": "SUCCESS", "message": "Session invalidated.", "revoked_tokens": revoked}
 
 @router.get("/api/auth/me")

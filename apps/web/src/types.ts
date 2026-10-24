@@ -107,6 +107,8 @@ export interface DashboardStats {
     mean_time_to_detect_minutes: number | null;
     mean_time_to_respond_minutes: number | null;
   };
+  /** How many incidents the MTTD / MTTR averages were measured from. */
+  response_metrics?: { mttd_samples: number; mttr_samples: number };
   top_threats: Array<{ name: string; count: number; severity: string; tactic?: string | null; source: string }>;
   /** Hourly event history, last 24 UTC hours, oldest first. */
   timeline?: TimelineBucket[];

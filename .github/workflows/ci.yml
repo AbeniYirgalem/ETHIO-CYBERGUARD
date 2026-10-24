@@ -5,6 +5,9 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  schedule:
+    # Weekly: new vulnerabilities are published against dependencies we have not changed.
+    - cron: '17 4 * * 1'
 
 permissions:
   contents: read
@@ -41,9 +44,14 @@ jobs:
         run: |
           python -m compileall -q apps/ services/ collectors/ detection/ tests/
 
-      - name: Run Pytest Test Suite
+      - name: Run Pytest Test Suite (with coverage gate)
+        env:
+          # Raise this number as coverage grows. Run `python -m pytest --cov` locally to see the current value.
+          COVERAGE_MIN: '40'
         run: |
-          python -m pytest tests/ -q
+          python -m pytest tests/ -q \
+            --cov=apps --cov=services --cov=detection --cov=database \
+            --cov-report=term --cov-fail-under=$COVERAGE_MIN
 
   frontend-checks:
     runs-on: ubuntu-latest
@@ -68,6 +76,32 @@ jobs:
       - name: Build Web Application
         working-directory: apps/web
         run: npm run build
+
+  dependency-audit:
+    # Separate job: a newly published advisory must not block unrelated test results,
+    # but it shows up as a red check and in the weekly run.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Audit Python dependencies
+        run: |
+          python -m pip install --upgrade pip pip-audit
+          pip-audit -r requirements.txt --strict
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+
+      - name: Audit web dependencies (production, high and critical)
+        working-directory: apps/web
+        run: npm audit --omit=dev --audit-level=high
 
   docker-checks:
     runs-on: ubuntu-latest

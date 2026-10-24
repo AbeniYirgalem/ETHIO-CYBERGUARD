@@ -5,6 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.4.0] - 2026-10-24
+
+### Security
+- **Refresh-token rotation with reuse detection.** Refresh tokens are now single-use. Every login starts a session family (`fid` claim); each refresh returns a new pair in the same family and marks the old refresh token as used. If a used token is presented again after a short grace window (`REFRESH_REUSE_GRACE_SECONDS`, default 10, so two browser tabs refreshing together are not logged out), the whole family is revoked: the thief and the victim both have to sign in again. Other logins of the same user (other devices) are not affected.
+- **Logout ends the whole login family**, so tokens rotated earlier in that login stop working too.
+- Used-token and revoked-family lists are saved with the state store, so a restart does not forget them. Tokens issued before this release (no `fid`) keep working and join a family on their next refresh.
+
+### Added
+- **Measured MTTD and MTTR** (`services/telemetry/response_metrics.py`). `/api/dashboard/stats` now returns real averages instead of `null`: MTTD = minutes from `first_seen` to the first analyst action; MTTR = minutes from `first_seen` to the first CONTAINED/CLOSED. Incidents that have not reached the milestone are left out; with no data the value stays `null`. A `response_metrics` block reports how many incidents each average is based on. The Overview card shows both.
+- CI: `dependency-audit` job (`pip-audit`, `npm audit --omit=dev --audit-level=high`), a weekly scheduled run, and a test-coverage gate (`COVERAGE_MIN`, starts at 40).
+- `tests/security/test_refresh_rotation.py` and `tests/unit/test_response_metrics.py`.
+
+---
+
 ## [1.3.0] - 2026-10-24
 
 ### Security

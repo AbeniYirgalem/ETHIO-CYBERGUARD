@@ -234,7 +234,10 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
           <div className="mt-2 text-[10px] text-[#7D8A99] flex items-center justify-between">
             <span>{stats
-              ? (stats.metrics.mean_time_to_respond_minutes !== null ? `Avg MTTR: ${stats.metrics.mean_time_to_respond_minutes} min` : 'MTTR: not measured yet')
+              ? [
+                  stats.metrics.mean_time_to_detect_minutes !== null ? `MTTD ${stats.metrics.mean_time_to_detect_minutes} min` : 'MTTD n/a',
+                  stats.metrics.mean_time_to_respond_minutes !== null ? `MTTR ${stats.metrics.mean_time_to_respond_minutes} min` : 'MTTR n/a',
+                ].join(' · ')
               : 'Avg MTTR: 28 min'}</span>
             <span className="text-[#00D9FF] font-semibold">AI Correlated</span>
           </div>

@@ -13,12 +13,13 @@ import base64
 import binascii
 import json
 import os
+import threading
 import uuid
 
 from .config import (
     JWT_SECRET, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, 
     REFRESH_TOKEN_EXPIRE_DAYS, INGEST_API_KEY, DEMO_MODE,
-    BOOTSTRAP_ADMIN_EMAIL, BOOTSTRAP_ADMIN_PASSWORD
+    BOOTSTRAP_ADMIN_EMAIL, BOOTSTRAP_ADMIN_PASSWORD, REFRESH_REUSE_GRACE_SECONDS
 )
 from services.security.passwords import hash_password
 from database import state_store
@@ -156,6 +157,80 @@ def revoke_token_payload(payload: Dict[str, Any]) -> bool:
     return True
 
 
+# ---------------------------------------------------------------------------
+# Refresh-token rotation
+# ---------------------------------------------------------------------------
+# Every login starts a token "family" (claim "fid"). Each refresh issues a new refresh token in
+# the same family and marks the old one as used. Presenting a used refresh token again means two
+# parties hold it (a theft, or a replay): after a short grace window (two browser tabs refreshing
+# at the same moment) the whole family is revoked, so the thief AND the victim must sign in again.
+REFRESH_USED_STORE: List[Dict[str, Any]] = []       # [{"jti", "fid", "used_at", "exp"}]
+REVOKED_FAMILIES_STORE: List[Dict[str, Any]] = []   # [{"fid", "exp"}]
+_revoked_fids: set = set()
+_used_refresh: Dict[str, float] = {}                 # jti -> used_at
+_rotation_lock = threading.Lock()
+
+
+def _prune_rotation() -> None:
+    now = datetime.now(timezone.utc).timestamp()
+    REFRESH_USED_STORE[:] = [e for e in REFRESH_USED_STORE if float(e.get("exp", 0)) > now]
+    REVOKED_FAMILIES_STORE[:] = [e for e in REVOKED_FAMILIES_STORE if float(e.get("exp", 0)) > now]
+    _used_refresh.clear()
+    _used_refresh.update({str(e["jti"]): float(e.get("used_at", 0)) for e in REFRESH_USED_STORE if e.get("jti")})
+    _revoked_fids.clear()
+    _revoked_fids.update(str(e["fid"]) for e in REVOKED_FAMILIES_STORE if e.get("fid"))
+
+
+def is_family_revoked(payload: Dict[str, Any]) -> bool:
+    fid = payload.get("fid")
+    return bool(fid) and str(fid) in _revoked_fids
+
+
+def revoke_family(payload: Dict[str, Any]) -> bool:
+    """Revoke every token (access and refresh) that belongs to the payload's login family."""
+    fid, exp = payload.get("fid"), payload.get("exp")
+    if not fid or isinstance(exp, bool) or not isinstance(exp, (int, float)):
+        return False
+    with _rotation_lock:
+        if str(fid) in _revoked_fids:
+            return False
+        # A family's longest-lived token is a refresh token, so keep the entry for the full refresh lifetime.
+        keep_until = max(float(exp), datetime.now(timezone.utc).timestamp() + REFRESH_TOKEN_EXPIRE_DAYS * 86400)
+        REVOKED_FAMILIES_STORE.append({"fid": str(fid), "exp": keep_until})
+        _prune_rotation()
+    state_store.save("revoked_families")
+    return True
+
+
+def consume_refresh_token(payload: Dict[str, Any], now: Optional[float] = None) -> str:
+    """Mark a verified refresh token as used.
+
+    Returns "ok" (first use), "grace" (second use inside the grace window: allowed) or
+    "reuse" (used again after the window: the family has been revoked and the caller must reject).
+    """
+    jti, exp = payload.get("jti"), payload.get("exp")
+    if not jti or isinstance(exp, bool) or not isinstance(exp, (int, float)):
+        return "ok"
+    current = datetime.now(timezone.utc).timestamp() if now is None else now
+    with _rotation_lock:
+        used_at = _used_refresh.get(str(jti))
+        if used_at is None:
+            REFRESH_USED_STORE.append(
+                {"jti": str(jti), "fid": str(payload.get("fid") or ""), "used_at": current, "exp": float(exp)}
+            )
+            _prune_rotation()
+            first_use = True
+        else:
+            first_use = False
+    if first_use:
+        state_store.save("refresh_used")
+        return "ok"
+    if current - used_at <= REFRESH_REUSE_GRACE_SECONDS:
+        return "grace"
+    revoke_family(payload)
+    return "reuse"
+
+
 # User accounts live in DEMO_USERS (email -> user). They are saved after every change.
 USERS_STORE: List[Dict[str, Any]] = []
 _BOOTSTRAP_ADMIN_ID = "usr_bootstrap_admin"
@@ -192,10 +267,13 @@ def after_state_restore() -> None:
     """Called once at API startup, right after state_store.restore_all()."""
     restore_users()
     _prune_revoked()
+    _prune_rotation()
 
 
 state_store.register("users", USERS_STORE)
 state_store.register("revoked_tokens", REVOKED_TOKENS_STORE)
+state_store.register("refresh_used", REFRESH_USED_STORE)
+state_store.register("revoked_families", REVOKED_FAMILIES_STORE)
 
 def _b64url_encode(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).decode("utf-8").rstrip("=")
@@ -300,7 +378,7 @@ def verify_token(token: str, expected_type: str = "access") -> Dict[str, Any]:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if is_token_revoked(payload):
+    if is_token_revoked(payload) or is_family_revoked(payload):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has been revoked",

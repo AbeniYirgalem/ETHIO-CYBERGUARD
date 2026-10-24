@@ -10,6 +10,7 @@ from typing import Dict, Any, List
 
 from services.ingestion.pipeline import ingestion_pipeline
 from services.security.tenancy import is_global, org_of, scope
+from services.telemetry.response_metrics import compute_response_metrics
 from services.telemetry.stats import telemetry_registry, telemetry_stats
 from services.websocket.manager import ws_manager
 
@@ -36,6 +37,7 @@ def get_dashboard_stats(_user: Dict[str, Any] = Depends(get_current_user)):
     def count(severity: str) -> int:
         return sum(1 for i in active if str(i.get("severity", "")).upper() == severity)
 
+    response = compute_response_metrics(scope(_user, INCIDENTS_STORE))
     pending = sum(1 for a in scope(_user, ACTIONS_STORE) if a.get("status") == "PENDING_APPROVAL")
     telemetry = telemetry_stats.snapshot() if national else telemetry_registry.for_org(org_id).snapshot()
 
@@ -91,9 +93,13 @@ def get_dashboard_stats(_user: Dict[str, Any] = Depends(get_current_user)):
             "pending_approvals": pending,
             "audit_entries": len(scope(_user, AUDIT_LOG_STORE)),
             "assets_monitored": len({i.get("affected_asset") for i in scope(_user, INCIDENTS_STORE) if i.get("affected_asset")}),
-            # Not measured yet: reported as null instead of an invented figure.
-            "mean_time_to_detect_minutes": None,
-            "mean_time_to_respond_minutes": None,
+            # Measured from incident history; null until an incident reaches the milestone.
+            "mean_time_to_detect_minutes": response["mean_time_to_detect_minutes"],
+            "mean_time_to_respond_minutes": response["mean_time_to_respond_minutes"],
+        },
+        "response_metrics": {
+            "mttd_samples": response["mttd_samples"],
+            "mttr_samples": response["mttr_samples"],
         },
         "telemetry": {
             "window_seconds": telemetry["window_seconds"],
