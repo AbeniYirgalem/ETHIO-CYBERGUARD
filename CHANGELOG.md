@@ -5,6 +5,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.3.0] - 2026-10-24
+
+### Security
+- **Per-organization isolation.** Incidents, SOAR actions, the audit log, dashboard numbers, event statistics, the AI assistant, reports and the live WebSocket stream are now limited to the signed-in user's organization. SUPER_ADMIN is the national administrator and sees every organization. Another organization's record answers "404 not found", never "403", so its existence is not revealed.
+- **Reports were readable without logging in.** `/api/reports/*` now needs a login (guest only in demo mode).
+- **AI assistant fallback leak.** An unknown incident number used to fall back to the first incident of any organization; it now falls back to the caller's own, or returns 404 when the organization has none.
+- **Event deduplication no longer crosses organizations.** The organization id is part of the duplicate fingerprint, and the collector rate limit is per organization and host.
+- The WebSocket handshake now takes the role and organization from the live account (not from token claims), and rejects a session retired by a password reset, like the REST API.
+
+### Added
+- `services/security/tenancy.py` (organization helpers) and `apps/api/tenancy.py` (collector organization resolver).
+- **Collector keys decide the organization.** `INGEST_ORG_KEYS` (key:organization pairs) and `INGEST_DEFAULT_ORG` in `.env.example`. In demo mode only, an `X-Org-ID` header lets one server simulate several organizations.
+- Per-organization telemetry (`TelemetryRegistry`): separate counters, severity mix, detections and timeline per organization, saved and restored across restarts. The national total is kept for SUPER_ADMIN.
+- `/api/dashboard/stats` reports a `tenant` block (`org_id`, `scope`).
+- `tests/unit/test_tenancy.py` and `tests/security/test_tenant_api_isolation.py`.
+
+### Changed
+- Audit entries carry `org_id`. The SHA-256 hash chain is unchanged and still one chain for the whole platform; `/audit-log/verify` checks it in full but tells an organization only about its own entries.
+- Records saved before this release have no `org_id` and belong to Commercial Bank of Ethiopia, so existing data keeps working.
+- A user's organization comes from their account's `organization` name (for example "Awash Bank" becomes `org_awash_bank`).
+
+---
+
 ## [1.2.1] - 2026-10-24
 
 ### Added

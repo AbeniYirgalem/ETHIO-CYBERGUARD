@@ -1,6 +1,7 @@
 """
 ETHIO-CYBERGUARD Dashboard & Observability Router
 Live SOC overview numbers, calculated from the real incident, SOAR and telemetry stores.
+Every number is limited to the signed-in user's organization; SUPER_ADMIN sees the national total.
 Supports /api/dashboard/stats and /api/v1/stats/overview.
 """
 
@@ -8,7 +9,8 @@ from fastapi import APIRouter, Depends
 from typing import Dict, Any, List
 
 from services.ingestion.pipeline import ingestion_pipeline
-from services.telemetry.stats import telemetry_stats
+from services.security.tenancy import is_global, org_of, scope
+from services.telemetry.stats import telemetry_registry, telemetry_stats
 from services.websocket.manager import ws_manager
 
 from ..dependencies import get_current_user
@@ -20,20 +22,22 @@ router = APIRouter(tags=["SOC Dashboard & Analytics"])
 _SEVERITY_RANK = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1, "INFO": 0}
 
 
-def _active_incidents() -> List[Dict[str, Any]]:
-    return [i for i in INCIDENTS_STORE if str(i.get("status", "")).upper() != "CLOSED"]
+def _active_incidents(user: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return [i for i in scope(user, INCIDENTS_STORE) if str(i.get("status", "")).upper() != "CLOSED"]
 
 
 @router.get("/api/dashboard/stats")
 @router.get("/api/v1/stats/overview")
 def get_dashboard_stats(_user: Dict[str, Any] = Depends(get_current_user)):
-    active = _active_incidents()
+    national = is_global(_user)
+    org_id = org_of(_user)
+    active = _active_incidents(_user)
 
     def count(severity: str) -> int:
         return sum(1 for i in active if str(i.get("severity", "")).upper() == severity)
 
-    pending = sum(1 for a in ACTIONS_STORE if a.get("status") == "PENDING_APPROVAL")
-    telemetry = telemetry_stats.snapshot()
+    pending = sum(1 for a in scope(_user, ACTIONS_STORE) if a.get("status") == "PENDING_APPROVAL")
+    telemetry = telemetry_stats.snapshot() if national else telemetry_registry.for_org(org_id).snapshot()
 
     # Top threats: detection alerts actually seen; before any telemetry, the open incidents.
     if telemetry["top_alerts"]:
@@ -68,7 +72,15 @@ def get_dashboard_stats(_user: Dict[str, Any] = Depends(get_current_user)):
             profile["max_severity"] = severity
 
     eps = telemetry["events_per_second"]
+    if national:
+        pipeline_health = f"{eps} eps, queue depth {len(ingestion_pipeline.queue)}"
+        stream_clients = ws_manager.get_active_count()
+    else:
+        # The shared queue and the total socket count describe other organizations too.
+        pipeline_health = f"{eps} eps"
+        stream_clients = ws_manager.get_tenant_count(org_id)
     return {
+        "tenant": {"org_id": org_id, "scope": "national" if national else "organization"},
         "metrics": {
             "events_per_second": eps,
             "events_processed_today": telemetry["events_processed_today"],
@@ -77,8 +89,8 @@ def get_dashboard_stats(_user: Dict[str, Any] = Depends(get_current_user)):
             "high_risk_alerts": count("HIGH"),
             "medium_risk_alerts": count("MEDIUM"),
             "pending_approvals": pending,
-            "audit_entries": len(AUDIT_LOG_STORE),
-            "assets_monitored": len({i.get("affected_asset") for i in INCIDENTS_STORE if i.get("affected_asset")}),
+            "audit_entries": len(scope(_user, AUDIT_LOG_STORE)),
+            "assets_monitored": len({i.get("affected_asset") for i in scope(_user, INCIDENTS_STORE) if i.get("affected_asset")}),
             # Not measured yet: reported as null instead of an invented figure.
             "mean_time_to_detect_minutes": None,
             "mean_time_to_respond_minutes": None,
@@ -93,7 +105,7 @@ def get_dashboard_stats(_user: Dict[str, Any] = Depends(get_current_user)):
         "top_threats": top_threats,
         "sector_profiles": sector_profiles,
         "system_health": {
-            "ingestion_pipeline": f"{eps} eps, queue depth {len(ingestion_pipeline.queue)}",
-            "live_stream_clients": ws_manager.get_active_count(),
+            "ingestion_pipeline": pipeline_health,
+            "live_stream_clients": stream_clients,
         },
     }

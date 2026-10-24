@@ -38,12 +38,14 @@ class IngestionPipeline:
         Works for flat collector events (source_ip, host_name, ...) and for normalized
         events (nested source / network / process objects). Normalized events also carry
         their event_id, timestamp and user, so two different events of the same type are
-        no longer mistaken for duplicates.
+        no longer mistaken for duplicates. The organization id is part of the fingerprint, so
+        deduplication never crosses an organization boundary.
         """
         source = event_data.get("source") if isinstance(event_data.get("source"), dict) else {}
         network = event_data.get("network") if isinstance(event_data.get("network"), dict) else {}
         process = event_data.get("process") if isinstance(event_data.get("process"), dict) else {}
         parts = [
+            event_data.get("org_id"),   # two organizations may send identical events; neither hides the other's
             event_data.get("event_type"),
             event_data.get("source_ip") or network.get("source_ip"),
             event_data.get("destination_ip") or network.get("destination_ip"),

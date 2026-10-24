@@ -9,7 +9,7 @@ from apps.api import dependencies
 from apps.api.main import app
 from apps.api.routers.incidents import INCIDENTS_STORE
 from services.ingestion.pipeline import IngestionPipeline
-from services.telemetry.stats import TelemetryStats, telemetry_stats
+from services.telemetry.stats import TelemetryStats, telemetry_registry, telemetry_stats
 import apps.api.main as main_module
 
 client = TestClient(app)
@@ -69,8 +69,10 @@ def test_pipeline_keeps_different_events_of_same_type():
 @pytest.fixture
 def clean_stats():
     telemetry_stats.reset()
+    telemetry_registry.reset()
     yield
     telemetry_stats.reset()
+    telemetry_registry.reset()
 
 
 def _event(**overrides):
@@ -125,10 +127,11 @@ def test_dashboard_requires_login_in_production(monkeypatch):
 def test_ingest_broadcasts_event_without_raw_data(clean_stats, monkeypatch):
     sent = []
 
-    async def fake_broadcast(message):
+    async def fake_broadcast(org_id, message):
+        assert org_id == "org_cbe_01"   # demo collectors belong to the default organization
         sent.append(message)
 
-    monkeypatch.setattr(main_module.ws_manager, "broadcast", fake_broadcast)
+    monkeypatch.setattr(main_module.ws_manager, "broadcast_to_tenant", fake_broadcast)
 
     body = _event(raw_data={"secret": "must-not-leave-the-server"})
     resp = client.post("/api/v1/events/ingest", json=body)

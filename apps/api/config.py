@@ -41,6 +41,24 @@ PASSWORD_RESET_ENABLED: bool = os.getenv("PASSWORD_RESET_ENABLED", "true").lower
 MAX_PAYLOAD_BYTES: int = int(os.getenv("MAX_PAYLOAD_BYTES", str(2 * 1024 * 1024))) # 2MB limit
 RATE_LIMIT_REQUESTS_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE", "120"))
 INGEST_API_KEY: str = os.getenv("INGEST_API_KEY", _DEFAULT_INGEST_API_KEY)
+# Multi-tenant collectors. The shared INGEST_API_KEY above feeds INGEST_DEFAULT_ORG; each
+# organization can also get its own collector key:  INGEST_ORG_KEYS="key1:org_awash_bank,key2:Telebirr"
+INGEST_DEFAULT_ORG: str = os.getenv("INGEST_DEFAULT_ORG", "org_cbe_01")
+
+
+def _parse_org_keys(raw: str) -> dict:
+    keys = {}
+    for pair in (raw or "").split(","):
+        if ":" not in pair:
+            continue
+        key, org = pair.rsplit(":", 1)
+        key, org = key.strip(), org.strip()
+        if key and org:
+            keys[key] = org
+    return keys
+
+
+INGEST_ORG_KEYS: dict = _parse_org_keys(os.getenv("INGEST_ORG_KEYS", ""))
 
 # HTTP hardening (see apps/api/security_middleware.py)
 # Per-IP limit on login / refresh / password-reset. Default: ON in production, OFF in demo mode.
@@ -103,5 +121,9 @@ def validate_production_config(
         problems.append("JWT_SECRET must be set to a unique random value of at least 32 characters")
     if _is_weak(ingest, 16):
         problems.append("INGEST_API_KEY must be set to a unique random value of at least 16 characters")
+    for org_key in INGEST_ORG_KEYS:
+        if _is_weak(org_key, 16):
+            problems.append("every INGEST_ORG_KEYS key must be a unique random value of at least 16 characters")
+            break
     if problems:
         raise RuntimeError("Insecure production configuration: " + "; ".join(problems) + ".")

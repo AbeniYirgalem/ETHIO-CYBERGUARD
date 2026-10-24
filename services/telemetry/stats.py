@@ -13,6 +13,12 @@ through the ``persist`` callback (the global instance uses the durable state
 store), at most once every ``persist_interval`` seconds, and flushed at
 shutdown. A crash can therefore lose at most the last few seconds of counts.
 The per-second window is deliberately not persisted: it describes "right now".
+
+Organizations
+-------------
+``telemetry_stats`` is the national view (every organization together, for SUPER_ADMIN).
+``telemetry_registry`` keeps one separate ``TelemetryStats`` per organization, so a bank only
+ever sees its own event counts, severity mix, detections and timeline.
 """
 
 import logging
@@ -146,6 +152,11 @@ class TelemetryStats:
             doc = self._take_snapshot_for_persist(now)
         self._write(doc)
 
+    def export_state(self) -> Dict[str, Any]:
+        """A copy of the saveable counters (used by the per-organization registry)."""
+        with self._lock:
+            return self._export_locked()
+
     def timeline(self) -> List[Dict[str, Any]]:
         """Last 24 hourly buckets, oldest first, including empty hours."""
         now = self._clock()
@@ -235,9 +246,98 @@ class TelemetryStats:
             self._reset_counters(self._today())
 
 
-# ---- global instance, wired to the durable state store ----
+# ---- per-organization registry ----
 
-STATE_DOCS: List[Dict[str, Any]] = []  # filled in place by state_store.restore_all()
+MAX_ORGS = 500            # safety cap; real deployments have a few dozen organizations
+ORG_STATE_NAME = "telemetry_orgs"
+
+
+class TelemetryRegistry:
+    """One ``TelemetryStats`` per organization, plus the national total."""
+
+    def __init__(
+        self,
+        national: TelemetryStats,
+        persist_docs: Optional[Callable[[List[Dict[str, Any]]], Any]] = None,
+        clock: Callable[[], float] = time.time,
+        max_orgs: int = MAX_ORGS,
+        **stats_kwargs: Any,
+    ):
+        self.national = national
+        self._persist_docs = persist_docs
+        self._clock = clock
+        self._max_orgs = max_orgs
+        self._stats_kwargs = stats_kwargs
+        self._orgs: Dict[str, TelemetryStats] = {}
+        self._lock = threading.Lock()
+
+    def _new_stats(self) -> TelemetryStats:
+        return TelemetryStats(
+            clock=self._clock,
+            persist=self._persist_all if self._persist_docs else None,
+            **self._stats_kwargs,
+        )
+
+    def for_org(self, org_id: str) -> TelemetryStats:
+        with self._lock:
+            stats = self._orgs.get(org_id)
+            if stats is None:
+                if len(self._orgs) >= self._max_orgs:
+                    # Cap reached: hand back a throw-away instance so memory stays bounded.
+                    return self._new_stats()
+                stats = self._orgs[org_id] = self._new_stats()
+            return stats
+
+    def record_event(self, org_id: str, severity: str, alerts: Optional[List[Dict[str, Any]]] = None) -> None:
+        """Count one event for its organization and for the national total."""
+        self.national.record_event(severity, alerts)
+        self.for_org(org_id).record_event(severity, alerts)
+
+    def org_ids(self) -> List[str]:
+        with self._lock:
+            return sorted(self._orgs)
+
+    # ---- persistence ----
+    def export_all(self) -> List[Dict[str, Any]]:
+        with self._lock:
+            items = list(self._orgs.items())
+        return [{**stats.export_state(), "org_id": org_id} for org_id, stats in items]
+
+    def _persist_all(self, _doc: Dict[str, Any]) -> None:
+        if self._persist_docs is not None:
+            self._persist_docs(self.export_all())
+
+    def load_all(self, docs: Any) -> int:
+        """Adopt saved per-organization documents. Malformed entries are skipped."""
+        if not isinstance(docs, list):
+            return 0
+        loaded = 0
+        for doc in docs:
+            if not isinstance(doc, dict) or not isinstance(doc.get("org_id"), str) or not doc["org_id"]:
+                continue
+            if self.for_org(doc["org_id"]).load_state(doc):
+                loaded += 1
+        return loaded
+
+    def flush_all(self) -> None:
+        with self._lock:
+            instances = list(self._orgs.values())
+        for stats in instances:
+            stats.flush()
+
+    def reset(self) -> None:
+        """Forget every organization's counters (the national total is reset separately)."""
+        with self._lock:
+            instances = list(self._orgs.values())
+            self._orgs.clear()
+        for stats in instances:
+            stats.reset()
+
+
+# ---- global instances, wired to the durable state store ----
+
+STATE_DOCS: List[Dict[str, Any]] = []      # national document, filled in place by state_store.restore_all()
+ORG_STATE_DOCS: List[Dict[str, Any]] = []  # one document per organization
 
 
 def _persist_to_store(doc: Dict[str, Any]) -> None:
@@ -247,16 +347,26 @@ def _persist_to_store(doc: Dict[str, Any]) -> None:
         raise RuntimeError("state store did not accept the telemetry snapshot")
 
 
+def _persist_orgs_to_store(docs: List[Dict[str, Any]]) -> None:
+    from database import state_store
+
+    if state_store.ENABLED and not state_store.save(ORG_STATE_NAME, docs):
+        raise RuntimeError("state store did not accept the per-organization telemetry snapshot")
+
+
 telemetry_stats = TelemetryStats(persist=_persist_to_store)
+telemetry_registry = TelemetryRegistry(telemetry_stats, persist_docs=_persist_orgs_to_store)
 
 
 def register_persistence() -> None:
-    """Tell the state store which list holds the saved telemetry document."""
+    """Tell the state store which lists hold the saved telemetry documents."""
     from database import state_store
 
     state_store.register(STATE_NAME, STATE_DOCS)
+    state_store.register(ORG_STATE_NAME, ORG_STATE_DOCS)
 
 
 def restore_from_store() -> bool:
-    """Apply the document that state_store.restore_all() loaded (call right after it)."""
+    """Apply the documents that state_store.restore_all() loaded (call right after it)."""
+    telemetry_registry.load_all(ORG_STATE_DOCS)
     return telemetry_stats.load_state(STATE_DOCS[0]) if STATE_DOCS else False

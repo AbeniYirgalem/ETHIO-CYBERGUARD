@@ -17,6 +17,7 @@ import uuid
 from ..dependencies import require_permission, get_current_user, security
 from ..config import DEMO_MODE
 from database import state_store
+from services.security.tenancy import org_of, record_org, is_global, scope, can_access
 
 def _persist_response_writes(request: Request):
     """After any state-changing request, snapshot actions and the audit log to the database."""
@@ -121,13 +122,14 @@ class DisableAccountRequest(BaseModel):
     require_approval: Optional[bool] = True
     dry_run: Optional[bool] = False
 
-def _record_audit(operator: str, action: str, target: str, result: str, details: str):
+def _record_audit(operator: str, action: str, target: str, result: str, details: str, org_id: Optional[str] = None):
     prev_hash = AUDIT_LOG_STORE[0]["integrity_hash"] if AUDIT_LOG_STORE else "0000000000000000000000000000000000000000000000000000000000000000"
     ts = datetime.now(timezone.utc).isoformat()
     entry_str = f"{prev_hash}|{operator}|{action}|{target}|{result}|{ts}"
     h = hashlib.sha256(entry_str.encode("utf-8")).hexdigest()
     entry = {
         "id": f"AUD-{len(AUDIT_LOG_STORE) + 1:03d}",
+        "org_id": org_id or record_org(None),
         "timestamp": ts,
         "operator": operator,
         "action": action,
@@ -178,8 +180,11 @@ def _next_action_id() -> str:
     return f"ACT-{max(numbers, default=0) + 1:03d}"
 
 
-def _find_action(action_id: str) -> Dict[str, Any]:
-    action = next((item for item in ACTIONS_STORE if item.get("id") == action_id), None)
+def _find_action(action_id: str, user: Dict[str, Any]) -> Dict[str, Any]:
+    """Another organization's action is reported exactly like one that does not exist."""
+    action = next(
+        (item for item in ACTIONS_STORE if item.get("id") == action_id and can_access(user, item)), None
+    )
     if action is None:
         raise HTTPException(status_code=404, detail=f"Action '{action_id}' not found")
     return action
@@ -199,7 +204,7 @@ def _require_pending_action(action: Dict[str, Any]) -> None:
             raise HTTPException(status_code=500, detail="Action has an invalid expiry timestamp.") from exc
         if expiry <= datetime.now(timezone.utc):
             action["status"] = "EXPIRED"
-            _record_audit("system", "ACTION_EXPIRED", str(action.get("target_entity", "")), "EXPIRED", str(action.get("id", "")))
+            _record_audit("system", "ACTION_EXPIRED", str(action.get("target_entity", "")), "EXPIRED", str(action.get("id", "")), org_id=record_org(action))
             raise HTTPException(status_code=409, detail="Action approval has expired. Re-submission required.")
 
 
@@ -208,7 +213,8 @@ def _require_pending_action(action: Dict[str, Any]) -> None:
 def list_response_actions(
     current_user: Dict[str, Any] = Depends(_require_authenticated_permission("audit:read")),
 ):
-    return {"total": len(ACTIONS_STORE), "actions": ACTIONS_STORE}
+    visible = scope(current_user, ACTIONS_STORE)
+    return {"total": len(visible), "actions": visible}
 
 
 @router.post("/api/response/isolate-host")
@@ -229,6 +235,7 @@ def request_host_isolation(
     action_id = _next_action_id()
     action = {
         "id": action_id,
+        "org_id": org_of(current_user),
         "incident_number": payload.incident_number,
         "action_type": "ISOLATE_HOST",
         "target_entity": f"{hostname} ({ip_address or 'DHCP'})",
@@ -243,7 +250,7 @@ def request_host_isolation(
     }
     ACTIONS_STORE.insert(0, action)
     operator = _operator_name(current_user)
-    _record_audit(operator, f"ISOLATE_HOST_{'DRY_RUN' if payload.dry_run else 'SUBMITTED'}", hostname, "SIMULATED" if payload.dry_run else "PENDING", reason)
+    _record_audit(operator, f"ISOLATE_HOST_{'DRY_RUN' if payload.dry_run else 'SUBMITTED'}", hostname, "SIMULATED" if payload.dry_run else "PENDING", reason, org_id=org_of(current_user))
     return {"status": "SIMULATED" if payload.dry_run else "QUEUED", "dry_run": bool(payload.dry_run), "action_id": action_id, "action": action}
 
 
@@ -265,6 +272,7 @@ def request_block_ip(
     action_id = _next_action_id()
     action = {
         "id": action_id,
+        "org_id": org_of(current_user),
         "incident_number": payload.incident_number,
         "action_type": "BLOCK_IP",
         "target_entity": ip_address,
@@ -280,7 +288,7 @@ def request_block_ip(
     }
     ACTIONS_STORE.insert(0, action)
     operator = _operator_name(current_user)
-    _record_audit(operator, f"BLOCK_IP_{'DRY_RUN' if payload.dry_run else 'SUBMITTED'}", ip_address, "SIMULATED" if payload.dry_run else "PENDING", reason)
+    _record_audit(operator, f"BLOCK_IP_{'DRY_RUN' if payload.dry_run else 'SUBMITTED'}", ip_address, "SIMULATED" if payload.dry_run else "PENDING", reason, org_id=org_of(current_user))
     return {"status": "SIMULATED" if payload.dry_run else "QUEUED", "dry_run": bool(payload.dry_run), "action_id": action_id, "action": action}
 
 
@@ -303,6 +311,7 @@ def request_disable_account(
     target = f"{username}@{domain}"
     action = {
         "id": action_id,
+        "org_id": org_of(current_user),
         "incident_number": payload.incident_number,
         "action_type": "DISABLE_ACCOUNT",
         "target_entity": target,
@@ -317,7 +326,7 @@ def request_disable_account(
     }
     ACTIONS_STORE.insert(0, action)
     operator = _operator_name(current_user)
-    _record_audit(operator, f"DISABLE_ACCOUNT_{'DRY_RUN' if payload.dry_run else 'SUBMITTED'}", target, "SIMULATED" if payload.dry_run else "PENDING", reason)
+    _record_audit(operator, f"DISABLE_ACCOUNT_{'DRY_RUN' if payload.dry_run else 'SUBMITTED'}", target, "SIMULATED" if payload.dry_run else "PENDING", reason, org_id=org_of(current_user))
     return {"status": "SIMULATED" if payload.dry_run else "QUEUED", "dry_run": bool(payload.dry_run), "action_id": action_id, "action": action}
 
 
@@ -328,7 +337,7 @@ def approve_action(
     payload: ActionDecisionPayload,
     current_user: Dict[str, Any] = Depends(_require_authenticated_permission("response:approve")),
 ):
-    action = _find_action(action_id)
+    action = _find_action(action_id, current_user)
     _require_pending_action(action)
     if action.get("requested_by_id") and action["requested_by_id"] == _user_key(current_user):
         raise HTTPException(
@@ -340,7 +349,7 @@ def approve_action(
     action["status"] = "APPROVED"
     action["executed_at"] = datetime.now(timezone.utc).isoformat()
     action["reviewed_by"] = operator
-    _record_audit(operator, f"ACTION_APPROVED_{action['action_type']}", action["target_entity"], "SUCCESS", f"Approved for {action.get('incident_number')}: {reason}")
+    _record_audit(operator, f"ACTION_APPROVED_{action['action_type']}", action["target_entity"], "SUCCESS", f"Approved for {action.get('incident_number')}: {reason}", org_id=org_of(current_user))
     return {"status": "SUCCESS", "message": f"Action {action_id} ({action['action_type']}) approved by the SOAR workflow.", "action": action}
 
 
@@ -351,7 +360,7 @@ def reject_action(
     payload: ActionDecisionPayload,
     current_user: Dict[str, Any] = Depends(_require_authenticated_permission("response:approve")),
 ):
-    action = _find_action(action_id)
+    action = _find_action(action_id, current_user)
     _require_pending_action(action)
     reason = _require_reason(payload.reason)
     operator = _operator_name(current_user)
@@ -359,7 +368,7 @@ def reject_action(
     action["rejection_reason"] = reason
     action["reviewed_by"] = operator
     action["rejected_at"] = datetime.now(timezone.utc).isoformat()
-    _record_audit(operator, f"ACTION_REJECTED_{action['action_type']}", action["target_entity"], "REJECTED", reason)
+    _record_audit(operator, f"ACTION_REJECTED_{action['action_type']}", action["target_entity"], "REJECTED", reason, org_id=org_of(current_user))
     return {"status": "SUCCESS", "message": f"Action {action_id} rejected.", "action": action}
 
 
@@ -370,7 +379,7 @@ def rollback_action(
     payload: ActionDecisionPayload,
     current_user: Dict[str, Any] = Depends(_require_authenticated_permission("response:approve")),
 ):
-    action = _find_action(action_id)
+    action = _find_action(action_id, current_user)
     if action.get("status") != "APPROVED" or action.get("dry_run"):
         raise HTTPException(status_code=409, detail="Only approved, non-dry-run actions can be rolled back.")
     reason = _require_reason(payload.reason)
@@ -378,7 +387,7 @@ def rollback_action(
     action["status"] = "ROLLED_BACK"
     action["rolled_back_at"] = datetime.now(timezone.utc).isoformat()
     action["rollback_reason"] = reason
-    _record_audit(operator, f"ACTION_ROLLED_BACK_{action['action_type']}", action["target_entity"], "SUCCESS", reason)
+    _record_audit(operator, f"ACTION_ROLLED_BACK_{action['action_type']}", action["target_entity"], "SUCCESS", reason, org_id=org_of(current_user))
     return {"status": "SUCCESS", "message": f"Action {action_id} was marked rolled back.", "action": action}
 
 
@@ -387,7 +396,8 @@ def rollback_action(
 def get_response_audit_log(
     current_user: Dict[str, Any] = Depends(_require_authenticated_permission("audit:read")),
 ):
-    return {"total": len(AUDIT_LOG_STORE), "audit_logs": AUDIT_LOG_STORE}
+    visible = scope(current_user, AUDIT_LOG_STORE)
+    return {"total": len(visible), "audit_logs": visible}
 
 
 @router.get("/api/response/audit-log/verify")
@@ -395,8 +405,21 @@ def get_response_audit_log(
 def verify_response_audit_log(
     current_user: Dict[str, Any] = Depends(_require_authenticated_permission("audit:read")),
 ):
-    """Recompute the SHA-256 hash chain and report any tampered or re-ordered entries."""
-    return verify_audit_chain(AUDIT_LOG_STORE)
+    """Recompute the SHA-256 hash chain and report any tampered or re-ordered entries.
+
+    The chain is one tamper-evident sequence for the whole platform, so it is always checked in
+    full. An organization is told whether the chain is intact and which of ITS OWN entries are
+    broken; it never learns the ids or number of other organizations' entries.
+    """
+    result = verify_audit_chain(AUDIT_LOG_STORE)
+    if is_global(current_user):
+        return result
+    mine = {str(entry.get("id")) for entry in scope(current_user, AUDIT_LOG_STORE)}
+    return {
+        "valid": result["valid"],
+        "entries": len(mine),
+        "broken_entries": [entry_id for entry_id in result["broken_entries"] if entry_id in mine],
+    }
 
 
 def verify_audit_chain(entries: List[Dict[str, Any]]) -> Dict[str, Any]:

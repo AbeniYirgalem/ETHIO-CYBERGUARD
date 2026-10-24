@@ -18,7 +18,8 @@ class ChannelSubscriptionManager:
             "all": set(),
             "incidents": set(),
             "alerts": set(),
-            "telemetry": set()
+            "telemetry": set(),
+            "global": set()   # national administrators: receive every organization's messages
         }
         self.max_connections = max_connections
 
@@ -32,13 +33,15 @@ class ChannelSubscriptionManager:
         self.socket_user_meta[websocket] = user_meta
         self.channel_subscribers["all"].add(websocket)
         
-        # Subscribe to tenant channel
-        tenant = user_meta.get("organization", "default_org")
+        # Subscribe to the tenant channel (organization id when known, else its name)
+        tenant = user_meta.get("org_id") or user_meta.get("organization", "default_org")
         tenant_channel = f"tenant:{tenant}"
         if tenant_channel not in self.channel_subscribers:
             self.channel_subscribers[tenant_channel] = set()
         self.channel_subscribers[tenant_channel].add(websocket)
-        
+        if user_meta.get("global"):
+            self.channel_subscribers["global"].add(websocket)
+
         return True
 
     def disconnect(self, websocket: WebSocket):
@@ -67,7 +70,27 @@ class ChannelSubscriptionManager:
             self.disconnect(dead_ws)
 
     async def broadcast(self, message: Dict[str, Any]):
+        """Send to EVERY connected console. Never use this for organization data."""
         await self.broadcast_to_channel("all", message)
+
+    async def broadcast_to_tenant(self, org_id: str, message: Dict[str, Any]):
+        """Send to the consoles of one organization (and to national administrators).
+
+        A socket subscribed to both channels still receives the message only once.
+        """
+        recipients = set(self.channel_subscribers.get(f"tenant:{org_id}", set()))
+        recipients |= self.channel_subscribers.get("global", set())
+        dead_sockets = []
+        for ws in list(recipients):
+            try:
+                await ws.send_json(message)
+            except Exception:
+                dead_sockets.append(ws)
+        for dead_ws in dead_sockets:
+            self.disconnect(dead_ws)
+
+    def get_tenant_count(self, org_id: str) -> int:
+        return len(self.channel_subscribers.get(f"tenant:{org_id}", set()))
 
     def get_active_count(self) -> int:
         return len(self.active_sockets)

@@ -45,9 +45,11 @@ from database.connection import init_db
 from database import state_store
 from apps.api.routers import response as response_module
 from services.websocket.manager import ws_manager
-from services.telemetry.stats import telemetry_stats, register_persistence, restore_from_store
+from services.telemetry.stats import telemetry_stats, telemetry_registry, register_persistence, restore_from_store
+from services.security.tenancy import DEFAULT_ORG_ID, org_of, is_global
 from services.ingestion.pipeline import ingestion_pipeline
-from apps.api.dependencies import verify_collector_api_key, require_permission, verify_token, after_state_restore
+from apps.api.dependencies import require_permission, verify_token, after_state_restore, DEMO_USERS
+from apps.api.tenancy import resolve_collector_org
 from apps.api.config import DEMO_MODE, MAX_PAYLOAD_BYTES, validate_production_config
 from apps.api.security_middleware import install_security_middleware
 
@@ -63,6 +65,7 @@ async def lifespan(app: FastAPI):
     response_module._rearm_demo_seed_actions()
     yield
     telemetry_stats.flush()  # save the last few seconds of counts
+    telemetry_registry.flush_all()
 
 app = FastAPI(
     title="ETHIO-CYBERGUARD Central SOC API",
@@ -195,10 +198,13 @@ def _stream_event(norm: Dict[str, Any]) -> Dict[str, Any]:
 @app.post("/api/v1/events/ingest")
 async def ingest_event(
     payload: EventIngestPayload,
-    is_authenticated: bool = Depends(verify_collector_api_key)
+    org_id: str = Depends(resolve_collector_org)
 ):
     norm = normalizer.normalize(payload.model_dump(exclude_none=True))
-    client_id = (norm.get("source") or {}).get("hostname") or "collector"
+    # The collector's key decides the organization; the event body can never choose it.
+    norm["org_id"] = org_id
+    # Rate limit per organization + host, so one organization cannot exhaust another's allowance.
+    client_id = f"{org_id}:{(norm.get('source') or {}).get('hostname') or 'collector'}"
     ingest_result = ingestion_pipeline.ingest(norm, client_id=client_id)
     result_status = ingest_result.get("status", "ACCEPTED")
     if result_status == "RATE_LIMITED":
@@ -207,13 +213,14 @@ async def ingest_event(
     alerts: List[Dict[str, Any]] = []
     if result_status == "ACCEPTED":
         alerts = detection_engine.evaluate_event(norm)
-        telemetry_stats.record_event(norm.get("severity", "INFO"), alerts)
-        # Push to every connected SOC console, so the dashboard updates in real time.
-        await ws_manager.broadcast({
+        telemetry_registry.record_event(org_id, norm.get("severity", "INFO"), alerts)
+        # Push to the consoles of THIS organization only (plus national administrators).
+        await ws_manager.broadcast_to_tenant(org_id, {
             "type": "EVENT_INGESTED",
+            "org_id": org_id,
             "event": _stream_event(norm),
             "alerts": alerts,
-            "stats": telemetry_stats.snapshot(),
+            "stats": telemetry_registry.for_org(org_id).snapshot(),
         })
     return {
         "status": result_status,
@@ -278,7 +285,12 @@ def readiness_check():
 # --- Real-Time SOC WebSocket Telemetry Stream ---
 @app.websocket("/ws/live-events")
 async def websocket_live_events(websocket: WebSocket, token: Optional[str] = None):
-    user_meta = {"role": "SECURITY_ANALYST", "organization": "Commercial Bank of Ethiopia"}
+    user_meta = {
+        "role": "SECURITY_ANALYST",
+        "organization": "Commercial Bank of Ethiopia",
+        "org_id": DEFAULT_ORG_ID,
+        "global": False,
+    }
     if token:
         # A token that is present must be valid; a bad token is never silently downgraded to guest.
         try:
@@ -286,9 +298,23 @@ async def websocket_live_events(websocket: WebSocket, token: Optional[str] = Non
         except Exception:
             await websocket.close(code=1008)
             return
+        known_user = DEMO_USERS.get(payload.get("sub"))
+        if known_user is not None:
+            # Same rule as the REST API: a password reset retires every earlier session.
+            if int(payload.get("tv", 0) or 0) != int(known_user.get("token_version", 0) or 0):
+                await websocket.close(code=1008)
+                return
+            identity = known_user          # the live account decides role and organization
+        elif DEMO_MODE:
+            identity = payload             # demo sandbox: accept an unknown but validly signed token
+        else:
+            await websocket.close(code=1008)
+            return
         user_meta = {
-            "role": payload.get("role", "SECURITY_ANALYST"),
-            "organization": payload.get("organization", "Commercial Bank of Ethiopia"),
+            "role": identity.get("role", "SECURITY_ANALYST"),
+            "organization": identity.get("organization", "Commercial Bank of Ethiopia"),
+            "org_id": org_of(identity),
+            "global": is_global(identity),
             "email": payload.get("sub")
         }
     elif not DEMO_MODE:
@@ -305,7 +331,7 @@ async def websocket_live_events(websocket: WebSocket, token: Optional[str] = Non
         await websocket.send_json({
             "type": "CONNECTION_ESTABLISHED",
             "message": "Connected to authenticated ETHIO-CYBERGUARD live SOC telemetry stream",
-            "tenant_channel": f"tenant:{user_meta.get('organization')}",
+            "tenant_channel": f"tenant:{user_meta.get('org_id')}",
             "role": user_meta.get("role"),
             "timestamp": datetime.now(timezone.utc).isoformat()
         })
@@ -335,8 +361,8 @@ async def dispatch_alert_notification(
 ):
     alert_dict = payload.model_dump()
     result = alert_notifier.dispatch(alert_dict, channel=payload.channel)
-    # Broadcast to live SOC console via WebSocket
-    await ws_manager.broadcast({
+    # Broadcast to the live SOC consoles of the sender's organization only
+    await ws_manager.broadcast_to_tenant(org_of(_user), {
         "type": "NEW_ALERT_DISPATCHED",
         "alert": alert_dict,
         "notification": result
