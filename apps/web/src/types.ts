@@ -79,6 +79,24 @@ export interface ThreatIndicator {
   related_incidents: string[];
 }
 
+export interface DashboardStats {
+  metrics: {
+    events_per_second: number;
+    events_processed_today: number;
+    active_incidents: number;
+    critical_alerts: number;
+    high_risk_alerts: number;
+    medium_risk_alerts: number;
+    pending_approvals: number;
+    audit_entries: number;
+    assets_monitored: number;
+    mean_time_to_detect_minutes: number | null;
+    mean_time_to_respond_minutes: number | null;
+  };
+  top_threats: Array<{ name: string; count: number; severity: string; tactic?: string | null; source: string }>;
+  system_health: { ingestion_pipeline: string; live_stream_clients: number };
+}
+
 export interface AuditLogEntry {
   id: string;
   timestamp: string;

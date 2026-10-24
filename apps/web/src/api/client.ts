@@ -1,5 +1,6 @@
 import type {
   Incident, ResponseAction, AuthUser, ThreatIndicator, AuditLogEntry, AssistantReply,
+  DashboardStats, SecurityEvent, Severity,
 } from '../types';
 
 /**
@@ -225,6 +226,144 @@ export async function askAssistant(query: string, incidentNumber: string): Promi
     { method: 'POST', body: JSON.stringify({ query, incident_number: incidentNumber }) },
   );
   return { reply: data.reply, citations: data.citations ?? [] };
+}
+
+export async function fetchDashboardStats(): Promise<DashboardStats> {
+  return authedRequest<DashboardStats>('/api/dashboard/stats');
+}
+
+// ---------- live event stream (WebSocket) ----------
+
+interface RawStreamEvent {
+  event_id: string;
+  timestamp?: string;
+  source?: { type?: string; hostname?: string; ip?: string; os?: string };
+  event_type?: string;
+  severity?: string;
+  user?: string;
+  process?: { name?: string | null; command_line?: string | null };
+  network?: {
+    source_ip?: string | null; source_port?: number | null;
+    destination_ip?: string | null; destination_port?: number | null;
+  } | null;
+}
+
+export interface StreamAlert {
+  title?: string;
+  severity?: string;
+}
+
+export interface StreamStats {
+  events_per_second: number;
+  events_processed_today: number;
+}
+
+export interface LiveStreamHandlers {
+  onEvent: (event: SecurityEvent, stats: StreamStats | undefined, alerts: StreamAlert[]) => void;
+  onStatus: (connected: boolean) => void;
+}
+
+const SEVERITIES: Severity[] = ['INFO', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+
+function toSecurityEvent(raw: RawStreamEvent): SecurityEvent {
+  const when = raw.timestamp ? new Date(raw.timestamp) : new Date();
+  const net = raw.network ?? undefined;
+  const hasNet = !!net && (net.source_ip || net.destination_ip);
+  const severity = (raw.severity ?? 'INFO').toUpperCase() as Severity;
+  return {
+    event_id: raw.event_id,
+    timestamp: Number.isNaN(when.getTime()) ? String(raw.timestamp) : when.toLocaleTimeString(),
+    source: {
+      type: raw.source?.type ?? 'endpoint',
+      hostname: raw.source?.hostname ?? 'unknown',
+      ip: raw.source?.ip ?? '',
+      os: raw.source?.os,
+    },
+    event_type: raw.event_type ?? 'event',
+    severity: SEVERITIES.includes(severity) ? severity : 'INFO',
+    user: raw.user ?? 'SYSTEM',
+    process: {
+      name: raw.process?.name ?? undefined,
+      command_line: raw.process?.command_line ?? undefined,
+    },
+    network: hasNet
+      ? {
+          source_ip: net?.source_ip ?? undefined,
+          source_port: net?.source_port ?? undefined,
+          destination_ip: net?.destination_ip ?? undefined,
+          destination_port: net?.destination_port ?? undefined,
+        }
+      : undefined,
+  };
+}
+
+/** Opens the authenticated live telemetry stream and reconnects with backoff.
+ *  Returns a function that closes it. */
+export function openLiveStream(handlers: LiveStreamHandlers): () => void {
+  let socket: WebSocket | null = null;
+  let closed = false;
+  let retry = 0;
+  let pingTimer: ReturnType<typeof setInterval> | undefined;
+  let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+
+  const scheduleReconnect = () => {
+    if (closed) return;
+    const delay = Math.min(15000, 1000 * 2 ** retry);
+    retry += 1;
+    reconnectTimer = setTimeout(() => { void connect(); }, delay);
+  };
+
+  const connect = async () => {
+    if (closed) return;
+    if (retry > 0) {
+      // The stored access token may have expired while we were disconnected.
+      try { await authedRequest('/api/auth/me'); } catch { /* handled by the next attempt */ }
+    }
+    const session = getSession();
+    if (!session || closed) return;
+    const url = `${API_BASE.replace(/^http/i, 'ws')}/ws/live-events?token=${encodeURIComponent(session.accessToken)}`;
+    try {
+      socket = new WebSocket(url);
+    } catch {
+      scheduleReconnect();
+      return;
+    }
+    socket.onopen = () => {
+      retry = 0;
+      handlers.onStatus(true);
+      pingTimer = setInterval(() => {
+        if (socket && socket.readyState === WebSocket.OPEN) socket.send('ping');
+      }, 25000);
+    };
+    socket.onmessage = (msg: MessageEvent) => {
+      if (typeof msg.data !== 'string' || msg.data === 'pong') return;
+      try {
+        const data = JSON.parse(msg.data) as {
+          type?: string; event?: RawStreamEvent; stats?: StreamStats; alerts?: StreamAlert[];
+        };
+        if (data.type === 'EVENT_INGESTED' && data.event) {
+          handlers.onEvent(toSecurityEvent(data.event), data.stats, data.alerts ?? []);
+        }
+      } catch {
+        /* ignore malformed frames */
+      }
+    };
+    socket.onclose = () => {
+      if (pingTimer) clearInterval(pingTimer);
+      handlers.onStatus(false);
+      scheduleReconnect();
+    };
+    socket.onerror = () => { socket?.close(); };
+  };
+
+  void connect();
+
+  return () => {
+    closed = true;
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    if (pingTimer) clearInterval(pingTimer);
+    socket?.close();
+  };
 }
 
 export async function decideAction(

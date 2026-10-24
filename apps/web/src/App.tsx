@@ -25,7 +25,7 @@ import type { ToastMessage } from './components/ToastManager';
 import { soundManager } from './utils/sound';
 import {
   ApiError, getSession, login, logout, fetchIncidents, fetchActions, decideAction,
-  fetchThreatIntel, fetchAuditLog,
+  fetchThreatIntel, fetchAuditLog, fetchDashboardStats, openLiveStream,
 } from './api/client';
 import type { Session } from './api/client';
 import { 
@@ -35,7 +35,7 @@ import {
   INITIAL_ACTIONS, 
   INITIAL_TIMELINE 
 } from './mockData';
-import type { Incident, SecurityEvent, ResponseAction, AuditLogEntry } from './types';
+import type { Incident, SecurityEvent, ResponseAction, AuditLogEntry, DashboardStats } from './types';
 
 export const App: React.FC = () => {
   const [inPublicPortal, setInPublicPortal] = useState(false);
@@ -45,6 +45,8 @@ export const App: React.FC = () => {
   const [events, setEvents] = useState<SecurityEvent[]>(INITIAL_EVENTS);
   const [indicators, setIndicators] = useState(INITIAL_INDICATORS);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [streamConnected, setStreamConnected] = useState(false);
   const [actions, setActions] = useState<ResponseAction[]>(INITIAL_ACTIONS);
   const [isStreaming, setIsStreaming] = useState(true);
   const [liveCount, setLiveCount] = useState(4210);
@@ -92,6 +94,9 @@ export const App: React.FC = () => {
     setActions(INITIAL_ACTIONS);
     setIndicators(INITIAL_INDICATORS);
     setAuditLogs([]);
+    setStats(null);
+    setEvents(INITIAL_EVENTS);
+    setLiveCount(4210);
     setCurrentRole('SECURITY_ANALYST');
     addToast({ type: 'warning', title: 'Using demo data', message });
   };
@@ -113,6 +118,9 @@ export const App: React.FC = () => {
     setActions(INITIAL_ACTIONS);
     setIndicators(INITIAL_INDICATORS);
     setAuditLogs([]);
+    setStats(null);
+    setEvents(INITIAL_EVENTS);
+    setLiveCount(4210);
     setCurrentRole('SECURITY_ANALYST');
     addToast({ type: 'info', title: 'Signed out', message: 'Showing simulated demo data.' });
   };
@@ -135,8 +143,8 @@ export const App: React.FC = () => {
     if (!session) return;
     let cancelled = false;
     (async () => {
-      const [inc, act, ti, aud] = await Promise.allSettled([
-        fetchIncidents(), fetchActions(), fetchThreatIntel(), fetchAuditLog(),
+      const [inc, act, ti, aud, dash] = await Promise.allSettled([
+        fetchIncidents(), fetchActions(), fetchThreatIntel(), fetchAuditLog(), fetchDashboardStats(),
       ]);
       if (cancelled) return;
       if (inc.status === 'rejected' && act.status === 'rejected') {
@@ -156,6 +164,12 @@ export const App: React.FC = () => {
       if (act.status === 'fulfilled') setActions(act.value);
       if (ti.status === 'fulfilled' && ti.value.length > 0) setIndicators(ti.value);
       if (aud.status === 'fulfilled') setAuditLogs(aud.value);
+      if (dash.status === 'fulfilled') {
+        setStats(dash.value);
+        setLiveCount(dash.value.metrics.events_per_second);
+      }
+      // Live mode shows only real events pushed by the backend (no simulated rows).
+      setEvents([]);
       setLiveMode(true);
     })();
     return () => { cancelled = true; };
@@ -183,7 +197,7 @@ export const App: React.FC = () => {
 
   // Simulated live telemetry stream
   useEffect(() => {
-    if (!isStreaming) return;
+    if (!isStreaming || liveMode) return;
     const interval = setInterval(() => {
       setLiveCount(prev => prev + Math.floor(Math.random() * 80) - 35);
       
@@ -212,7 +226,50 @@ export const App: React.FC = () => {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [isStreaming]);
+  }, [isStreaming, liveMode]);
+
+  // Live mode: real events from the backend over an authenticated WebSocket
+  useEffect(() => {
+    if (!liveMode || !isStreaming) return;
+    const close = openLiveStream({
+      onStatus: setStreamConnected,
+      onEvent: (ev, streamStats, alerts) => {
+        setEvents(prev => [ev, ...prev.slice(0, 49)]);
+        if (streamStats) {
+          setLiveCount(streamStats.events_per_second);
+          setStats(prev => prev ? {
+            ...prev,
+            metrics: {
+              ...prev.metrics,
+              events_per_second: streamStats.events_per_second,
+              events_processed_today: streamStats.events_processed_today,
+            },
+          } : prev);
+        }
+        if (alerts.length > 0) {
+          soundManager.playAlert();
+          addToast({
+            type: 'critical',
+            title: 'Detection triggered',
+            message: `${alerts[0].title ?? 'Detection'} on ${ev.source.hostname}`,
+          });
+        }
+      },
+    });
+    return () => {
+      close();
+      setStreamConnected(false);
+    };
+  }, [liveMode, isStreaming]);
+
+  // Live mode: refresh the overview numbers every 30 seconds
+  useEffect(() => {
+    if (!liveMode) return;
+    const timer = setInterval(() => {
+      fetchDashboardStats().then(setStats).catch(() => { /* keep the last numbers */ });
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [liveMode]);
 
   // Deep-link URL hash synchronization
   useEffect(() => {
@@ -420,6 +477,9 @@ export const App: React.FC = () => {
               isStreaming={isStreaming}
               setIsStreaming={setIsStreaming}
               onSelectIncident={handleDrilldownIncident}
+              stats={liveMode ? stats : null}
+              liveMode={liveMode}
+              streamConnected={streamConnected}
             />
           )}
 

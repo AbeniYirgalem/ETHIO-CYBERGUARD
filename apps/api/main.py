@@ -45,6 +45,7 @@ from database.connection import init_db
 from database import state_store
 from apps.api.routers import response as response_module
 from services.websocket.manager import ws_manager
+from services.telemetry.stats import telemetry_stats
 from services.ingestion.pipeline import ingestion_pipeline
 from apps.api.dependencies import verify_collector_api_key, require_permission, verify_token, after_state_restore
 from apps.api.config import DEMO_MODE, MAX_PAYLOAD_BYTES, validate_production_config
@@ -171,19 +172,47 @@ def get_system_mode():
         "max_payload_bytes": MAX_PAYLOAD_BYTES
     }
 
+def _stream_event(norm: Dict[str, Any]) -> Dict[str, Any]:
+    """The part of a normalized event that is safe and useful to push to SOC consoles
+    (raw_data and enrichment stay on the server)."""
+    process = norm.get("process") or {}
+    return {
+        "event_id": norm.get("event_id"),
+        "timestamp": norm.get("timestamp"),
+        "source": norm.get("source"),
+        "event_type": norm.get("event_type"),
+        "severity": norm.get("severity"),
+        "user": norm.get("user"),
+        "process": {"name": process.get("name"), "command_line": process.get("command_line")},
+        "network": norm.get("network"),
+    }
+
+
 @app.post("/api/v1/events/ingest")
-def ingest_event(
+async def ingest_event(
     payload: EventIngestPayload,
     is_authenticated: bool = Depends(verify_collector_api_key)
 ):
-    norm = normalizer.normalize(payload.dict())
-    ingest_result = ingestion_pipeline.ingest(norm, client_id=payload.host_name or "collector")
-    if ingest_result.get("status") == "RATE_LIMITED":
+    norm = normalizer.normalize(payload.model_dump(exclude_none=True))
+    client_id = (norm.get("source") or {}).get("hostname") or "collector"
+    ingest_result = ingestion_pipeline.ingest(norm, client_id=client_id)
+    result_status = ingest_result.get("status", "ACCEPTED")
+    if result_status == "RATE_LIMITED":
         raise HTTPException(status_code=429, detail=ingest_result.get("message"))
-        
-    alerts = detection_engine.evaluate_event(norm)
+
+    alerts: List[Dict[str, Any]] = []
+    if result_status == "ACCEPTED":
+        alerts = detection_engine.evaluate_event(norm)
+        telemetry_stats.record_event(norm.get("severity", "INFO"), alerts)
+        # Push to every connected SOC console, so the dashboard updates in real time.
+        await ws_manager.broadcast({
+            "type": "EVENT_INGESTED",
+            "event": _stream_event(norm),
+            "alerts": alerts,
+            "stats": telemetry_stats.snapshot(),
+        })
     return {
-        "status": ingest_result.get("status", "ACCEPTED"),
+        "status": result_status,
         "event_id": norm["event_id"],
         "event_hash": ingest_result.get("event_hash"),
         "queue_depth": ingest_result.get("queue_depth", 0),

@@ -12,7 +12,7 @@ import {
   Download,
   Search
 } from 'lucide-react';
-import type { Incident, SecurityEvent } from '../types';
+import type { Incident, SecurityEvent, DashboardStats } from '../types';
 import { EthiopiaCyberRadar } from './EthiopiaCyberRadar';
 import { soundManager } from '../utils/sound';
 
@@ -22,6 +22,10 @@ interface OverviewViewProps {
   isStreaming: boolean;
   setIsStreaming: (val: boolean) => void;
   onSelectIncident: (inc: Incident) => void;
+  /** Real numbers from the API. Null = show the simulated demo figures. */
+  stats?: DashboardStats | null;
+  liveMode?: boolean;
+  streamConnected?: boolean;
 }
 
 export const OverviewView: React.FC<OverviewViewProps> = ({
@@ -29,7 +33,10 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   events,
   isStreaming,
   setIsStreaming,
-  onSelectIncident
+  onSelectIncident,
+  stats = null,
+  liveMode = false,
+  streamConnected = false
 }) => {
   const [selectedSeverity, setSelectedSeverity] = useState<'ALL' | 'CRITICAL' | 'HIGH' | 'MEDIUM'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,12 +136,12 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
           <div className="mt-3">
             <span className="text-3xl font-extrabold text-white">
-              {incidents.filter(i => i.severity === 'CRITICAL').length}
+              {stats ? stats.metrics.critical_alerts : incidents.filter(i => i.severity === 'CRITICAL').length}
             </span>
             <span className="text-[11px] text-[#FF1744] ml-2 font-medium">Require immediate containment</span>
           </div>
           <div className="mt-2 text-[10px] text-[#7D8A99] flex items-center justify-between">
-            <span>+2 in last hour</span>
+            <span>{stats ? `${stats.metrics.pending_approvals} awaiting approval` : '+2 in last hour'}</span>
             <span className="text-[#FF1744] font-semibold">Highest Priority</span>
           </div>
         </div>
@@ -148,11 +155,11 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold text-white">23</span>
+            <span className="text-3xl font-extrabold text-white">{stats ? stats.metrics.high_risk_alerts : 23}</span>
             <span className="text-[11px] text-[#7D8A99] ml-2">Active triage</span>
           </div>
           <div className="mt-2 text-[10px] text-[#7D8A99] flex items-center justify-between">
-            <span>Baseline variance: +14%</span>
+            <span>{stats ? `${stats.metrics.medium_risk_alerts} medium severity` : 'Baseline variance: +14%'}</span>
             <span className="text-[#F59E0B] font-semibold">Under Investigation</span>
           </div>
         </div>
@@ -166,11 +173,13 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold text-white">{incidents.length}</span>
-            <span className="text-[11px] text-[#00D9FF] ml-2 font-medium">3 In Forensics</span>
+            <span className="text-3xl font-extrabold text-white">{stats ? stats.metrics.active_incidents : incidents.length}</span>
+            <span className="text-[11px] text-[#00D9FF] ml-2 font-medium">{stats ? `${stats.metrics.assets_monitored} assets involved` : '3 In Forensics'}</span>
           </div>
           <div className="mt-2 text-[10px] text-[#7D8A99] flex items-center justify-between">
-            <span>Avg MTTR: 28 min</span>
+            <span>{stats
+              ? (stats.metrics.mean_time_to_respond_minutes !== null ? `Avg MTTR: ${stats.metrics.mean_time_to_respond_minutes} min` : 'MTTR: not measured yet')
+              : 'Avg MTTR: 28 min'}</span>
             <span className="text-[#00D9FF] font-semibold">AI Correlated</span>
           </div>
         </div>
@@ -184,12 +193,12 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold text-white">51,240</span>
-            <span className="text-[11px] text-[#22C55E] ml-2 font-mono">EPS Peak</span>
+            <span className="text-3xl font-extrabold text-white">{stats ? stats.metrics.events_processed_today.toLocaleString() : '51,240'}</span>
+            <span className="text-[11px] text-[#22C55E] ml-2 font-mono">{stats ? `${stats.metrics.events_per_second} EPS now` : 'EPS Peak'}</span>
           </div>
           <div className="mt-2 text-[10px] text-[#7D8A99] flex items-center justify-between">
             <span>Sliding window: 60s</span>
-            <span className="text-[#22C55E] font-semibold">100% Normalized</span>
+            <span className="text-[#22C55E] font-semibold">{stats ? 'Counted from collectors' : '100% Normalized'}</span>
           </div>
         </div>
       </div>
@@ -436,7 +445,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <p className="text-xs text-[#7D8A99]">Normalized raw events arriving from endpoint agents and perimeter syslog</p>
           </div>
           <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#0D131C] text-[#7D8A99] border border-[#1E2A38]">
-            {events.length} Telemetry Records Streamed
+            {liveMode ? (streamConnected ? 'LIVE STREAM · ' : 'RECONNECTING · ') : 'SIMULATED · '}{events.length} Telemetry Records Streamed
           </span>
         </div>
 
@@ -453,6 +462,13 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1E2A38] font-mono text-[11px]">
+              {events.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-6 px-4 text-center text-[#7D8A99] font-sans">
+                    No events yet. Waiting for collectors to send events to /api/v1/events/ingest.
+                  </td>
+                </tr>
+              )}
               {events.map((ev) => (
                 <tr key={ev.event_id} className="hover:bg-[#0D131C]/60 transition">
                   <td className="py-2.5 px-4 text-[#7D8A99] flex items-center space-x-1">

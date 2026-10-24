@@ -5,6 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.2.0] - 2026-10-24
+
+### Added
+- **Real Overview numbers.** `/api/dashboard/stats` is now calculated from the live stores: active/critical/high incidents, actions awaiting approval, audit entries, and events counted from the ingestion endpoint (events per second over a 60 s window, events today, severity mix, top detections). It needs a login. MTTD/MTTR are `null` until they are measured, instead of invented figures.
+- **Live event stream.** `POST /api/v1/events/ingest` pushes each accepted event (and any detection alerts) to connected SOC consoles over the authenticated WebSocket. The web app, when signed in, shows these real events instead of the browser simulation, refreshes its numbers, and raises a toast when a detection fires. The WebSocket reconnects with backoff and refreshes an expired token.
+- `scripts/demo/send_events.py` to send sample events to a running API.
+- `services/telemetry/stats.py`.
+- `tests/unit/test_live_pipeline.py` (10 tests).
+
+### Fixed
+- `POST /api/v1/events/ingest` crashed on every call (it read a `host_name` field that does not exist, and passed empty `process`/`network` values to the normalizer).
+- Duplicate detection hashed fields the normalizer never produces, so after the first event of a given type every later event of that type was dropped as a duplicate. The hash now covers the event id, timestamp, user, host, network and command line.
+
+### Changed
+- Signed out (or offline) the Overview still shows the simulated demo figures, labelled `SIMULATED`.
+
+---
+
 ## [1.1.9] - 2026-10-24
 
 ### Security

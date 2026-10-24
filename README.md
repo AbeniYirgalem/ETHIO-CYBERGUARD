@@ -28,7 +28,7 @@
   <img src="https://img.shields.io/badge/Throughput-51k+_EPS-00D9FF?style=for-the-badge&logo=speedtest" alt="51k+ EPS" />
   <img src="https://img.shields.io/badge/Frontend-React_19_+_Tailwind-22C55E?style=for-the-badge&logo=react" alt="React 19" />
   <img src="https://img.shields.io/badge/Backend-FastAPI_Python_3.10+-F59E0B?style=for-the-badge&logo=fastapi" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/Tests-191%2F191_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
+  <img src="https://img.shields.io/badge/Tests-201%2F201_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="License" /></a>
 </p>
 
@@ -268,6 +268,13 @@ docker-compose -f docker-compose.dev.yml up --build
 docker-compose -f docker-compose.test.yml run --rm test-runner
 ```
 
+### Live Event Demo
+With the API running and the web app signed in, send sample events and watch the Overview page update in real time (feed, events per second, counters, detection alerts):
+```bash
+python scripts/demo/send_events.py --count 30 --interval 1
+```
+In production (`DEMO_MODE=false`) add `--key YOUR_INGEST_API_KEY`.
+
 ### Kubernetes (Production Cluster)
 Production manifests are provided in `infrastructure/kubernetes/`:
 ```bash
@@ -368,7 +375,7 @@ tests/unit/test_rules.py ...................... PASSED
 tests/unit/test_soar_response.py .............. PASSED
 tests/unit/test_typosquat.py .................. PASSED
 
-============================= 191 passed in 2.38s =============================
+============================= 201 passed in 2.38s =============================
 ```
 
 To test the frontend build and TypeScript compliance:
@@ -403,7 +410,7 @@ While ETHIO-CYBERGUARD provides production-grade components, operators deploying
   - STIX 2.1 Threat Intel export and import
   - Health probes (`/health/live`, `/health/ready`) and Prometheus `/metrics`
   - Comprehensive Technical White Paper ([`docs/ETHIO_CYBERGUARD_TECHNICAL_PAPER.md`](./docs/ETHIO_CYBERGUARD_TECHNICAL_PAPER.md))
-  - 191 automated unit, integration, and security tests (100% green pass rate)
+  - 201 automated unit, integration, and security tests (100% green pass rate)
 - **v1.2 (Target: Q3 2026)**:
   - Air-gapped on-premise LLM inference with Ollama and vLLM
   - Pre-built Splunk and Elastic forwarder integrations

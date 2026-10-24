@@ -126,7 +126,7 @@ def test_dashboard_stats_endpoint():
     assert resp.status_code == 200
     data = resp.json()
     assert "metrics" in data
-    assert data["metrics"]["events_per_second"] > 0
+    assert data["metrics"]["events_per_second"] >= 0
     assert "sector_profiles" in data
 
 def test_response_endpoints(responder_headers, commander_headers):
