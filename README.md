@@ -443,7 +443,7 @@ npm run build
 | :-: | :--- | :--- | :--- |
 | 1 | **ቤአምላክ ስንታየሁ** (Beamlak Sintayehu) | `CTC-912-24` | ዋና አባል እና አስተዋፅዖ አድራጊ (Core Member / Contributor) |
 | 2 | **ዮናስ አባዲ** (Yonas Abadi) | `[የተማሪ መለያ: ____________]` | አስተዋፅዖ አድራጊ (Contributor) |
-| 3 | **አበኔዘር ይርጋለም** (Abeni Yirgalem) | `[የተማሪ መለያ: ____________]` | የፕሮጀክት አስተዳዳሪ (Repository Administrator) |
+| 3 | **አቤኔዘር ይርጋለም** (Abenezer Yirgalem) | `CTC-041-26` | የፕሮጀክት አስተዳዳሪ (Repository Administrator) |
 | 4 | **ፍቅረማርያም** (FikreMariam) | `[የተማሪ መለያ: ____________]` | የቡድን አባል (Team Member) |
 | 5 | **ረመዳን** (Remedan) | `[የተማሪ መለያ: ____________]` | የቡድን አባል (Team Member) |
 
