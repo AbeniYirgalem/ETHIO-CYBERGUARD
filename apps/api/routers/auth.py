@@ -7,15 +7,6 @@ Supports both /api/auth and /api/v1/auth routes.
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
-ETHIO-CYBERGUARD Authentication & Identity Router
-Provides login, registration, single-use refresh token rotation, password reset,
-account lockout, session revocation, and RBAC endpoints.
-Supports both /api/auth and /api/v1/auth routes.
-"""
-
-from fastapi import APIRouter, HTTPException, Depends, status, Header
-from fastapi.security import HTTPAuthorizationCredentials
-from pydantic import BaseModel, EmailStr
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone, timedelta
 import hashlib
@@ -24,7 +15,7 @@ import re
 import secrets
 import uuid
 
-from ..config import DEMO_MODE, PASSWORD_RESET_ENABLED
+from ..config import DEMO_MODE, PASSWORD_RESET_ENABLED, REFRESH_REUSE_GRACE_SECONDS
 from ..dependencies import (
     DEMO_USERS, LOGIN_ATTEMPTS, create_access_token,
     create_refresh_token, verify_token, get_current_user, require_permission,
@@ -34,12 +25,6 @@ from ..dependencies import (
 from services.security.passwords import hash_password, verify_password, validate_password_policy
 
 logger = logging.getLogger("ecg.auth")
-    DEMO_USERS, LOGIN_ATTEMPTS, create_access_token, 
-    create_refresh_token, verify_token, get_current_user,
-    revoke_token, is_token_revoked, security,
-    ROLES, ROLE_PERMISSIONS
-)
-from ..config import DEMO_MODE
 
 router = APIRouter(tags=["Authentication & Identity"])
 
@@ -147,7 +132,6 @@ def login_for_access_token(payload: LoginRequest):
         "department": user["department"],
         "tv": user.get("token_version", 0),
         "fid": uuid.uuid4().hex,  # login session family, used for refresh-token rotation
-        "organization": user.get("organization", "Commercial Bank of Ethiopia")
     }
 
     access_token = create_access_token(token_payload)
@@ -162,8 +146,7 @@ def login_for_access_token(payload: LoginRequest):
             "email": user["email"],
             "name": user["name"],
             "role": user["role"],
-            "department": user["department"],
-            "organization": user.get("organization", "Commercial Bank of Ethiopia")
+            "department": user["department"]
         }
     }
 
@@ -171,7 +154,6 @@ def login_for_access_token(payload: LoginRequest):
 @router.post("/api/v1/auth/refresh")
 def refresh_token(payload: RefreshRequest):
     """Exchange a refresh token for a new pair. Refresh tokens are single-use (rotation)."""
-    # Verify the incoming refresh token
     token_data = verify_token(payload.refresh_token, expected_type="refresh")
     email = token_data.get("sub")
 
@@ -190,14 +172,10 @@ def refresh_token(payload: RefreshRequest):
     if consume_refresh_token(token_data) == "reuse":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token reuse detected. The session was ended; please sign in again.",
+            detail="Refresh token reuse detected. Token has been revoked; please sign in again.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-        
-    # Single-use refresh token rotation: invalidate the used refresh token immediately
-    revoke_token(payload.refresh_token)
-    
     token_payload = {
         "sub": user["email"],
         "id": user["id"],
@@ -207,7 +185,6 @@ def refresh_token(payload: RefreshRequest):
         "tv": user.get("token_version", 0),
         # Tokens issued before rotation existed have no family: start one now.
         "fid": token_data.get("fid") or uuid.uuid4().hex,
-        "organization": user.get("organization", "Commercial Bank of Ethiopia")
     }
     new_access_token = create_access_token(token_payload)
     new_refresh_token = create_refresh_token(token_payload)
@@ -252,28 +229,10 @@ def register_user(
         "department": (payload.department or "SOC Operations")[:100],
         "organization": (payload.organization or "")[:100],
         "password_hash": hash_password(payload.password),
-        "name": payload.full_name,
-        "role": payload.role or "SECURITY_ANALYST",
-        "department": payload.department or "SOC Operations",
-        "organization": payload.organization or "Commercial Bank of Ethiopia",
-        "password_hash": hashed_password
     }
     DEMO_USERS[email] = new_user
     persist_users()
 
-    
-    token_payload = {
-        "sub": email,
-        "id": new_user_id,
-        "name": payload.full_name,
-        "role": new_user["role"],
-        "department": new_user["department"],
-        "organization": new_user["organization"]
-    }
-    
-    access_token = create_access_token(token_payload)
-    refresh_token = create_refresh_token(token_payload)
-    
     return {
         "status": "CREATED",
         "message": f"User {email} created.",
@@ -371,11 +330,6 @@ def logout_user(
     for data in verified:
         revoke_family(data)
     return {"status": "SUCCESS", "message": "Session invalidated.", "revoked_tokens": revoked}
-def logout_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
-    """Invalidates active session by revoking the submitted token."""
-    if credentials and credentials.credentials:
-        revoke_token(credentials.credentials)
-    return {"status": "SUCCESS", "message": "Session invalidated and token revoked."}
 
 @router.get("/api/auth/me")
 @router.get("/api/v1/auth/me")
@@ -388,7 +342,6 @@ def read_current_user(current_user: Dict[str, Any] = Depends(get_current_user)):
             "name": current_user.get("name"),
             "role": current_user.get("role"),
             "department": current_user.get("department", "Security Operations"),
-            "organization": current_user.get("organization", "Commercial Bank of Ethiopia"),
             "permissions": ROLE_PERMISSIONS.get(current_user.get("role", "READ_ONLY"), [])
         }
     }
@@ -408,12 +361,6 @@ def list_demo_credentials():
     """Returns available pre-seeded demo accounts for easy evaluator onboarding (demo mode only)."""
     if not DEMO_MODE:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    """Returns available pre-seeded demo accounts for easy evaluator onboarding in non-production mode."""
-    if not DEMO_MODE:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Demo credentials endpoint is disabled in production mode."
-        )
     return {
         "demo_mode": True,
         "message": "DEMO SANDBOX: The following pre-seeded test accounts are available for testing role-based access:",

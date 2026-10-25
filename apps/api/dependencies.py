@@ -1,13 +1,11 @@
-import uuid
 """
 ETHIO-CYBERGUARD Authentication Dependencies & Token Handling
-Provides JWT token creation/verification, password hashing, token revocation, and role-based route guards.
-Enforces fail-closed authentication in production environments.
+Provides JWT token creation/verification, password hashing, and role-based route guards.
 """
 
 from fastapi import Depends, HTTPException, status, Header, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Dict, Any, List, Optional, Set
+from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone, timedelta
 import hashlib
 import hmac
@@ -104,7 +102,7 @@ def _build_user_directory(demo_mode: bool, bootstrap_email: str, bootstrap_passw
         for email, user_id, name, role, department, password_hash in _DEMO_ACCOUNTS:
             users[email] = {
                 "id": user_id, "email": email, "name": name, "role": role,
-                "department": department, "password_hash": password_hash,
+                "department": department, "organization": "Commercial Bank of Ethiopia", "password_hash": password_hash,
             }
     if bootstrap_email and bootstrap_password:
         users[bootstrap_email] = {
@@ -121,72 +119,6 @@ def _build_user_directory(demo_mode: bool, bootstrap_email: str, bootstrap_passw
 DEMO_USERS: Dict[str, Dict[str, Any]] = _build_user_directory(
     DEMO_MODE, BOOTSTRAP_ADMIN_EMAIL, BOOTSTRAP_ADMIN_PASSWORD
 )
-# Seeded Demo Accounts (Role-Based Access)
-DEMO_USERS: Dict[str, Dict[str, Any]] = {
-    "admin@cbe.com.et": {
-        "id": "usr_cbe_admin_01",
-        "email": "admin@cbe.com.et",
-        "name": "Dawit Mengistu",
-        "role": "SUPER_ADMIN",
-        "department": "Security Operations Center",
-        "organization": "Commercial Bank of Ethiopia",
-        "password_hash": hashlib.sha256("EthioCyber@2026!".encode("utf-8")).hexdigest()
-    },
-    "analyst@cbe.com.et": {
-        "id": "usr_cbe_analyst_02",
-        "email": "analyst@cbe.com.et",
-        "name": "Sara Yohannes",
-        "role": "SECURITY_ANALYST",
-        "department": "Incident Triage",
-        "organization": "Commercial Bank of Ethiopia",
-        "password_hash": hashlib.sha256("Analyst@2026!".encode("utf-8")).hexdigest()
-    },
-    "commander@cbe.com.et": {
-        "id": "usr_cbe_cmd_03",
-        "email": "commander@cbe.com.et",
-        "name": "Abebe Kebede",
-        "role": "INCIDENT_COMMANDER",
-        "department": "Executive Cyber Command",
-        "organization": "Commercial Bank of Ethiopia",
-        "password_hash": hashlib.sha256("Commander@2026!".encode("utf-8")).hexdigest()
-    },
-    "responder@cbe.com.et": {
-        "id": "usr_cbe_resp_05",
-        "email": "responder@cbe.com.et",
-        "name": "Kidus Girma",
-        "role": "INCIDENT_RESPONDER",
-        "department": "Incident Response Unit",
-        "organization": "Commercial Bank of Ethiopia",
-        "password_hash": hashlib.sha256("Responder@2026!".encode("utf-8")).hexdigest()
-    },
-    "hunter@cbe.com.et": {
-        "id": "usr_cbe_th_06",
-        "email": "hunter@cbe.com.et",
-        "name": "Yared Tadesse",
-        "role": "THREAT_HUNTER",
-        "department": "Threat Hunting & Detections",
-        "organization": "Commercial Bank of Ethiopia",
-        "password_hash": hashlib.sha256("Hunter@2026!".encode("utf-8")).hexdigest()
-    },
-    "auditor@cbe.com.et": {
-        "id": "usr_cbe_audit_04",
-        "email": "auditor@cbe.com.et",
-        "name": "Tigist Haile",
-        "role": "AUDITOR",
-        "department": "Compliance & Forensics",
-        "organization": "Commercial Bank of Ethiopia",
-        "password_hash": hashlib.sha256("Auditor@2026!".encode("utf-8")).hexdigest()
-    },
-    "readonly@cbe.com.et": {
-        "id": "usr_cbe_ro_07",
-        "email": "readonly@cbe.com.et",
-        "name": "Executive Observer",
-        "role": "READ_ONLY",
-        "department": "Executive Board",
-        "organization": "Commercial Bank of Ethiopia",
-        "password_hash": hashlib.sha256("ReadOnly@2026!".encode("utf-8")).hexdigest()
-    }
-}
 
 # In-memory account lockout tracker: email -> {"failed_attempts": int, "lockout_until": datetime}
 LOGIN_ATTEMPTS: Dict[str, Dict[str, Any]] = {}
@@ -212,8 +144,19 @@ def _ttl_until(exp: float) -> int:
     return max(1, int(exp - datetime.now(timezone.utc).timestamp()) + 1)
 
 
-def is_token_revoked(payload: Dict[str, Any]) -> bool:
-    jti = payload.get("jti")
+def is_token_revoked(token_or_payload: Any) -> bool:
+    if isinstance(token_or_payload, str):
+        try:
+            parts = token_or_payload.split(".")
+            if len(parts) == 3:
+                payload = json.loads(_b64url_decode(parts[1]).decode("utf-8"))
+                return is_token_revoked(payload)
+        except Exception:
+            return True
+        return False
+    if not isinstance(token_or_payload, dict):
+        return False
+    jti = token_or_payload.get("jti")
     if not jti:
         return False
     if str(jti) in _revoked_jtis:
@@ -237,6 +180,21 @@ def revoke_token_payload(payload: Dict[str, Any]) -> bool:
     if shared.distributed:
         shared.set_flag(f"jti:{jti}", _ttl_until(float(exp)))
     return True
+
+
+def revoke_token(token_or_payload: Any) -> bool:
+    """Revoke a token string or verified payload dictionary."""
+    if isinstance(token_or_payload, str):
+        try:
+            parts = token_or_payload.split(".")
+            if len(parts) == 3:
+                payload = json.loads(_b64url_decode(parts[1]).decode("utf-8"))
+                return revoke_token_payload(payload)
+        except Exception:
+            return False
+    if isinstance(token_or_payload, dict):
+        return revoke_token_payload(token_or_payload)
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -386,20 +344,6 @@ state_store.register("users", USERS_STORE)
 state_store.register("revoked_tokens", REVOKED_TOKENS_STORE)
 state_store.register("refresh_used", REFRESH_USED_STORE)
 state_store.register("revoked_families", REVOKED_FAMILIES_STORE)
-# In-memory Revoked Tokens Blacklist: set of SHA-256 hashes of revoked tokens
-REVOKED_TOKENS: Set[str] = set()
-
-def _hash_token(token: str) -> str:
-    return hashlib.sha256(token.encode("utf-8")).hexdigest()
-
-def revoke_token(token: str) -> None:
-    """Adds a token's hash to the revocation blacklist."""
-    if token:
-        REVOKED_TOKENS.add(_hash_token(token))
-
-def is_token_revoked(token: str) -> bool:
-    """Checks if a token's hash is in the revocation blacklist."""
-    return _hash_token(token) in REVOKED_TOKENS
 
 def _b64url_encode(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).decode("utf-8").rstrip("=")
@@ -458,8 +402,6 @@ def verify_token(token: str, expected_type: str = "access") -> Dict[str, Any]:
     )
     if not isinstance(token, str):
         raise unauthorized
-    if is_token_revoked(token):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has been revoked")
 
     parts = token.split(".")
     if len(parts) != 3 or any(not part for part in parts):
@@ -499,25 +441,6 @@ def verify_token(token: str, expected_type: str = "access") -> Dict[str, Any]:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    signing_input = f"{header_b64}.{payload_b64}".encode("utf-8")
-    expected_sig = hmac.new(JWT_SECRET.encode("utf-8"), signing_input, hashlib.sha256).digest()
-    
-    try:
-        decoded_sig = _b64url_decode(sig_b64)
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token signature decoding failed")
-
-    if not hmac.compare_digest(decoded_sig, expected_sig):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token signature verification failed")
-    
-    try:
-        payload = json.loads(_b64url_decode(payload_b64).decode("utf-8"))
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload JSON")
-
-    if "exp" in payload and payload["exp"] < int(datetime.now(timezone.utc).timestamp()):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
-    
     if payload.get("type", "access") != expected_type:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -543,20 +466,12 @@ def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depen
                 headers={"WWW-Authenticate": "Bearer"},
             )
         # Demo sandbox only: unauthenticated visitors act as a low-privilege guest analyst
-        # In production mode, authentication is strictly required
-        if not DEMO_MODE:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Authentication required. Please provide a valid Bearer token.",
-                headers={"WWW-Authenticate": "Bearer"}
-            )
-        # Fallback to guest analyst ONLY in local demo sandbox mode
         return {
             "id": "usr_guest",
             "email": "analyst@cbe.com.et",
             "name": "Guest Analyst",
             "role": "SECURITY_ANALYST",
-            "organization": "Commercial Bank of Ethiopia"
+            "organization": "Commercial Bank of Ethiopia",
         }
     
     payload = verify_token(credentials.credentials, expected_type="access")
@@ -570,7 +485,10 @@ def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depen
                 detail="Session is no longer valid. Please sign in again.",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        return known_user
+        user_copy = dict(known_user)
+        if "organization" not in user_copy:
+            user_copy["organization"] = payload.get("organization", "Commercial Bank of Ethiopia")
+        return user_copy
 
     if not DEMO_MODE:
         raise HTTPException(
@@ -584,7 +502,7 @@ def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depen
         "email": user_email,
         "name": payload.get("name", "Authenticated Analyst"),
         "role": payload.get("role", "SECURITY_ANALYST"),
-        "organization": payload.get("organization", "Commercial Bank of Ethiopia")
+        "organization": payload.get("organization", "Commercial Bank of Ethiopia"),
     }
 
 def require_role(allowed_roles: List[str]):
@@ -614,8 +532,9 @@ def verify_collector_api_key(
     authorization: Optional[str] = Header(None)
 ) -> bool:
     """Verifies that an incoming ingestion event comes from an authenticated collector."""
-    # In production, require either valid X-API-Key or valid Bearer token
-    if x_api_key and x_api_key == INGEST_API_KEY:
+    if DEMO_MODE:
+        return True # Bypass in demo sandbox mode
+    if x_api_key == INGEST_API_KEY:
         return True
     if authorization and authorization.startswith("Bearer "):
         token = authorization.split(" ")[1]
@@ -624,11 +543,6 @@ def verify_collector_api_key(
             return True
         except Exception:
             pass
-            
-    # Demo sandbox fallback only if not in production and no credentials provided
-    if DEMO_MODE and not x_api_key and not authorization:
-        return True
-
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Unauthorized collector. Valid X-API-Key or Bearer token required."

@@ -75,6 +75,7 @@ def test_incident_created_via_api_survives_restart(commander_headers):
 
     fetched = client.get(f"/api/incidents/{number}", headers=commander_headers)
     assert fetched.status_code == 200
+    INCIDENTS_STORE[:] = [i for i in INCIDENTS_STORE if i.get("incident_number") != number]
 
 
 def test_soar_action_and_audit_chain_survive_restart(responder_headers, commander_headers):

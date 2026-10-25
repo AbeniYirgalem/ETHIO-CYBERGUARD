@@ -36,13 +36,10 @@ import {
   INITIAL_TIMELINE 
 } from './mockData';
 import type { Incident, SecurityEvent, ResponseAction, AuditLogEntry, DashboardStats } from './types';
-import type { Incident, SecurityEvent, ResponseAction } from './types';
 import { 
   checkBackendHealth, 
-  fetchIncidents, 
-  fetchResponseActions, 
-  approveResponseAction, 
-  rejectResponseAction 
+  fetchIncidents as fetchIncidentsApi, 
+  fetchResponseActions 
 } from './utils/api';
 
 export const App: React.FC = () => {
@@ -192,7 +189,7 @@ export const App: React.FC = () => {
       if (!isMounted) return;
       setBackendConnected(status.connected);
       if (status.connected) {
-        fetchIncidents().then(res => {
+        fetchIncidentsApi().then(res => {
           if (res.success && res.data && res.data.length > 0) {
             setIncidents(res.data);
             setSelectedIncident(res.data[0]);
@@ -388,27 +385,6 @@ export const App: React.FC = () => {
     } catch (err) {
       reportApiError(err, 'Rejection refused');
     }
-  // Action Approval Handlers (Dispatches to Live SOAR REST API with fallback)
-  const handleApproveAction = async (id: string) => {
-    soundManager.playLockAction();
-    const result = await approveResponseAction(id);
-    setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'APPROVED' } : a));
-    addToast({
-      type: 'success',
-      title: result.isLive ? 'SOAR Action Executed on Live Backend' : 'SOAR Action Approved (Simulated)',
-      message: result.message
-    });
-  };
-
-  const handleRejectAction = async (id: string, reason?: string) => {
-    soundManager.playAlert();
-    const result = await rejectResponseAction(id, reason);
-    setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'REJECTED', rejection_reason: reason } : a));
-    addToast({
-      type: 'warning',
-      title: result.isLive ? 'Action Rejected on Live Backend' : 'Action Dismissed (Simulated)',
-      message: result.message
-    });
   };
 
   const handleDrilldownIncident = (inc: Incident) => {
@@ -478,9 +454,6 @@ export const App: React.FC = () => {
 
         {/* Dynamic Main Workspace Content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#070B12] space-y-6">
-          {/* Demo Mode Alert Banner */}
-          {showDemoBanner && !liveMode && (
-            <div className="bg-[#FF9100]/10 border border-[#FF9100]/30 rounded-lg p-3 px-4 flex items-center justify-between text-xs text-[#FF9100]">
           {/* Environment Status Alert Banner */}
           {showDemoBanner && (
             <div className={`border rounded-lg p-3 px-4 flex items-center justify-between text-xs ${

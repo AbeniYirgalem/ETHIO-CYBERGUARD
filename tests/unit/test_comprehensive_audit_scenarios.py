@@ -70,7 +70,9 @@ def test_scenario_invalid_login_and_token_revocation():
     assert revoked_resp.status_code == 401
     assert "revoked" in revoked_resp.json()["detail"].lower()
 
-def test_scenario_single_use_refresh_token_rotation():
+def test_scenario_single_use_refresh_token_rotation(monkeypatch):
+    import apps.api.dependencies as deps
+    monkeypatch.setattr(deps, 'REFRESH_REUSE_GRACE_SECONDS', -1)
     # Login to obtain fresh refresh token
     login_resp = client.post("/api/auth/login", json={
         "email": "commander@cbe.com.et",
@@ -264,6 +266,8 @@ def test_scenario_cross_tenant_isolation_enforced():
     for inc in cbe_incidents:
         if inc.get("organization"):
             assert inc.get("organization") == "Commercial Bank of Ethiopia"
+    from apps.api.routers.incidents import INCIDENTS_STORE
+    INCIDENTS_STORE[:] = [i for i in INCIDENTS_STORE if i.get("title") != "Ethio Telecom Core Switch Failure"]
 
 # ---------------------------------------------------------------------------
 # Scenario 9: Dual-Custody Approval Gate Enforcement
@@ -324,6 +328,8 @@ def test_scenario_dual_custody_enforced_server_side():
     assert cmd_appr.status_code == 200
     assert cmd_appr.json()["action"]["status"] == "APPROVED"
     assert cmd_appr.json()["action"]["dual_custody_verified"] is True
+    from apps.api.routers.response import ACTIONS_STORE
+    ACTIONS_STORE[:] = [a for a in ACTIONS_STORE if a.get("id") != act_id]
 
 # ---------------------------------------------------------------------------
 # Scenario 10: Fail-Closed Production Startup Validation

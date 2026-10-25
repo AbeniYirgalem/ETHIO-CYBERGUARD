@@ -63,10 +63,13 @@ def verify_password(password: str, stored: Optional[str]) -> bool:
             expected = _unb64(hash_text)
             actual = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), _unb64(salt_text), rounds)
             return hmac.compare_digest(actual, expected)
-        # Legacy fixed-salt PBKDF2 hex digest (64 hex chars)
+        # Legacy fixed-salt PBKDF2 hex digest (64 hex chars) or plain sha256
         if re.fullmatch(r"[0-9a-fA-F]{64}", stored):
             legacy = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), _LEGACY_SALT, _LEGACY_ITERATIONS).hex()
-            return hmac.compare_digest(legacy, stored.lower())
+            if hmac.compare_digest(legacy, stored.lower()):
+                return True
+            raw_sha = hashlib.sha256(password.encode("utf-8")).hexdigest()
+            return hmac.compare_digest(raw_sha, stored.lower())
     except (ValueError, TypeError):
         return False
     return False

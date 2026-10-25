@@ -1,17 +1,11 @@
 {
   "status": "PASS",
   "target_eps_threshold": 4200,
-  "sustained_eps": 22673.32,
+  "sustained_eps": 31770.64,
   "total_events": 1000,
-  "wall_time_sec": 0.044,
-  "latency_p50_ms": 0.0359,
-  "latency_p95_ms": 0.0815,
-  "latency_p99_ms": 0.1239,
-  "sustained_eps": 46902.78,
-  "total_events": 1000,
-  "wall_time_sec": 0.021,
-  "latency_p50_ms": 0.0185,
-  "latency_p95_ms": 0.0308,
-  "latency_p99_ms": 0.0509,
+  "wall_time_sec": 0.031,
+  "latency_p50_ms": 0.0279,
+  "latency_p95_ms": 0.0463,
+  "latency_p99_ms": 0.0902,
   "meets_target": true
 }

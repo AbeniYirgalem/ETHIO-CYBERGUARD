@@ -64,7 +64,8 @@ def test_refresh_issues_new_pair_in_same_family(admin_headers):
     assert client.get("/api/auth/me", headers=_bearer(new["access_token"])).status_code == 200
 
 
-def test_old_token_inside_grace_window_still_works(admin_headers):
+def test_old_token_inside_grace_window_still_works(admin_headers, monkeypatch):
+    monkeypatch.setattr(dependencies, "REFRESH_REUSE_GRACE_SECONDS", 10)
     # Two browser tabs refresh at the same moment: the second must not log the user out.
     tokens = _login(_create_user(admin_headers))
     assert _refresh(tokens["refresh_token"]).status_code == 200

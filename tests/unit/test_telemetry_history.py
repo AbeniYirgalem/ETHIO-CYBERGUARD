@@ -121,5 +121,6 @@ def test_dashboard_returns_timeline_and_sector_severity_detail(commander_headers
     assert {"hour", "events", "critical", "alerts"} <= set(body["timeline"][0])
     for sector, profile in body["sector_profiles"].items():
         assert {"active_alerts", "critical", "high", "max_severity"} <= set(profile), sector
-    expected = sum(1 for i in INCIDENTS_STORE if str(i.get("status", "")).upper() != "CLOSED")
+    from services.security.tenancy import scope
+    expected = sum(1 for i in scope({"organization": "Commercial Bank of Ethiopia"}, INCIDENTS_STORE) if str(i.get("status", "")).upper() != "CLOSED")
     assert sum(p["active_alerts"] for p in body["sector_profiles"].values()) == expected
