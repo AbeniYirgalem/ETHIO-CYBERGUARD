@@ -154,10 +154,10 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
       num: 2,
       nameAm: 'ዮናስ አባዲ',
       nameEn: 'Yonas Abadi',
-      studentId: '[የተማሪ መለያ: ____________]',
+      studentId: 'CTC-7422-26',
       roleAm: 'አስተዋፅዖ አድራጊ',
       roleEn: 'Contributor',
-      badge: isAm ? 'አስተዋፅዖ አድራጊ' : 'Contributor',
+      badge: 'CTC-7422-26',
       badgeColor: 'border-[#A855F7] text-[#A855F7] bg-[#A855F7]/10',
       desc: isAm 
         ? 'በስጋት መረጃ እና በምርመራ ወኪሎች ትንተና ላይ ተሳትፎ ያደረገ የቡድኑ አስተዋፅዖ አድራጊ።' 
@@ -178,8 +178,8 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
     },
     {
       num: 4,
-      nameAm: 'ፍቅረማርያም',
-      nameEn: 'FikreMariam',
+      nameAm: 'ፍቅረማርያም ወርኩ',
+      nameEn: 'FikreMariam Worku',
       studentId: '[የተማሪ መለያ: ____________]',
       roleAm: 'የቡድን አባል',
       roleEn: 'Team Member',
@@ -191,12 +191,12 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
     },
     {
       num: 5,
-      nameAm: 'ረመዳን',
-      nameEn: 'Remedan',
-      studentId: '[የተማሪ መለያ: ____________]',
+      nameAm: 'ረመዳን ሀንቴ',
+      nameEn: 'Remedan Hante',
+      studentId: 'CTC-7445-26',
       roleAm: 'የቡድን አባል',
       roleEn: 'Team Member',
-      badge: isAm ? 'የቡድን አባል' : 'Team Member',
+      badge: 'CTC-7445-26',
       badgeColor: 'border-[#F59E0B] text-[#F59E0B] bg-[#F59E0B]/10',
       desc: isAm 
         ? 'የኔትወርክ ጥቃቶች ቅኝት (OSINT) እና የብራንድ ጥበቃ ሞጁሎችን በማጠናቀር የተሳተፈ የቡድን አባል።' 
