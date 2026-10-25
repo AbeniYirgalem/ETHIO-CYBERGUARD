@@ -33,6 +33,7 @@
 
 <p align="center">
   <a href="https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/"><img src="https://img.shields.io/badge/⚡_Live_SOC_Demo-Active_Online-00D9FF?style=for-the-badge&logo=github&logoColor=black" alt="Live Demo" /></a>
+  <a href="https://drive.google.com/file/d/1rHPkKjv6WIcTSQvD7jWhntDAEWoZqex3/view?usp=sharing"><img src="https://img.shields.io/badge/🎬_Video_Demo-Watch_Walkthrough-FF0055?style=for-the-badge&logo=googledrive&logoColor=white" alt="Video Demo" /></a>
   <img src="https://img.shields.io/badge/Defense_Status-DEFCON_2-FF1744?style=for-the-badge" alt="DEFCON 2" />
   <img src="https://img.shields.io/badge/AI_Engine-7_Specialized_Agents-9333EA?style=for-the-badge&logo=openai" alt="7 AI Agents" />
   <img src="https://img.shields.io/badge/Throughput-51,000+_EPS-00D9FF?style=for-the-badge&logo=speedtest" alt="51k+ EPS" />
@@ -48,6 +49,11 @@
   </a>
 </p>
 
+<p align="center">
+  <a href="https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/">🌐 <strong>Explore Live Interactive Demo</strong></a> &nbsp;&bull;&nbsp;
+  <a href="https://drive.google.com/file/d/1rHPkKjv6WIcTSQvD7jWhntDAEWoZqex3/view?usp=sharing">🎥 <strong>Watch Video Demonstration (Google Drive)</strong></a>
+</p>
+
 </div>
 
 ---
@@ -57,7 +63,7 @@
 1. [Project Overview](#-1-project-overview)
 2. [Main Features](#-2-main-features)
 3. [System Architecture](#-3-system-architecture)
-4. [Live Demo URL](#-4-live-demo-url)
+4. [Live Demo & Video Demonstration](#-4-live-demo--video-demonstration)
 5. [Operational Workspaces](#-5-operational-workspaces)
 6. [Quick Start Guide](#-6-quick-start-guide)
 7. [Environment Configuration](#-7-environment-configuration)
@@ -164,8 +170,21 @@ flowchart TD
 
 ---
 
-## 🌐 4. Live Demo URL
+## 🌐 4. Live Demo & Video Demonstration
+<a id="-4-live-demo--video-demonstration"></a>
+<a id="-4-live-demo-url"></a>
 
+Experience ETHIO-CYBERGUARD in action through either the interactive browser SOC session or the comprehensive recorded video walkthrough:
+
+### 🎥 Video Demonstration & Walkthrough
+Watch the complete end-to-end platform demonstration showcasing real-time telemetry ingestion, SIGMA detection rules, 7-agent AI investigation, and dual-custody SOAR response playbooks:
+
+👉 **[Watch Full Video Demonstration (Google Drive)](https://drive.google.com/file/d/1rHPkKjv6WIcTSQvD7jWhntDAEWoZqex3/view?usp=sharing)**  
+*(Direct link: [`https://drive.google.com/file/d/1rHPkKjv6WIcTSQvD7jWhntDAEWoZqex3/view?usp=sharing`](https://drive.google.com/file/d/1rHPkKjv6WIcTSQvD7jWhntDAEWoZqex3/view?usp=sharing))*
+
+---
+
+### 🌐 Live Interactive SOC Dashboard
 Test the interactive SOC Dashboard, Phishing Forensics, Brand Defense, and Attack Surface Scanner directly in your browser:
 
 👉 **[Launch Active SOC Dashboard](https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/)** (`https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/`)
