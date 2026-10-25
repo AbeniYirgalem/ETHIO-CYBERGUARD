@@ -430,17 +430,15 @@ Contributions from security analysts, developers, and researchers are warmly wel
 ## 👥 16. Project Team & Contributors
 <a id="-16-project-team--contributors"></a>
 
-| # | Full Name / Member Handle | Student / Member ID | Project Role | Status / Notes |
+| # | Full Name | Student / Member ID | Project Role | Status / Notes |
 | :-: | :--- | :--- | :--- | :--- |
 | 1 | **Beamlak Sintayehu** | `CTC-912-24` | Core Member / Contributor | Active |
-| 2 | **Yonas Abadi** | `[Pending ID: ____________]` | Project Owner | Group Owner |
-| 3 | **Abeni Yirgalem** (*Abeni Dorm In*) | `[Pending ID: ____________]` | Repository Administrator | Lead Maintainer |
-| 4 | **FikreMariam** (*FikreMariam.*) | `[Pending ID: ____________]` | Team Member | Contributor |
-| 5 | **Remedan** (*Remedan Dorm In*) | `[Pending ID: ____________]` | Team Member | Contributor |
-| 6 | **Jerry** | `[Pending ID: ____________]` | Team Member | Contributor |
-| * | *MR Nobody* | `[Pending ID: ____________]` | Team Member | *Telegram Alias / Contributor* |
+| 2 | **Yonas Abadi** | `[Pending ID: ____________]` | Project Owner | Project Lead |
+| 3 | **Abeni Yirgalem** | `[Pending ID: ____________]` | Repository Administrator | Lead Maintainer |
+| 4 | **FikreMariam** | `[Pending ID: ____________]` | Team Member | Contributor |
+| 5 | **Remedan** | `[Pending ID: ____________]` | Team Member | Contributor |
 
-> ℹ️ *Space and ID placeholders are reserved above for all 5 remaining team members to record their official student/member IDs.*
+> ℹ️ *Space and ID placeholders are reserved above for team members to record their official student/member IDs.*
 
 ---
 
