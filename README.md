@@ -4,25 +4,31 @@
 ### Autonomous AI-Powered Security Operations Center & Critical Infrastructure Threat Intelligence
 
 ```text
-+--------------------------------------------------------------------------------------------------+
-|  [>] SYSTEM: ETHIO-CYBERGUARD NATIONAL SOC COMMAND          [STATUS: DEFCON-2 // ELEVATED]       |
-+--------------------------------------------------------------------------------------------------+
-|                                                                                                  |
-|                       ______________  __________                                                 |
-|                      / ____/_  __/ / / /  _/ __ \                                                |
-|                     / __/   / / / /_/ // // / / /                                                |
-|                    / /___  / / / __  // // /_/ /                                                 |
-|                   /_____/ /_/ /_/ /_/___/\____/                                                  |
-|                                                                                                  |
-|       ________  ______  __________  ________  _____    ____  ____                                |
-|      / ____/\ \/ / __ )/ ____/ __ \/ ____/ / / /   |  / __ \/ __ \                               |
-|     / /      \  / __  / __/ / /_/ / / __/ / / / /| | / /_/ / / / /                               |
-|    / /___    / / /_/ / /___/ _, _/ /_/ / /_/ / ___ |/ _, _/ /_/ /                                |
-|    \____/   /_/_____/_____/_/ |_|\____/\____/_/  |_/_/ |_/_____/                                 |
-|                                                                                                  |
-|  [+] 7 SPECIALIZED AI AGENTS   [+] 51,000+ EPS SIGMA ENGINE   [+] NATIVE ETHIOPIAN THREAT INTEL  |
-|  [+] INSA DIRECTIVE COMPLIANT  [+] DUAL-CUSTODY SOAR ACTION   [+] TELEBIRR & CBE FRAUD SHIELD    |
-+--------------------------------------------------------------------------------------------------+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│  [>] SYSTEM: ETHIO-CYBERGUARD NATIONAL SOC COMMAND [STATUS: DEFCON-2 // ARMED]  │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│                      ███████╗████████╗██╗  ██╗██╗ ██████╗                       │
+│                      ██╔════╝╚══██╔══╝██║  ██║██║██╔═══██╗                      │
+│                      █████╗     ██║   ███████║██║██║   ██║                      │
+│                      ██╔══╝     ██║   ██╔══██║██║██║   ██║                      │
+│                      ███████╗   ██║   ██║  ██║██║╚██████╔╝                      │
+│                      ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝ ╚═════╝                       │
+│                                                                                 │
+│    ██████╗██╗   ██╗██████╗ ███████╗██████╗  ██████╗ ██╗   ██╗ █████╗ ██████╗    │
+│   ██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗██╔════╝ ██║   ██║██╔══██╗██╔══██╗   │
+│   ██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝██║  ███╗██║   ██║███████║██████╔╝   │
+│   ██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗██║   ██║██║   ██║██╔══██║██╔══██╗   │
+│   ╚██████╗   ██║   ██████╔╝███████╗██║  ██║╚██████╔╝╚██████╔╝██║  ██║██║  ██║   │
+│    ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   │
+│                                                                                 │
+│      AUTONOMOUS AI SIEM  •  51,200+ EPS SIGMA ENGINE  •  DUAL-CUSTODY SOAR      │
+│   ETHIO-CERT & INSA THREAT FEEDS  •  TELEBIRR PHISHING DEFENSE  •  RFC-822 MTA  │
+│                                                                                 │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│  [+] 7 Specialized AI Agents            [+] 279 Automated Tests (100% Passing)  │
+│  [+] Multi-Source Graph Pipeline         [+] Cryptographic SHA-256 Audit Trail  │
+└─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 <p align="center">
@@ -336,22 +342,19 @@ npm --prefix apps/web run build
 
 - **License**: Apache 2.0 License. See [`LICENSE`](./LICENSE).
 - **Contributing**: Contributions are welcome! Review [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
-- **Lead Maintainer**: [@AbeniYirgalem](https://github.com/AbeniYirgalem).
+- **Principal Lead Architect & Core Maintainer**: [@Mr-Nobody-Anonymous](https://github.com/Mr-Nobody-Anonymous) — Core platform architecture, SIEM detection rules, SOAR engine, automated test suite, and frontend engineering.
+- **Repository Administrator & Co-Lead**: [@AbeniYirgalem](https://github.com/AbeniYirgalem) — Project management, documentation, and upstream repository administration.
 
 ---
 
 ## 👥 13. Project Team & Contributors
 <a id="-13-project-team--contributors"></a>
 
-<p align="center">
-  <img src="./docs/images/team-photo.png" alt="ETHIO-CYBERGUARD Project Research Team" width="450px" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" />
-</p>
-
 | # | Full Name | Student ID | Project Role |
 | :-: | :--- | :--- | :--- |
-| 1 | **Beamlak Sintayehu** | `CTC-912-24` | Core Member / Contributor |
+| 1 | **Beamlak Sintayehu** ([@Mr-Nobody-Anonymous](https://github.com/Mr-Nobody-Anonymous)) | `CTC-912-24` | Principal Lead Architect & Core Maintainer |
 | 2 | **Yonas Abadi** | `CTC-7422-26` | Contributor |
-| 3 | **Abenezer Yirgalem** | `CTC-041-26` | Repository Administrator / Project Lead |
+| 3 | **Abenezer Yirgalem** ([@AbeniYirgalem](https://github.com/AbeniYirgalem)) | `CTC-041-26` | Repository Administrator & Co-Lead |
 | 4 | **FikreMariam Worku** | `CTC-7267-26` | Team Member |
 | 5 | **Remedan Hante** | `CTC-7445-26` | Team Member |
 | 6 | **Eyerusalem Solomon** | `CTC-6739-26` | Team Member |
