@@ -2,7 +2,6 @@
 
 # 🛡️ ETHIO-CYBERGUARD
 ### Autonomous AI-Powered Security Operations Center & Critical Infrastructure Threat Intelligence
-#### የኢትዮጵያ ወሳኝ መሰረተ-ልማቶች የሳይበር ደህንነት፣ የስጋት መረጃ እና የፈጣን ምላሽ ማዕከል
 
 ```text
 +--------------------------------------------------------------------------------------------------+
@@ -29,15 +28,11 @@
 <p align="center">
   <strong>Autonomous AI SIEM, Threat Intelligence & Human-in-the-Loop Incident Response</strong>
   <br />
-  <strong>በአርቴፊሻል ኢንተለጀንስ የተደገፈ የሳይበር ደህንነት ክትትል፣ የስጋት መረጃ እና የሰው ማረጋገጫ ያለው ፈጣን ምላሽ</strong>
-  <br />
   <em>Defending Ethiopian Banking, Telecommunications, Government & Critical Infrastructure Networks.</em>
-  <br />
-  <em>የኢትዮጵያ ባንኮችን፣ ቴሌኮሙኒኬሽንን፣ የኤሌክትሪክ ሃይልን እና የመንግስት ተቋማትን ከሳይበር ጥቃት የመከላከል ብሄራዊ መድረክ።</em>
 </p>
 
 <p align="center">
-  <a href="https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/"><img src="https://img.shields.io/badge/⚡_Live_SOC_Demo-Active_Online-00D9FF?style=for-the-badge&logo=github&logoColor=black" alt="Live Demo" /></a>
+  <a href="https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/"><img src="https://img.shields.io/badge/⚡_Live_SOC_Demo-Active_Online-00D9FF?style=for-the-badge&logo=github&logoColor=black" alt="Live Demo" /></a>
   <img src="https://img.shields.io/badge/Defense_Status-DEFCON_2-FF1744?style=for-the-badge" alt="DEFCON 2" />
   <img src="https://img.shields.io/badge/AI_Engine-7_Specialized_Agents-9333EA?style=for-the-badge&logo=openai" alt="7 AI Agents" />
   <img src="https://img.shields.io/badge/Throughput-51,000+_EPS-00D9FF?style=for-the-badge&logo=speedtest" alt="51k+ EPS" />
@@ -48,7 +43,7 @@
 </p>
 
 <p align="center">
-  <a href="https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/">
+  <a href="https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/">
     <img src="./docs/images/platform-overview.png" alt="ETHIO-CYBERGUARD Centralized Threat Detection & AI Investigation Platform" width="100%" />
   </a>
 </p>
@@ -81,7 +76,7 @@
 
 Unlike conventional Western-centric SIEM/SOAR platforms, ETHIO-CYBERGUARD incorporates native detection heuristics for **Ethiopian regional threat vectors**:
 - **Financial & Mobile Money Fraud**: Impersonation detection for Telebirr, Commercial Bank of Ethiopia (CBE), Awash Bank, Dashen Bank, and Chapa.
-- **Multilingual NLP**: Scans lures, fraud keywords, and credential harvesting in both **English and Amharic (አማርኛ)**.
+- **Multilingual NLP**: Scans lures, fraud keywords, and credential harvesting in both **English and Amharic languages**.
 - **National ASN & Threat Feeds**: Out-of-the-box enrichment for Ethio Telecom (`AS24757`), Safaricom Ethiopia (`AS329340`), and INSA (`AS37059`).
 
 ---
@@ -173,14 +168,14 @@ flowchart TD
 
 Test the interactive SOC Dashboard, Phishing Forensics, Brand Defense, and Attack Surface Scanner directly in your browser:
 
-👉 **[Launch Active SOC Dashboard](https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/)** (`https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/`)
+👉 **[Launch Active SOC Dashboard](https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/)** (`https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/`)
 
-*(Upstream Mirror: [`https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/`](https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/))*
+*(Deployment Mirror: [`https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/`](https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/))*
 
 > [!TIP]
-> **Interactive Client Mode**: The live demonstration runs in zero-friction browser mode with real-time simulated telemetry feeds (4,200+ EPS), interactive ransomware and phishing scenario injection, Amharic lure heuristics, and AI incident investigation. For production log ingestion with live PostgreSQL persistence, run `docker compose up`.
+> **Interactive Client Mode**: The live demonstration runs in zero-friction browser mode with real-time simulated telemetry feeds (4,200+ EPS), interactive ransomware and phishing scenario injection, localized lure heuristics, and AI incident investigation. For production log ingestion with live PostgreSQL persistence, run `docker compose up`.
 
-### 📊 Feature Benchmark & Comparative Matrix / የቴክኒክ ንጽጽር ሠንጠረዥ
+### 📊 Feature Benchmark & Comparative Matrix
 
 <p align="center">
   <img src="./docs/images/comparative-benchmark.png" alt="ETHIO-CYBERGUARD Feature Benchmark & Comparative Matrix" width="100%" />
@@ -188,27 +183,27 @@ Test the interactive SOC Dashboard, Phishing Forensics, Brand Defense, and Attac
 
 ---
 
-## 🖥️ 5. Operational Workspaces / የኦፕሬሽን ክፍሎች
+## 🖥️ 5. Operational Workspaces
 
-ETHIO-CYBERGUARD provides a unified SOC command experience across key operational views with native Amharic and English localization:
+ETHIO-CYBERGUARD provides a unified SOC command experience across key operational workspaces:
 
-| View / ክፍል | Focus / ትኩረት | Amharic Name / አማርኛ መጠሪያ | Capabilities / አቅሞች |
+| Workspace | Operational Focus | Primary Function | Core Capabilities |
 | :--- | :--- | :--- | :--- |
-| **Overview** | Central SOC Command | አጠቃላይ እይታ | Live event throughput (EPS), active alerts, and health metrics. |
-| **Unified Pipeline** | Graph Correlation | የተቀናጀ የፍተሻ መስመር | Graph-based multi-source telemetry correlation and anomaly links. |
-| **Monitoring** | Telemetry Stream | የቀጥታ ክትትል | Real-time ECS-normalized log stream from Windows, Linux, and firewalls. |
-| **Incidents** | Incident Management | የሳይበር አደጋዎች ክትትል | 10-stage lifecycle, MITRE ATT&CK mapping, and evidence locker. |
-| **Threat Intel** | Regional Intelligence | የስጋት መረጃ (Threat Intel) | Ethio-CERT and INSA threat feeds, IOC search, and STIX 2.1 export. |
-| **Investigation** | Deep Forensics | ምርመራ እና ማስረጃ | Automated blast-radius reconstruction and entity timeline analysis. |
-| **Phishing Forensics** | Email Defense | የፊሺንግ ፎረንሲክስ መርማሪ | RFC-822 header inspection, SPF/DMARC checks, and Amharic lure scanner. |
-| **Brand Protection** | Domain Monitoring | የስም ቅጅ እና ማጭበርበር | Homoglyph generator for Ethiopian banks and automated takedown reporting. |
-| **OSINT Recon** | Attack Surface | የጥቃት ቀጠና ቅኝት (OSINT) | Ethiopian ASN mappings (`AS24757`), open ports, and certificate discovery. |
-| **Security Awareness** | Employee Training | የሰራተኞች የሳይበር ግንዛቤ | Localized regional phishing simulations in Amharic & English. |
-| **AI Copilot** | Tier-1/2 Assistant | አርቴፊሻል ኢንተለጀንስ ረዳት | Multi-agent incident investigation, query synthesis, and threat attribution. |
-| **Risk & Analytics** | Vulnerability Scoring | የስጋት ስሌት እና ትንተና | Asset criticality and vulnerability exposure weighting formula. |
-| **SOAR Response** | Containment Gate | የፈጣን ምላሽ ማዕከል | Human-in-the-loop dual-custody approval (isolate host, block IP, disable account). |
-| **Reports** | Compliance Briefing | ሪፖርቶች እና ተገዢነት | Executive board briefing dossiers and INSA regulatory compliance. |
-| **Identity & RBAC** | Access Control | የማንነት እና ፈቃድ አስተዳደር | 7 enterprise tiers with JWT token rotation and audit integrity. |
+| **Overview** | Central SOC Command | Executive Dashboard | Live event throughput (EPS), active alerts, and system health metrics. |
+| **Unified Pipeline** | Graph Correlation | Ingestion & Graph | Graph-based multi-source telemetry correlation and anomaly links. |
+| **Monitoring** | Telemetry Stream | Real-Time Telemetry | Real-time ECS-normalized log stream from Windows, Linux, and firewalls. |
+| **Incidents** | Incident Management | Triage & Lifecycle | 10-stage lifecycle, MITRE ATT&CK mapping, and evidence locker. |
+| **Threat Intel** | Regional Intelligence | Feeds & IOCs | Ethio-CERT and INSA threat feeds, IOC search, and STIX 2.1 export. |
+| **Investigation** | Deep Forensics | Root Cause Triage | Automated blast-radius reconstruction and entity timeline analysis. |
+| **Phishing Forensics** | Email Defense | Inbound MTA Parser | RFC-822 header inspection, SPF/DMARC checks, and localized lure scanner. |
+| **Brand Protection** | Domain Monitoring | Typosquat Radar | Homoglyph generator for Ethiopian banks and automated takedown reporting. |
+| **OSINT Recon** | Attack Surface | Perimeter Radar | Ethiopian ASN mappings (`AS24757`), open ports, and certificate discovery. |
+| **Security Awareness** | Employee Training | Simulation Suite | Localized regional phishing simulations and security awareness reporting. |
+| **AI Copilot** | Tier-1/2 Assistant | Multi-Agent Copilot | Multi-agent incident investigation, query synthesis, and threat attribution. |
+| **Risk & Analytics** | Vulnerability Scoring | Risk Engine | Asset criticality and vulnerability exposure weighting formula. |
+| **SOAR Response** | Containment Gate | Mitigation Center | Human-in-the-loop dual-custody approval (isolate host, block IP, disable account). |
+| **Reports** | Compliance Briefing | Board Reports | Executive board briefing dossiers and INSA regulatory compliance. |
+| **Identity & RBAC** | Access Control | Security Admin | 7 enterprise tiers with JWT token rotation and audit integrity. |
 
 ---
 
@@ -452,24 +447,21 @@ npm run build
 
 ---
 
-## 👥 13. Project Team & Contributors / የፕሮጀክቱ ቡድን አባላት እና አስተዋፅዖ አድራጊዎች
+## 👥 13. Project Team & Contributors
 <a id="-13-project-team--contributors"></a>
 
 <p align="center">
   <img src="./docs/images/team-photo.png" alt="ETHIO-CYBERGUARD Project Research Team" width="450px" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" />
 </p>
 
-| # | Full Name / ሙሉ ስም | Student ID / የተማሪ መለያ | Project Role / የሥራ ድርሻ |
+| # | Full Name | Student ID | Project Role |
 | :-: | :--- | :--- | :--- |
-| 1 | **ቤአምላክ ስንታየሁ** (Beamlak Sintayehu) | `CTC-912-24` | ዋና አባል እና አስተዋፅዖ አድራጊ (Core Member / Contributor) |
-| 2 | **ዮናስ አባዲ** (Yonas Abadi) | `CTC-7422-26` | አስተዋፅዖ አድራጊ (Contributor) |
-| 3 | **አቤኔዘር ይርጋለም** (Abenezer Yirgalem) | `CTC-041-26` | የፕሮጀክት አስተዳዳሪ (Repository Administrator) |
-| 4 | **ፍቅረማርያም ወርኩ** (FikreMariam Worku) | `CTC-7267-26` | የቡድን አባል (Team Member) |
-| 5 | **ረመዳን ሀንቴ** (Remedan Hante) | `CTC-7445-26` | የቡድን አባል (Team Member) |
-| 6 | **እየሩሳሌም ሰለሞን**  (Eyerusalem Solomon) | `CTC-6739-26` | የቡድን አባል (Team Member) |
-
-
-
+| 1 | **Beamlak Sintayehu** | `CTC-912-24` | Core Member / Contributor |
+| 2 | **Yonas Abadi** | `CTC-7422-26` | Contributor |
+| 3 | **Abenezer Yirgalem** | `CTC-041-26` | Repository Administrator / Project Lead |
+| 4 | **FikreMariam Worku** | `CTC-7267-26` | Team Member |
+| 5 | **Remedan Hante** | `CTC-7445-26` | Team Member |
+| 6 | **Eyerusalem Solomon** | `CTC-6739-26` | Team Member |
 
 ---
 

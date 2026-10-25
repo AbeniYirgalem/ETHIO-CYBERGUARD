@@ -696,7 +696,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                   </div>
 
                   <a 
-                    href="https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/" 
+                    href="https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/" 
                     target="_blank" 
                     rel="noreferrer"
                     className="w-full py-2.5 px-4 bg-[#00D9FF] hover:bg-[#00D9FF]/85 text-black font-extrabold text-xs rounded-xl transition flex items-center justify-center space-x-2 shadow-lg shadow-[#00D9FF]/20"
@@ -706,7 +706,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                   </a>
 
                   <div className="text-[10px] text-[#526171] font-mono truncate text-center">
-                    https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/
+                    https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/
                   </div>
                 </div>
 
@@ -1140,8 +1140,24 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-[#070B12] rounded-lg border border-[#1E2A38] gap-2">
                   <div>
-                    <span className="font-bold text-white block">Mr-Nobody-Anonymous / ETHIO-CYBERGUARD (Live Deployment)</span>
-                    <span className="text-[11px] text-[#7D8A99]">Active GitHub Pages hosting target</span>
+                    <span className="font-bold text-white block">AbeniYirgalem / ETHIO-CYBERGUARD (Official Live Pages)</span>
+                    <span className="text-[11px] text-[#7D8A99]">Primary official GitHub Pages live deployment</span>
+                  </div>
+                  <a 
+                    href="https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/" 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="text-[#00D9FF] hover:underline font-mono text-[11px] flex items-center space-x-1"
+                  >
+                    <span>Launch Live Site</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-[#070B12] rounded-lg border border-[#1E2A38] gap-2">
+                  <div>
+                    <span className="font-bold text-white block">Mr-Nobody-Anonymous / ETHIO-CYBERGUARD (Mirror)</span>
+                    <span className="text-[11px] text-[#7D8A99]">Secondary GitHub Pages deployment mirror</span>
                   </div>
                   <a 
                     href="https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/" 
@@ -1149,7 +1165,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                     rel="noreferrer"
                     className="text-[#00D9FF] hover:underline font-mono text-[11px] flex items-center space-x-1"
                   >
-                    <span>Open Live Pages</span>
+                    <span>Open Mirror</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
