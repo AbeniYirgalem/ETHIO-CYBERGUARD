@@ -67,7 +67,18 @@ def test_background_jobs_workflow():
     assert status_resp.status_code == 200
     assert status_resp.json()["job_id"] == job_id
 
-def test_auth_refresh_and_reset():
+def test_auth_refresh_and_reset(monkeypatch):
+    from apps.api.routers import auth as auth_router
+
+    delivered = []
+    monkeypatch.setattr(auth_router, "_deliver_reset_token", lambda email, token: delivered.append((email, token)))
+
+    def request_token():
+        resp = client.post("/api/auth/password-reset", json={"email": "analyst@cbe.com.et"})
+        assert resp.status_code == 200
+        assert "reset_token_simulated" not in resp.json()  # never returned to the caller
+        return delivered[-1][1]
+
     # Login to get refresh token
     login_resp = client.post("/api/auth/login", json={
         "email": "analyst@cbe.com.et",
@@ -83,23 +94,16 @@ def test_auth_refresh_and_reset():
     assert refresh_resp.status_code == 200
     assert "access_token" in refresh_resp.json()
 
-    # Password reset request
-    reset_req = client.post("/api/auth/password-reset", json={
-        "email": "analyst@cbe.com.et"
-    })
-    assert reset_req.status_code == 200
-    reset_token = reset_req.json()["reset_token_simulated"]
-
-    # Confirm reset
+    # Password reset request + confirm (token captured from the out-of-band channel)
     confirm_resp = client.post("/api/auth/password-reset/confirm", json={
-        "reset_token": reset_token,
+        "reset_token": request_token(),
         "new_password": "NewSecurePassword@2026!"
     })
     assert confirm_resp.status_code == 200
 
     # Reset back to original password for other tests
     client.post("/api/auth/password-reset/confirm", json={
-        "reset_token": client.post("/api/auth/password-reset", json={"email": "analyst@cbe.com.et"}).json()["reset_token_simulated"],
+        "reset_token": request_token(),
         "new_password": "Analyst@2026!"
     })
 
@@ -146,29 +150,43 @@ def test_incident_lifecycle_and_timeline():
     assert len(timeline["history"]) >= 1
     assert len(timeline["comments"]) >= 1
 
-def test_safe_soar_dry_run_and_rollback():
+def test_safe_soar_dry_run_and_rollback(responder_headers, commander_headers):
     # Dry-run action
     dry_resp = client.post("/api/response/isolate-host", json={
         "hostname": "SERVER-TEST-09",
         "reason": "Simulated containment test",
         "dry_run": True
-    })
+    }, headers=commander_headers)
     assert dry_resp.status_code == 200
     assert dry_resp.json()["dry_run"] is True
     assert dry_resp.json()["status"] == "SIMULATED"
-    action_id = dry_resp.json()["action_id"]
+    dry_action_id = dry_resp.json()["action_id"]
 
-    # Approve action
+    # Dry-run (simulated) actions can never be approved
+    dry_appr = client.post(f"/api/response/actions/{dry_action_id}/approve", json={
+        "reason": "Should be refused"
+    }, headers=commander_headers)
+    assert dry_appr.status_code == 409
+
+    # Live action: queued for approval, then approved
+    live_resp = client.post("/api/response/isolate-host", json={
+        "hostname": "SERVER-TEST-10",
+        "reason": "Confirmed lateral movement",
+        "dry_run": False
+    }, headers=responder_headers)
+    assert live_resp.status_code == 200
+    action_id = live_resp.json()["action_id"]
+
     appr_resp = client.post(f"/api/response/actions/{action_id}/approve", json={
         "reason": "Confirmed threat containment"
-    })
+    }, headers=commander_headers)
     assert appr_resp.status_code == 200
     assert appr_resp.json()["action"]["status"] == "APPROVED"
 
     # Rollback action
     roll_resp = client.post(f"/api/response/actions/{action_id}/rollback", json={
         "reason": "Containment period elapsed, returning host to normal operations"
-    })
+    }, headers=commander_headers)
     assert roll_resp.status_code == 200
     assert roll_resp.json()["action"]["status"] == "ROLLED_BACK"
 

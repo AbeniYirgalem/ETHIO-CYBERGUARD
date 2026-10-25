@@ -6,29 +6,56 @@ interface ThreatIntelViewProps {
   indicators: ThreatIndicator[];
 }
 
-export const ThreatIntelView: React.FC<ThreatIntelViewProps> = ({ indicators }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [lookupResult, setLookupResult] = useState<ThreatIndicator | null>(null);
+type LookupResult =
+  | { status: 'found'; data: ThreatIndicator }
+  | { status: 'not-found'; indicator: string }
+  | { status: 'empty' };
 
-  const filtered = indicators.filter(ind => 
-    ind.indicator.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ind.threat_actor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ind.malware.toLowerCase().includes(searchTerm.toLowerCase())
+export const ThreatIntelView: React.FC<ThreatIntelViewProps> = ({
+  indicators,
+}) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [lookupResult, setLookupResult] = useState<LookupResult | null>(null);
+
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+
+  const filtered = indicators.filter((ind) =>
+    ind.indicator.toLowerCase().includes(normalizedSearchTerm) ||
+    ind.threat_actor.toLowerCase().includes(normalizedSearchTerm) ||
+    ind.malware.toLowerCase().includes(normalizedSearchTerm)
   );
 
-  const handleQuickLookup = (val: string) => {
-    const match = indicators.find(i => i.indicator.toLowerCase() === val.toLowerCase());
-    setLookupResult(match || {
-      indicator: val,
-      type: val.includes('.') ? (val.split('.').length === 4 ? 'IPV4' : 'DOMAIN') : 'SHA256',
-      reputation: 'BENIGN',
-      confidence: 75,
-      first_seen: 'Not found in blacklist',
-      threat_actor: 'None recorded',
-      malware: 'Clean',
-      country: 'Unknown',
-      related_incidents: []
-    });
+  const handleQuickLookup = () => {
+    const value = searchTerm.trim();
+
+    if (!value) {
+      setLookupResult({ status: 'empty' });
+      return;
+    }
+
+    const match = indicators.find(
+      (ind) => ind.indicator.toLowerCase() === value.toLowerCase()
+    );
+
+    if (match) {
+      setLookupResult({ status: 'found', data: match });
+      return;
+    }
+
+    // Absence from this local dataset does not mean an indicator is safe.
+    setLookupResult({ status: 'not-found', indicator: value });
+  };
+
+  const getReputationClasses = (reputation: ThreatIndicator['reputation']) => {
+    if (reputation === 'MALICIOUS') {
+      return 'bg-[#FF1744]/20 text-[#FF1744]';
+    }
+
+    if (reputation === 'SUSPICIOUS') {
+      return 'bg-[#F59E0B]/20 text-[#F59E0B]';
+    }
+
+    return 'bg-[#22C55E]/20 text-[#22C55E]';
   };
 
   return (
@@ -39,52 +66,126 @@ export const ThreatIntelView: React.FC<ThreatIntelViewProps> = ({ indicators }) 
             <Binary className="w-5 h-5 text-[#00D9FF]" />
             <span>Threat Intelligence Database</span>
           </h1>
-          <p className="text-xs text-[#7D8A99]">Aggregated IOC feeds from Ethio-CERT, INSA, and regional financial intelligence exchanges</p>
+          <p className="text-xs text-[#7D8A99]">
+            Aggregated IOC feeds from Ethio-CERT, INSA, and regional financial
+            intelligence exchanges
+          </p>
         </div>
 
         {/* Live Feed Status */}
         <div className="flex items-center space-x-2 text-xs font-mono bg-[#0D131C] px-3 py-1.5 rounded-lg border border-[#1E2A38] mt-3 sm:mt-0">
-          <span className="w-2 h-2 rounded-full bg-[#22C55E]"></span>
+          <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
           <span className="text-white">Active Feed: Ethio-CERT Sync</span>
         </div>
       </div>
 
       {/* Lookup Bar */}
       <div className="bg-[#111923] border border-[#1E2A38] rounded-xl p-5">
-        <h2 className="text-sm font-bold text-white mb-2">On-Demand Indicator Lookup</h2>
-        <div className="flex flex-col sm:flex-row gap-3">
+        <h2 className="text-sm font-bold text-white mb-2">
+          On-Demand Indicator Lookup
+        </h2>
+
+        <form
+          className="flex flex-col sm:flex-row gap-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleQuickLookup();
+          }}
+        >
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-[#7D8A99] absolute left-3 top-2.5" />
-            <input 
-              type="text" 
-              placeholder="Paste IP (e.g. 185.220.101.5), domain, or SHA-256 hash..."
+            <input
+              type="text"
+              aria-label="Indicator to investigate"
+              placeholder="Paste IP, domain, URL, or SHA-256 hash..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(event) => setSearchTerm(event.target.value)}
               className="w-full bg-[#070B12] border border-[#1E2A38] rounded-lg py-2 pl-9 pr-3 text-xs text-white placeholder-[#7D8A99] focus:outline-none focus:border-[#00D9FF]"
             />
           </div>
-          <button 
-            onClick={() => handleQuickLookup(searchTerm || "185.220.101.5")}
+
+          <button
+            type="submit"
             className="px-4 py-2 bg-[#00D9FF] hover:bg-[#00D9FF]/80 text-black font-bold text-xs rounded-lg transition"
           >
             Investigate IOC
           </button>
-        </div>
+        </form>
 
         {lookupResult && (
-          <div className="mt-4 p-4 bg-[#070B12] border border-[#1E2A38] rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div
+            role="status"
+            aria-live="polite"
+            className={`mt-4 p-4 bg-[#070B12] border rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 ${
+              lookupResult.status === 'not-found'
+                ? 'border-[#F59E0B]/50'
+                : lookupResult.status === 'empty'
+                  ? 'border-[#1E2A38]'
+                  : 'border-[#1E2A38]'
+            }`}
+          >
             <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-mono text-white font-bold text-xs">{lookupResult.indicator}</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                  lookupResult.reputation === 'MALICIOUS' ? 'bg-[#FF1744]/20 text-[#FF1744]' : 'bg-[#22C55E]/20 text-[#22C55E]'
-                }`}>
-                  {lookupResult.reputation} • {lookupResult.confidence}% CONFIDENCE
-                </span>
-              </div>
-              <p className="text-xs text-[#7D8A99] mt-1">Actor: {lookupResult.threat_actor} | Malware: {lookupResult.malware} | Origin: {lookupResult.country}</p>
+              {lookupResult.status === 'empty' ? (
+                <>
+                  <p className="text-xs font-bold text-white">
+                    Indicator required
+                  </p>
+                  <p className="text-xs text-[#7D8A99] mt-1">
+                    Enter an IP address, domain, URL, or hash to search the
+                    local dataset.
+                  </p>
+                </>
+              ) : lookupResult.status === 'not-found' ? (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-white font-bold text-xs break-all">
+                      {lookupResult.indicator}
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#F59E0B]/20 text-[#F59E0B]">
+                      NOT FOUND IN LOCAL DATASET
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#7D8A99] mt-2">
+                    No exact match was found. This does not mean the indicator
+                    is benign or safe. Check an authoritative threat-intelligence
+                    source before making a security decision.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-white font-bold text-xs break-all">
+                      {lookupResult.data.indicator}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${getReputationClasses(
+                        lookupResult.data.reputation
+                      )}`}
+                    >
+                      {lookupResult.data.reputation} ·{' '}
+                      {lookupResult.data.confidence}% CONFIDENCE
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#7D8A99] mt-1">
+                    Actor: {lookupResult.data.threat_actor} | Malware:{' '}
+                    {lookupResult.data.malware} | Origin:{' '}
+                    {lookupResult.data.country}
+                  </p>
+                  <p className="text-[11px] text-[#7D8A99] mt-1">
+                    First seen: {lookupResult.data.first_seen}
+                  </p>
+                  {lookupResult.data.related_incidents.length > 0 && (
+                    <p className="text-[11px] text-[#7D8A99] mt-1">
+                      Related incidents:{' '}
+                      {lookupResult.data.related_incidents.join(', ')}
+                    </p>
+                  )}
+                </>
+              )}
             </div>
-            <button 
+
+            <button
+              type="button"
               onClick={() => setLookupResult(null)}
               className="text-xs text-[#7D8A99] hover:text-white"
             >
@@ -97,8 +198,12 @@ export const ThreatIntelView: React.FC<ThreatIntelViewProps> = ({ indicators }) 
       {/* Indicator Table */}
       <div className="bg-[#111923] border border-[#1E2A38] rounded-xl overflow-hidden">
         <div className="p-4 border-b border-[#1E2A38] flex justify-between items-center">
-          <h2 className="text-sm font-bold text-white">Active Verified Threat Indicators</h2>
-          <span className="text-[11px] font-mono text-[#7D8A99]">{filtered.length} entries</span>
+          <h2 className="text-sm font-bold text-white">
+            Active Verified Threat Indicators
+          </h2>
+          <span className="text-[11px] font-mono text-[#7D8A99]">
+            {filtered.length} entries
+          </span>
         </div>
 
         <div className="overflow-x-auto">
@@ -114,27 +219,46 @@ export const ThreatIntelView: React.FC<ThreatIntelViewProps> = ({ indicators }) 
                 <th className="py-2.5 px-4">Linked Incidents</th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-[#1E2A38] font-mono text-[11px]">
-              {filtered.map((ind, i) => (
-                <tr key={i} className="hover:bg-[#0D131C]/60 transition">
-                  <td className="py-3 px-4 font-bold text-white max-w-xs truncate">{ind.indicator}</td>
+              {filtered.map((ind) => (
+                <tr
+                  key={`${ind.type}:${ind.indicator}`}
+                  className="hover:bg-[#0D131C]/60 transition"
+                >
+                  <td className="py-3 px-4 font-bold text-white max-w-xs truncate">
+                    {ind.indicator}
+                  </td>
                   <td className="py-3 px-4 text-[#00D9FF]">{ind.type}</td>
                   <td className="py-3 px-4">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      ind.reputation === 'MALICIOUS' ? 'bg-[#FF1744]/15 text-[#FF1744] border border-[#FF1744]/30' :
-                      ind.reputation === 'SUSPICIOUS' ? 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30' :
-                      'bg-[#22C55E]/15 text-[#22C55E]'
-                    }`}>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        ind.reputation === 'MALICIOUS'
+                          ? 'bg-[#FF1744]/15 text-[#FF1744] border border-[#FF1744]/30'
+                          : ind.reputation === 'SUSPICIOUS'
+                            ? 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30'
+                            : 'bg-[#22C55E]/15 text-[#22C55E]'
+                      }`}
+                    >
                       {ind.reputation} ({ind.confidence}%)
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-[#E6EDF3] font-sans">{ind.threat_actor}</td>
-                  <td className="py-3 px-4 text-[#7D8A99] font-sans">{ind.malware}</td>
-                  <td className="py-3 px-4 text-[#7D8A99] font-sans">{ind.country}</td>
+                  <td className="py-3 px-4 text-[#E6EDF3] font-sans">
+                    {ind.threat_actor}
+                  </td>
+                  <td className="py-3 px-4 text-[#7D8A99] font-sans">
+                    {ind.malware}
+                  </td>
+                  <td className="py-3 px-4 text-[#7D8A99] font-sans">
+                    {ind.country}
+                  </td>
                   <td className="py-3 px-4">
                     <div className="flex space-x-1">
-                      {ind.related_incidents.map((rel, rIdx) => (
-                        <span key={rIdx} className="px-1.5 py-0.2 rounded bg-[#00D9FF]/10 text-[#00D9FF] text-[10px]">
+                      {ind.related_incidents.map((rel) => (
+                        <span
+                          key={rel}
+                          className="px-1.5 py-0.5 rounded bg-[#00D9FF]/10 text-[#00D9FF] text-[10px]"
+                        >
                           {rel}
                         </span>
                       ))}
@@ -142,6 +266,17 @@ export const ThreatIntelView: React.FC<ThreatIntelViewProps> = ({ indicators }) 
                   </td>
                 </tr>
               ))}
+
+              {filtered.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="py-8 px-4 text-center text-[#7D8A99] font-sans"
+                  >
+                    No indicators match your filter.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

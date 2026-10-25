@@ -14,6 +14,7 @@ from services.jobs.worker import job_manager
 from services.ingestion.pipeline import ingestion_pipeline
 from services.connectors import CONNECTOR_REGISTRY
 from database.connection import SessionLocal
+from services.security.shared_state import get_shared_state
 
 router = APIRouter(tags=["Health & Telemetry"])
 
@@ -60,6 +61,14 @@ def readiness_probe(response: Response):
     checks["jobs_worker"] = {
         "status": "HEALTHY",
         "active_jobs": len(job_manager.jobs)
+    }
+
+    # Shared security state (login rate limit, token revocation): Redis, or this process only.
+    shared = get_shared_state()
+    checks["shared_state"] = {
+        "status": "HEALTHY",
+        "backend": shared.name,
+        "multi_worker_safe": shared.distributed,
     }
 
     # 3. External Connectors Check

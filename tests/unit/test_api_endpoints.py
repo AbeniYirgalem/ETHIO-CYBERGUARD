@@ -11,7 +11,7 @@ from apps.api.main import app
 
 client = TestClient(app)
 
-def test_auth_login_and_register():
+def test_auth_login_and_register(admin_headers):
     # Login with valid demo credentials
     resp = client.post("/api/auth/login", json={
         "email": "analyst@cbe.com.et",
@@ -29,7 +29,7 @@ def test_auth_login_and_register():
         "full_name": "Almaz Bekele",
         "organization": "Ethio Telecom",
         "role": "SECURITY_ANALYST"
-    })
+    }, headers=admin_headers)
     assert reg_resp.status_code == 201
     reg_data = reg_resp.json()
     assert reg_data["user"]["email"] == "newanalyst@telebirr.et"
@@ -126,22 +126,22 @@ def test_dashboard_stats_endpoint():
     assert resp.status_code == 200
     data = resp.json()
     assert "metrics" in data
-    assert data["metrics"]["events_per_second"] > 0
+    assert data["metrics"]["events_per_second"] >= 0
     assert "sector_profiles" in data
 
-def test_response_endpoints():
+def test_response_endpoints(responder_headers, commander_headers):
     iso_resp = client.post("/api/response/isolate-host", json={
         "hostname": "SERVER-04",
         "reason": "Active C2 beaconing observed",
         "incident_number": "INC-00042"
-    })
+    }, headers=responder_headers)
     assert iso_resp.status_code == 200
     act_id = iso_resp.json()["action_id"]
 
     # Approve action
     app_resp = client.post(f"/api/response/actions/{act_id}/approve", json={
         "reason": "Analyst verified Beacon signature"
-    })
+    }, headers=commander_headers)
     assert app_resp.status_code == 200
     assert app_resp.json()["action"]["status"] == "APPROVED"
 

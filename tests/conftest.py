@@ -2,6 +2,17 @@
 Pytest Central Configuration & Fixtures for ETHIO-CYBERGUARD Test Suite
 """
 
+import os
+import tempfile
+from pathlib import Path
+
+# Tests must NEVER touch a developer's or production database: force a throw-away
+# SQLite file *before* any application module is imported.
+_TEST_DB_DIR = tempfile.mkdtemp(prefix="ecg-tests-")
+os.environ["DATABASE_URL"] = f"sqlite:///{(Path(_TEST_DB_DIR) / 'test.db').as_posix()}"
+os.environ["PERSISTENCE_ENABLED"] = "true"
+os.environ["PASSWORD_HASH_ITERATIONS"] = "1000"  # fast hashing for users created in tests
+
 import pytest
 from typing import Dict, Any
 
@@ -63,3 +74,34 @@ def sample_ecs_powershell_event() -> Dict[str, Any]:
             "command_line": "powershell.exe -NoP -NonI -W Hidden -Enc SQBFAFgA"
         }
     }
+
+
+# ---------------------------------------------------------------------------
+# Authenticated API headers (SOAR routes reject the unauthenticated guest user)
+# ---------------------------------------------------------------------------
+
+def _login_headers(email: str, password: str) -> Dict[str, str]:
+    from fastapi.testclient import TestClient
+    from apps.api.main import app
+
+    resp = TestClient(app).post("/api/auth/login", json={"email": email, "password": password})
+    assert resp.status_code == 200, f"Demo login failed for {email}: {resp.text}"
+    return {"Authorization": f"Bearer {resp.json()['access_token']}"}
+
+
+@pytest.fixture(scope="session")
+def admin_headers() -> Dict[str, str]:
+    """Bearer headers for SUPER_ADMIN (all permissions)."""
+    return _login_headers("admin@cbe.com.et", "EthioCyber@2026!")
+
+
+@pytest.fixture(scope="session")
+def commander_headers() -> Dict[str, str]:
+    """Bearer headers for INCIDENT_COMMANDER (isolate, block, approve)."""
+    return _login_headers("commander@cbe.com.et", "Commander@2026!")
+
+
+@pytest.fixture(scope="session")
+def responder_headers() -> Dict[str, str]:
+    """Bearer headers for INCIDENT_RESPONDER (can request actions, cannot approve)."""
+    return _login_headers("responder@cbe.com.et", "Responder@2026!")

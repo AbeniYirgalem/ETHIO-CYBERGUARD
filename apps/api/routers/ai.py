@@ -11,9 +11,28 @@ from typing import Optional, List, Dict, Any
 
 from services.ai.orchestrator import MultiAgentOrchestrator
 from services.ai.assistant_agent import SecurityAssistantAgent
+from services.security.tenancy import scope
 from .incidents import INCIDENTS_STORE
+from ..dependencies import get_current_user
+
+# Every AI route needs a valid login (guest allowed only in DEMO_MODE).
+_READ = Depends(get_current_user)
 
 router = APIRouter(tags=["Multi-Agent AI & Copilot"])
+
+
+def _incident_for(user: Dict[str, Any], incident_number: Optional[str]) -> Dict[str, Any]:
+    """The requested incident if the user's organization owns it, else that organization's
+    most recent incident. Another organization's incidents are never used, and an
+    organization with no incidents gets a 404 instead of someone else's data."""
+    visible = scope(user, INCIDENTS_STORE)
+    wanted = (incident_number or "INC-00042").upper()
+    match = next((i for i in visible if i["incident_number"].upper() == wanted), None)
+    if match is not None:
+        return match
+    if visible:
+        return visible[0]
+    raise HTTPException(status_code=404, detail="No incidents available for your organization")
 
 orchestrator = MultiAgentOrchestrator()
 assistant = SecurityAssistantAgent()
@@ -28,11 +47,8 @@ class AIChatRequest(BaseModel):
 
 @router.post("/api/ai/investigate")
 @router.post("/api/v1/ai/investigate")
-def run_ai_investigation(payload: InvestigateRequest):
-    inc = next(
-        (i for i in INCIDENTS_STORE if i["incident_number"].upper() == payload.incident_number.upper()), 
-        INCIDENTS_STORE[0]
-    )
+def run_ai_investigation(payload: InvestigateRequest, _user: Dict[str, Any] = _READ):
+    inc = _incident_for(_user, payload.incident_number)
     # Gather mock telemetry events related to this incident
     events = [
         {"event_id": "evt_001", "event_type": "process_execution", "severity": "CRITICAL", "process": {"name": "powershell.exe"}, "user": "administrator"},
@@ -43,16 +59,13 @@ def run_ai_investigation(payload: InvestigateRequest):
 @router.post("/api/ai/chat")
 @router.post("/api/v1/ai/chat")
 @router.post("/api/v1/ai/assistant/chat")
-def chat_with_copilot(payload: AIChatRequest):
-    inc = next(
-        (i for i in INCIDENTS_STORE if i["incident_number"].upper() == (payload.incident_number or "INC-00042").upper()), 
-        INCIDENTS_STORE[0]
-    )
+def chat_with_copilot(payload: AIChatRequest, _user: Dict[str, Any] = _READ):
+    inc = _incident_for(_user, payload.incident_number)
     return assistant.answer_query(payload.query, inc)
 
 @router.get("/api/ai/agents")
 @router.get("/api/v1/ai/agents")
-def list_ai_agents():
+def list_ai_agents(_user: Dict[str, Any] = _READ):
     return {
         "cluster_status": "ONLINE",
         "total_agents": 7,

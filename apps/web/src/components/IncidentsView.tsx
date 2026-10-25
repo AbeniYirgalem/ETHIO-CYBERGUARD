@@ -7,7 +7,7 @@ import {
   Check, 
   X
 } from 'lucide-react';
-import type { Incident, TimelineEntry, ResponseAction } from '../types';
+import type { Incident, TimelineEntry, ResponseAction, AuditLogEntry } from '../types';
 
 interface IncidentsViewProps {
   selectedIncident: Incident;
@@ -17,6 +17,8 @@ interface IncidentsViewProps {
   actions: ResponseAction[];
   onApproveAction: (id: string) => void;
   onRejectAction: (id: string) => void;
+  /** Live SOAR audit log from the API. Undefined = show the simulated demo trail. */
+  auditLogs?: AuditLogEntry[];
 }
 
 export const IncidentsView: React.FC<IncidentsViewProps> = ({
@@ -26,7 +28,8 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
   timeline,
   actions,
   onApproveAction,
-  onRejectAction
+  onRejectAction,
+  auditLogs
 }) => {
   const [activeTab, setActiveTab] = useState<
     'overview' | 'timeline' | 'graph' | 'evidence' | 'threat_intel' | 'ai_analysis' | 'response' | 'audit'
@@ -558,20 +561,38 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
           <p className="text-xs text-[#7D8A99] mb-4">Append-only chronological record</p>
 
           <div className="space-y-2 font-mono text-xs">
-            {[
-              { time: "10:42:21 EAT", user: "SYSTEM / Ingestion", action: "CORRELATION_INCIDENT_CREATED", details: "INC-00042 created with initial score 80" },
-              { time: "10:43:14 EAT", user: "AI_RISK_AGENT", action: "RISK_SCORE_ESCALATED", details: "Promoted to 92 (CRITICAL) due to C2 match" },
-              { time: "10:45:00 EAT", user: "AI_RISK_AGENT", action: "RECOMMENDATION_ENQUEUED", details: "Enqueued ISOLATE_HOST action for SERVER-04" },
-              { time: "11:02:18 EAT", user: "Dawit Mengistu (Analyst)", action: "INCIDENT_VIEWED", details: "Opened forensic dossier from SOC overview" }
-            ].map((log, i) => (
-              <div key={i} className="p-2.5 bg-[#0D131C] border border-[#1E2A38] rounded flex flex-col sm:flex-row justify-between text-[#7D8A99]">
-                <div>
-                  <span className="text-white font-semibold mr-2">{log.user}:</span>
-                  <span className="text-[#00D9FF]">{log.action}</span> - <span>{log.details}</span>
+            {auditLogs !== undefined ? (
+              auditLogs.length === 0 ? (
+                <p className="text-[#7D8A99]">No audit entries yet. Actions you request, approve or reject will appear here.</p>
+              ) : (
+                auditLogs.map((log) => (
+                  <div key={log.id} className="p-2.5 bg-[#0D131C] border border-[#1E2A38] rounded flex flex-col sm:flex-row justify-between gap-1 text-[#7D8A99]">
+                    <div>
+                      <span className="text-white font-semibold mr-2">{log.operator}:</span>
+                      <span className="text-[#00D9FF]">{log.action}</span> - <span>{log.target} ({log.result})</span>
+                      {log.details && <span className="block text-[10px] mt-0.5">{log.details}</span>}
+                      <span className="block text-[10px] mt-0.5 text-[#475569]">sha256: {log.integrity_hash.slice(0, 16)}…</span>
+                    </div>
+                    <span className="text-[10px] text-[#7D8A99] shrink-0">{new Date(log.timestamp).toLocaleString()}</span>
+                  </div>
+                ))
+              )
+            ) : (
+              [
+                { time: "10:42:21 EAT", user: "SYSTEM / Ingestion", action: "CORRELATION_INCIDENT_CREATED", details: "INC-00042 created with initial score 80" },
+                { time: "10:43:14 EAT", user: "AI_RISK_AGENT", action: "RISK_SCORE_ESCALATED", details: "Promoted to 92 (CRITICAL) due to C2 match" },
+                { time: "10:45:00 EAT", user: "AI_RISK_AGENT", action: "RECOMMENDATION_ENQUEUED", details: "Enqueued ISOLATE_HOST action for SERVER-04" },
+                { time: "11:02:18 EAT", user: "Dawit Mengistu (Analyst)", action: "INCIDENT_VIEWED", details: "Opened forensic dossier from SOC overview" }
+              ].map((log, i) => (
+                <div key={i} className="p-2.5 bg-[#0D131C] border border-[#1E2A38] rounded flex flex-col sm:flex-row justify-between text-[#7D8A99]">
+                  <div>
+                    <span className="text-white font-semibold mr-2">{log.user}:</span>
+                    <span className="text-[#00D9FF]">{log.action}</span> - <span>{log.details}</span>
+                  </div>
+                  <span className="text-[10px] text-[#7D8A99]">{log.time}</span>
                 </div>
-                <span className="text-[10px] text-[#7D8A99]">{log.time}</span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}

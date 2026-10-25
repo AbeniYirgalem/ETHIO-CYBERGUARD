@@ -12,7 +12,7 @@ import {
   Download,
   Search
 } from 'lucide-react';
-import type { Incident, SecurityEvent } from '../types';
+import type { Incident, SecurityEvent, DashboardStats } from '../types';
 import { EthiopiaCyberRadar } from './EthiopiaCyberRadar';
 import { soundManager } from '../utils/sound';
 
@@ -22,14 +22,62 @@ interface OverviewViewProps {
   isStreaming: boolean;
   setIsStreaming: (val: boolean) => void;
   onSelectIncident: (inc: Incident) => void;
+  /** Real numbers from the API. Null = show the simulated demo figures. */
+  stats?: DashboardStats | null;
+  liveMode?: boolean;
+  streamConnected?: boolean;
 }
+
+interface TimelineBar {
+  label: string;
+  title: string;
+  events: number;
+  critical: number;
+  eventsPx: number;
+  criticalPx: number;
+}
+
+const SIMULATED_TIMELINE = [
+  { time: '00:00', events: 35, alerts: 1 },
+  { time: '02:00', events: 20, alerts: 0 },
+  { time: '03:14', events: 65, alerts: 6 },
+  { time: '06:00', events: 45, alerts: 2 },
+  { time: '08:00', events: 80, alerts: 3 },
+  { time: '10:00', events: 95, alerts: 8 },
+  { time: '11:30', events: 70, alerts: 4 },
+];
+
+const MAX_BAR_PX = 100;
+
+/** Bars for the real hourly history (labels in the viewer's local time). */
+function liveTimelineBars(timeline: NonNullable<DashboardStats['timeline']>): TimelineBar[] {
+  const max = Math.max(1, ...timeline.map(b => b.events));
+  return timeline.map((b, i) => {
+    const when = new Date(b.hour);
+    const hh = when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    return {
+      label: i % 4 === 0 || i === timeline.length - 1 ? hh : '',
+      title: `${hh}: ${b.events.toLocaleString()} events, ${b.critical} critical, ${b.alerts} detections`,
+      events: b.events,
+      critical: b.critical,
+      eventsPx: b.events > 0 ? Math.max(3, Math.round((b.events / max) * MAX_BAR_PX)) : 0,
+      criticalPx: b.critical > 0 ? Math.max(3, Math.round((b.critical / max) * MAX_BAR_PX)) : 0,
+    };
+  });
+}
+
+const severityBar = (severity: string): string =>
+  severity === 'CRITICAL' || severity === 'HIGH' ? 'bg-[#FF1744]' : severity === 'MEDIUM' ? 'bg-[#F59E0B]' : 'bg-[#00D9FF]';
 
 export const OverviewView: React.FC<OverviewViewProps> = ({
   incidents,
   events,
   isStreaming,
   setIsStreaming,
-  onSelectIncident
+  onSelectIncident,
+  stats = null,
+  liveMode = false,
+  streamConnected = false
 }) => {
   const [selectedSeverity, setSelectedSeverity] = useState<'ALL' | 'CRITICAL' | 'HIGH' | 'MEDIUM'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +92,21 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
       inc.department.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSev && matchesQuery;
   });
+
+  const liveTimeline = stats?.timeline ?? null;
+  const timelineBars: TimelineBar[] = liveTimeline
+    ? liveTimelineBars(liveTimeline)
+    : SIMULATED_TIMELINE.map(b => ({
+        label: b.time,
+        title: `${b.events}k events, ${b.alerts} critical alerts`,
+        events: b.events,
+        critical: b.alerts,
+        eventsPx: Math.round(b.events * 0.9),
+        criticalPx: b.alerts * 8,
+      }));
+  const timelineEmpty = liveTimeline !== null && liveTimeline.every(b => b.events === 0);
+  const liveThreats = stats?.top_threats ?? null;
+  const maxThreat = Math.max(1, ...(liveThreats ?? []).map(t => t.count));
 
   // Export incident queue report as downloadable JSON/briefing
   const exportIncidentBriefing = () => {
@@ -129,12 +192,12 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
           <div className="mt-3">
             <span className="text-3xl font-extrabold text-white">
-              {incidents.filter(i => i.severity === 'CRITICAL').length}
+              {stats ? stats.metrics.critical_alerts : incidents.filter(i => i.severity === 'CRITICAL').length}
             </span>
             <span className="text-[11px] text-[#FF1744] ml-2 font-medium">Require immediate containment</span>
           </div>
           <div className="mt-2 text-[10px] text-[#7D8A99] flex items-center justify-between">
-            <span>+2 in last hour</span>
+            <span>{stats ? `${stats.metrics.pending_approvals} awaiting approval` : '+2 in last hour'}</span>
             <span className="text-[#FF1744] font-semibold">Highest Priority</span>
           </div>
         </div>
@@ -148,11 +211,11 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold text-white">23</span>
+            <span className="text-3xl font-extrabold text-white">{stats ? stats.metrics.high_risk_alerts : 23}</span>
             <span className="text-[11px] text-[#7D8A99] ml-2">Active triage</span>
           </div>
           <div className="mt-2 text-[10px] text-[#7D8A99] flex items-center justify-between">
-            <span>Baseline variance: +14%</span>
+            <span>{stats ? `${stats.metrics.medium_risk_alerts} medium severity` : 'Baseline variance: +14%'}</span>
             <span className="text-[#F59E0B] font-semibold">Under Investigation</span>
           </div>
         </div>
@@ -166,11 +229,16 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold text-white">{incidents.length}</span>
-            <span className="text-[11px] text-[#00D9FF] ml-2 font-medium">3 In Forensics</span>
+            <span className="text-3xl font-extrabold text-white">{stats ? stats.metrics.active_incidents : incidents.length}</span>
+            <span className="text-[11px] text-[#00D9FF] ml-2 font-medium">{stats ? `${stats.metrics.assets_monitored} assets involved` : '3 In Forensics'}</span>
           </div>
           <div className="mt-2 text-[10px] text-[#7D8A99] flex items-center justify-between">
-            <span>Avg MTTR: 28 min</span>
+            <span>{stats
+              ? [
+                  stats.metrics.mean_time_to_detect_minutes !== null ? `MTTD ${stats.metrics.mean_time_to_detect_minutes} min` : 'MTTD n/a',
+                  stats.metrics.mean_time_to_respond_minutes !== null ? `MTTR ${stats.metrics.mean_time_to_respond_minutes} min` : 'MTTR n/a',
+                ].join(' · ')
+              : 'Avg MTTR: 28 min'}</span>
             <span className="text-[#00D9FF] font-semibold">AI Correlated</span>
           </div>
         </div>
@@ -184,18 +252,22 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold text-white">51,240</span>
-            <span className="text-[11px] text-[#22C55E] ml-2 font-mono">EPS Peak</span>
+            <span className="text-3xl font-extrabold text-white">{stats ? stats.metrics.events_processed_today.toLocaleString() : '51,240'}</span>
+            <span className="text-[11px] text-[#22C55E] ml-2 font-mono">{stats ? `${stats.metrics.events_per_second} EPS now` : 'EPS Peak'}</span>
           </div>
           <div className="mt-2 text-[10px] text-[#7D8A99] flex items-center justify-between">
             <span>Sliding window: 60s</span>
-            <span className="text-[#22C55E] font-semibold">100% Normalized</span>
+            <span className="text-[#22C55E] font-semibold">{stats ? 'Counted from collectors' : '100% Normalized'}</span>
           </div>
         </div>
       </div>
 
       {/* NEW: Ethiopian Critical Infrastructure Defense Radar Component */}
-      <EthiopiaCyberRadar />
+      <EthiopiaCyberRadar
+        live={liveMode}
+        incidents={incidents}
+        sectorProfiles={stats?.sector_profiles ?? null}
+      />
 
       {/* Threat Activity & Top Threats Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -205,51 +277,58 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <div>
               <h2 className="text-sm font-bold text-white flex items-center space-x-2">
                 <span>Threat Activity Timeline</span>
-                <span className="text-[10px] font-normal text-[#7D8A99]">(24h rolling window)</span>
+                <span className="text-[10px] font-normal text-[#7D8A99]">
+                  {liveTimeline ? '(last 24 hours, your local time)' : '(24h rolling window)'}
+                </span>
               </h2>
-              <p className="text-xs text-[#7D8A99]">Normalized event velocity, correlated alert spikes & threat detections</p>
+              <p className="text-xs text-[#7D8A99]">
+                {liveTimeline
+                  ? 'Events received by the ingest endpoint, per hour'
+                  : 'Normalized event velocity, correlated alert spikes & threat detections'}
+              </p>
             </div>
             <div className="flex items-center space-x-4 text-xs font-mono">
               <div className="flex items-center space-x-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-[#00D9FF]"></span>
-                <span className="text-[#7D8A99]">Events (x10k)</span>
+                <span className="text-[#7D8A99]">{liveTimeline ? 'Events / hour' : 'Events (x10k)'}</span>
               </div>
               <div className="flex items-center space-x-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-[#FF1744]"></span>
-                <span className="text-[#7D8A99]">Critical Alerts</span>
+                <span className="text-[#7D8A99]">{liveTimeline ? 'Critical events' : 'Critical Alerts'}</span>
               </div>
             </div>
           </div>
 
-          {/* SVG Activity Visualization */}
-          <div className="h-44 w-full flex items-end justify-between pt-4 pb-2 px-2 border-b border-[#1E2A38]">
-            {[
-              { time: '00:00', events: 35, alerts: 1 },
-              { time: '02:00', events: 20, alerts: 0 },
-              { time: '03:14', events: 65, alerts: 6 },
-              { time: '06:00', events: 45, alerts: 2 },
-              { time: '08:00', events: 80, alerts: 3 },
-              { time: '10:00', events: 95, alerts: 8 },
-              { time: '11:30', events: 70, alerts: 4 }
-            ].map((bar, i) => (
-              <div key={i} className="flex flex-col items-center flex-1 group">
-                <div className="w-full max-w-[28px] flex flex-col items-center justify-end h-32 relative">
-                  {bar.alerts > 0 && (
-                    <div 
-                      className="w-full bg-[#FF1744] rounded-t-sm mb-0.5 transition-all group-hover:brightness-125"
-                      style={{ height: `${bar.alerts * 8}px` }}
-                      title={`${bar.alerts} critical alerts`}
+          {/* Activity visualization */}
+          <div className="relative">
+            <div className="h-44 w-full flex items-end justify-between pt-4 pb-2 px-2 border-b border-[#1E2A38]">
+              {timelineBars.map((bar, i) => (
+                <div key={i} className="flex flex-col items-center flex-1 group">
+                  <div className="w-full max-w-[28px] flex flex-col items-center justify-end h-32 relative">
+                    {bar.criticalPx > 0 && (
+                      <div
+                        className="w-full bg-[#FF1744] rounded-t-sm mb-0.5 transition-all group-hover:brightness-125"
+                        style={{ height: `${bar.criticalPx}px` }}
+                        title={bar.title}
+                      ></div>
+                    )}
+                    <div
+                      className="w-full bg-[#00D9FF]/40 rounded-sm group-hover:bg-[#00D9FF] transition-all"
+                      style={{ height: `${bar.eventsPx}px` }}
+                      title={bar.title}
                     ></div>
-                  )}
-                  <div 
-                    className="w-full bg-[#00D9FF]/40 rounded-sm group-hover:bg-[#00D9FF] transition-all"
-                    style={{ height: `${bar.events * 0.9}px` }}
-                    title={`${bar.events}k events`}
-                  ></div>
+                  </div>
+                  <span className="text-[10px] font-mono text-[#7D8A99] mt-2 h-3">{bar.label}</span>
                 </div>
-                <span className="text-[10px] font-mono text-[#7D8A99] mt-2">{bar.time}</span>
+              ))}
+            </div>
+            {timelineEmpty && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <p className="text-xs text-[#7D8A99] bg-[#111923]/90 px-3 py-1.5 rounded border border-[#1E2A38]">
+                  No events received in the last 24 hours. Start a collector or run scripts/demo/send_events.py.
+                </p>
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -260,13 +339,24 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <p className="text-xs text-[#7D8A99] mb-4">Classified attack patterns targeting our infrastructure</p>
 
             <div className="space-y-3.5">
-              {[
-                { name: 'Distributed SSH / RDP Brute Force', count: 1420, percent: 74, color: 'bg-[#FF1744]' },
-                { name: 'Obfuscated PowerShell Execution', count: 18, percent: 55, color: 'bg-[#FF1744]' },
-                { name: 'Off-Hours SWIFT Directory Access', count: 3, percent: 38, color: 'bg-[#F59E0B]' },
-                { name: 'Known Malicious C2 Beaconing', count: 12, percent: 45, color: 'bg-[#FF1744]' },
-                { name: 'Privilege Escalation via Sudo', count: 9, percent: 22, color: 'bg-[#00D9FF]' },
-              ].map((item, idx) => (
+              {liveThreats !== null && liveThreats.length === 0 && (
+                <p className="text-xs text-[#7D8A99]">No detections or open incidents yet.</p>
+              )}
+              {(liveThreats !== null
+                ? liveThreats.map(t => ({
+                    name: t.name,
+                    count: t.count,
+                    percent: Math.max(4, Math.round((t.count / maxThreat) * 100)),
+                    color: severityBar(String(t.severity).toUpperCase()),
+                  }))
+                : [
+                    { name: 'Distributed SSH / RDP Brute Force', count: 1420, percent: 74, color: 'bg-[#FF1744]' },
+                    { name: 'Obfuscated PowerShell Execution', count: 18, percent: 55, color: 'bg-[#FF1744]' },
+                    { name: 'Off-Hours SWIFT Directory Access', count: 3, percent: 38, color: 'bg-[#F59E0B]' },
+                    { name: 'Known Malicious C2 Beaconing', count: 12, percent: 45, color: 'bg-[#FF1744]' },
+                    { name: 'Privilege Escalation via Sudo', count: 9, percent: 22, color: 'bg-[#00D9FF]' },
+                  ]
+              ).map((item, idx) => (
                 <div key={idx}>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-white font-medium">{item.name}</span>
@@ -281,7 +371,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
 
           <div className="mt-4 pt-3 border-t border-[#1E2A38] flex justify-between items-center text-xs text-[#7D8A99]">
-            <span>Feed Source: Ethio-CERT / INSA</span>
+            <span>{liveThreats ? 'Source: detections from ingested events, else open incidents' : 'Feed Source: Ethio-CERT / INSA'}</span>
             <span className="text-[#00D9FF] cursor-pointer hover:underline font-mono">MITRE ATT&CK Matrix →</span>
           </div>
         </div>
@@ -436,7 +526,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <p className="text-xs text-[#7D8A99]">Normalized raw events arriving from endpoint agents and perimeter syslog</p>
           </div>
           <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#0D131C] text-[#7D8A99] border border-[#1E2A38]">
-            {events.length} Telemetry Records Streamed
+            {liveMode ? (streamConnected ? 'LIVE STREAM · ' : 'RECONNECTING · ') : 'SIMULATED · '}{events.length} Telemetry Records Streamed
           </span>
         </div>
 
@@ -453,6 +543,13 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1E2A38] font-mono text-[11px]">
+              {events.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-6 px-4 text-center text-[#7D8A99] font-sans">
+                    No events yet. Waiting for collectors to send events to /api/v1/events/ingest.
+                  </td>
+                </tr>
+              )}
               {events.map((ev) => (
                 <tr key={ev.event_id} className="hover:bg-[#0D131C]/60 transition">
                   <td className="py-2.5 px-4 text-[#7D8A99] flex items-center space-x-1">

@@ -1,30 +1,40 @@
-# Multi-stage Python API container
+# ETHIO-CYBERGUARD API image (non-root, with health check)
 FROM python:3.10-slim
+
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
-# Install system dependencies
+# System dependencies (curl is used by the container health check)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy dependency definition
+# Dependencies first, so code changes do not reinstall packages
 COPY apps/api/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend codebase, services, and database schemas
+# Everything the API imports or reads at runtime
 COPY apps/api /app/apps/api
 COPY services /app/services
 COPY database /app/database
 COPY scripts /app/scripts
+COPY playbooks /app/playbooks
 COPY detection-rules /app/detection-rules
 COPY collectors /app/collectors
 COPY alembic.ini /app/alembic.ini
 
+# Run as an unprivileged user
+RUN useradd --system --uid 10001 --create-home ecg && chown -R ecg:ecg /app
+USER ecg
+
 EXPOSE 8000
 
-ENV PYTHONPATH=/app
+HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
+    CMD curl -fsS http://127.0.0.1:8000/health/live || exit 1
 
 CMD ["uvicorn", "apps.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

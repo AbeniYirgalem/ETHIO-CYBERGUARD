@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -9,6 +7,13 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-ecg_admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be provided via environment in production}
       POSTGRES_DB: ${POSTGRES_DB:-ethio_cyberguard}
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-ecg_admin} -d $${POSTGRES_DB:-ethio_cyberguard}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     # Database is strictly private to container network in production (no host port publishing)
     expose:
       - "5432"
@@ -29,6 +34,13 @@ services:
     image: redis:7-alpine
     container_name: ecg_redis
     restart: always
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     command: redis-server --requirepass "${REDIS_PASSWORD:?REDIS_PASSWORD must be provided via environment in production}"
     # Redis cache is strictly private to container network in production
     expose:
@@ -51,6 +63,14 @@ services:
     ports:
       - "${API_PORT:-8000}:8000"
     environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ecg_admin}:${POSTGRES_PASSWORD:-SecOpsPassw0rd_2026!}@postgres:5432/${POSTGRES_DB:-ethio_cyberguard}
+      REDIS_URL: redis://redis:6379/0
+      API_SECRET_KEY: ${API_SECRET_KEY:-ecg_development_jwt_secret_key_change_in_prod}
+      JWT_SECRET: ${JWT_SECRET:-}
+      INGEST_API_KEY: ${INGEST_API_KEY:-ecg-collector-secure-api-key-2026}
+      DEMO_MODE: ${DEMO_MODE:-true}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
       DATABASE_URL: postgresql://${POSTGRES_USER:-ecg_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ethio_cyberguard}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       API_SECRET_KEY: ${API_SECRET_KEY:?API_SECRET_KEY must be provided via environment in production}
@@ -76,7 +96,8 @@ services:
     ports:
       - "${WEB_PORT:-3000}:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     networks:
       - ecg_network
 

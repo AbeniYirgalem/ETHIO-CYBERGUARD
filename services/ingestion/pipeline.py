@@ -33,9 +33,30 @@ class IngestionPipeline:
         return True
 
     def compute_event_hash(self, event_data: Dict[str, Any]) -> str:
-        """Computes deterministic SHA-256 fingerprint of the event for deduplication."""
-        event_str = f"{event_data.get('event_type')}|{event_data.get('source_ip')}|{event_data.get('destination_ip')}|{event_data.get('host_name')}|{event_data.get('raw_data')}"
-        return hashlib.sha256(event_str.encode()).hexdigest()
+        """Deterministic SHA-256 fingerprint used for deduplication.
+
+        Works for flat collector events (source_ip, host_name, ...) and for normalized
+        events (nested source / network / process objects). Normalized events also carry
+        their event_id, timestamp and user, so two different events of the same type are
+        no longer mistaken for duplicates. The organization id is part of the fingerprint, so
+        deduplication never crosses an organization boundary.
+        """
+        source = event_data.get("source") if isinstance(event_data.get("source"), dict) else {}
+        network = event_data.get("network") if isinstance(event_data.get("network"), dict) else {}
+        process = event_data.get("process") if isinstance(event_data.get("process"), dict) else {}
+        parts = [
+            event_data.get("org_id"),   # two organizations may send identical events; neither hides the other's
+            event_data.get("event_type"),
+            event_data.get("source_ip") or network.get("source_ip"),
+            event_data.get("destination_ip") or network.get("destination_ip"),
+            event_data.get("host_name") or source.get("hostname"),
+            event_data.get("raw_data"),
+            event_data.get("event_id"),
+            event_data.get("timestamp"),
+            event_data.get("user"),
+            process.get("command_line"),
+        ]
+        return hashlib.sha256("|".join(str(p) for p in parts).encode()).hexdigest()
 
     def is_duplicate(self, event_hash: str) -> bool:
         return event_hash in self.processed_hashes

@@ -3,10 +3,10 @@ ETHIO-CYBERGUARD Central Backend API Service
 FastAPI REST & WebSocket Gateway for SOC Monitoring, Ingestion, Detection & Multi-Agent AI
 """
 
-from fastapi import FastAPI, HTTPException, Request, Depends, status, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Request, Depends, Query, status, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
+from pydantic import BaseModel, Field
+from typing import List, Dict, Any, Literal, Optional
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 import sys
@@ -42,21 +42,39 @@ from apps.api.routers.jobs import router as jobs_router
 from apps.api.routers.connectors import router as connectors_router
 from apps.api.routers.health import router as health_router
 from database.connection import init_db
+from database import state_store
+from apps.api.routers import response as response_module
 from services.websocket.manager import ws_manager
+from services.telemetry.stats import telemetry_stats, telemetry_registry, register_persistence, restore_from_store
+from services.security.tenancy import DEFAULT_ORG_ID, org_of, is_global
 from services.ingestion.pipeline import ingestion_pipeline
-from apps.api.dependencies import verify_collector_api_key
-from apps.api.config import DEMO_MODE, MAX_PAYLOAD_BYTES
+from apps.api.dependencies import require_permission, verify_token, after_state_restore, DEMO_USERS
+from apps.api.tenancy import resolve_collector_org
+from apps.api.config import DEMO_MODE, MAX_PAYLOAD_BYTES, validate_production_config
+from apps.api.security_middleware import install_security_middleware
+
+register_persistence()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_production_config()
     init_db()
+    state_store.restore_all()
+    after_state_restore()
+    restore_from_store()  # event counters and hourly history survive restarts
+    response_module._rearm_demo_seed_actions()
     yield
+    telemetry_stats.flush()  # save the last few seconds of counts
+    telemetry_registry.flush_all()
 
 app = FastAPI(
     title="ETHIO-CYBERGUARD Central SOC API",
     description="Centralized Security Operations Center and AI Investigation Platform API",
     version="1.1.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    # Interactive API docs are only exposed in demo mode.
+    docs_url="/docs" if DEMO_MODE else None,
+    redoc_url="/redoc" if DEMO_MODE else None,
 )
 
 # Register Modular Routers (Supporting both /api and /api/v1 paths)
@@ -82,6 +100,9 @@ allowed_origins_env = os.getenv(
 )
 allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
 
+# Added before CORS so CORS wraps it (429 responses still carry CORS headers).
+install_security_middleware(app)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
@@ -105,81 +126,6 @@ alert_notifier = AlertNotifier()
 
 # Production Channel-based WebSocket Manager imported from services.websocket.manager
 
-# In-Memory State for Demonstration & Local Running
-mock_incidents = [
-    {
-        "id": "e0000000-0000-0000-0000-000000000001",
-        "incident_number": "INC-00042",
-        "title": "Suspicious Obfuscated PowerShell Activity & C2 Beaconing",
-        "severity": "CRITICAL",
-        "status": "INVESTIGATING",
-        "risk_score": 92,
-        "affected_asset": "SERVER-04",
-        "asset_ip": "10.10.1.24",
-        "department": "Core Banking Infrastructure",
-        "first_seen": "2026-09-30 10:42:00+03:00",
-        "last_activity": "2026-09-30 11:18:00+03:00",
-        "assigned_analyst": "Dawit Mengistu",
-        "summary": "Privileged service account initiated hidden PowerShell with base64 encoded command, establishing outbound beaconing to known malicious C2 IP 185.220.101.5."
-    },
-    {
-        "id": "e0000000-0000-0000-0000-000000000002",
-        "incident_number": "INC-00021",
-        "title": "Perimeter Gateway Distributed SSH & RDP Brute Force",
-        "severity": "HIGH",
-        "status": "OPEN",
-        "risk_score": 78,
-        "affected_asset": "FW-PERIMETER-01",
-        "asset_ip": "197.156.70.1",
-        "department": "Network Security",
-        "first_seen": "2026-09-30 09:15:00+03:00",
-        "last_activity": "2026-09-30 09:22:00+03:00",
-        "assigned_analyst": "Sara Yohannes",
-        "summary": "Over 1,200 failed authentication attempts detected within 4 minutes originating from distributed IP ranges targeting perimeter firewall management interface."
-    },
-    {
-        "id": "e0000000-0000-0000-0000-000000000003",
-        "incident_number": "INC-00019",
-        "title": "Unusual Off-Hours Privileged SWIFT Access from Remote IP",
-        "severity": "MEDIUM",
-        "status": "INVESTIGATING",
-        "risk_score": 64,
-        "affected_asset": "LAPTOP-FINANCE-22",
-        "asset_ip": "10.10.4.88",
-        "department": "Treasury & SWIFT Processing",
-        "first_seen": "2026-09-30 03:14:00+03:00",
-        "last_activity": "2026-09-30 03:45:00+03:00",
-        "assigned_analyst": "Dawit Mengistu",
-        "summary": "Treasury workstation user logged in at 03:14 AM EAT from unmanaged residential IP subnet, accessing SWIFT payment file transfer directory."
-    }
-]
-
-mock_response_actions = [
-    {
-        "id": "ACT-001",
-        "incident_number": "INC-00042",
-        "action_type": "ISOLATE_HOST",
-        "target_entity": "SERVER-04 (10.10.1.24)",
-        "recommended_by": "AI_RISK_AGENT",
-        "reasoning": "Potential active malware / C2 beaconing. Host isolation cuts lateral traversal while maintaining forensic link to SOC.",
-        "confidence": 94,
-        "status": "PENDING_APPROVAL",
-        "created_at": "2026-09-30T10:45:00Z"
-    },
-    {
-        "id": "ACT-002",
-        "incident_number": "INC-00042",
-        "action_type": "BLOCK_IP",
-        "target_entity": "185.220.101.5",
-        "recommended_by": "AI_THREAT_INTEL_AGENT",
-        "reasoning": "Confirmed Cobalt Strike C2 server on Ethio-CERT blacklist. Egress and ingress drop recommended.",
-        "confidence": 98,
-        "status": "PENDING_APPROVAL",
-        "created_at": "2026-09-30T10:46:00Z"
-    }
-]
-
-# Pydantic Schemas
 class EventIngestPayload(BaseModel):
     event_uid: Optional[str] = None
     timestamp: Optional[str] = None
@@ -228,29 +174,6 @@ def root():
         "docs_url": "/docs"
     }
 
-@app.get("/api/v1/stats/overview")
-def get_soc_overview():
-    return {
-        "metrics": {
-            "critical_alerts": 7,
-            "high_risk_alerts": 23,
-            "active_incidents": 12,
-            "events_processed_today": 284921
-        },
-        "top_threats": [
-            {"name": "Distributed Brute Force", "count": 1420, "severity": "HIGH"},
-            {"name": "Obfuscated PowerShell Execution", "count": 18, "severity": "CRITICAL"},
-            {"name": "Off-Hours SWIFT Directory Access", "count": 3, "severity": "MEDIUM"},
-            {"name": "Known Malicious C2 Beaconing", "count": 12, "severity": "CRITICAL"}
-        ],
-        "system_health": {
-            "ingestion_pipeline": "HEALTHY (4,210 eps)",
-            "detection_engine": "ACTIVE (148 rules)",
-            "correlation_engine": "RUNNING",
-            "ai_agents_cluster": "ONLINE (7/7 Agents Ready)"
-        }
-    }
-
 @app.get("/api/system/mode")
 @app.get("/api/v1/system/mode")
 def get_system_mode():
@@ -260,11 +183,49 @@ def get_system_mode():
         "max_payload_bytes": MAX_PAYLOAD_BYTES
     }
 
+def _stream_event(norm: Dict[str, Any]) -> Dict[str, Any]:
+    """The part of a normalized event that is safe and useful to push to SOC consoles
+    (raw_data and enrichment stay on the server)."""
+    process = norm.get("process") or {}
+    return {
+        "event_id": norm.get("event_id"),
+        "timestamp": norm.get("timestamp"),
+        "source": norm.get("source"),
+        "event_type": norm.get("event_type"),
+        "severity": norm.get("severity"),
+        "user": norm.get("user"),
+        "process": {"name": process.get("name"), "command_line": process.get("command_line")},
+        "network": norm.get("network"),
+    }
+
+
 @app.post("/api/v1/events/ingest")
-def ingest_event(
+async def ingest_event(
     payload: EventIngestPayload,
-    is_authenticated: bool = Depends(verify_collector_api_key)
+    org_id: str = Depends(resolve_collector_org)
 ):
+    norm = normalizer.normalize(payload.model_dump(exclude_none=True))
+    # The collector's key decides the organization; the event body can never choose it.
+    norm["org_id"] = org_id
+    # Rate limit per organization + host, so one organization cannot exhaust another's allowance.
+    client_id = f"{org_id}:{(norm.get('source') or {}).get('hostname') or 'collector'}"
+    ingest_result = ingestion_pipeline.ingest(norm, client_id=client_id)
+    result_status = ingest_result.get("status", "ACCEPTED")
+    if result_status == "RATE_LIMITED":
+        raise HTTPException(status_code=429, detail=ingest_result.get("message"))
+
+    alerts: List[Dict[str, Any]] = []
+    if result_status == "ACCEPTED":
+        alerts = detection_engine.evaluate_event(norm)
+        telemetry_registry.record_event(org_id, norm.get("severity", "INFO"), alerts)
+        # Push to the consoles of THIS organization only (plus national administrators).
+        await ws_manager.broadcast_to_tenant(org_id, {
+            "type": "EVENT_INGESTED",
+            "org_id": org_id,
+            "event": _stream_event(norm),
+            "alerts": alerts,
+            "stats": telemetry_registry.for_org(org_id).snapshot(),
+        })
     norm = normalizer.normalize(payload.model_dump())
     client_id = payload.host_name or (payload.source.get("host") if payload.source else "collector")
     ingest_result = ingestion_pipeline.ingest(norm, client_id=client_id)
@@ -304,7 +265,7 @@ def ingest_event(
         pass
 
     return {
-        "status": ingest_result.get("status", "ACCEPTED"),
+        "status": result_status,
         "event_id": norm["event_id"],
         "event_hash": ingest_result.get("event_hash"),
         "queue_depth": ingest_result.get("queue_depth", 0),
@@ -312,6 +273,7 @@ def ingest_event(
         "alerts": alerts
     }
 
+# NOTE: SOAR response routes live in apps/api/routers/response.py (authenticated, RBAC + audit).
 @app.get("/api/v1/incidents")
 def list_incidents():
     return {"incidents": mock_incidents}
@@ -382,41 +344,15 @@ def chat_with_assistant(payload: AssistantQueryRequest):
 # Note: Response actions & approvals are handled with full dual-custody RBAC via response_router
 
 # --- Phishing Email Analyzer (ThePhish / NLP Engine) ---
-@app.post("/api/v1/phishing/analyze")
-def analyze_phishing_email(payload: PhishingAnalyzeRequest):
-    result = phishing_analyzer.analyze(
-        raw_content=payload.raw_content,
-        subject=payload.subject,
-        sender=payload.sender
-    )
-    return result
-
 # --- Typosquatting & Brand Defense Monitor (openSquat Engine) ---
-@app.get("/api/v1/typosquat/scan")
-def scan_typosquats(target: str = "telebirr.et", limit: int = 40):
-    return typosquat_monitor.scan_domain(domain_or_brand=target, limit=limit)
-
 # --- OSINT & Attack Surface Recon (SpiderFoot / Sherlock Engine) ---
-@app.get("/api/v1/osint/scan")
-def scan_attack_surface(target: str = "ethiotelecom.et"):
-    return osint_recon.scan_target(target=target)
-
 # --- Security Awareness & Training (CyberSatark Engine) ---
-@app.get("/api/v1/awareness/campaigns")
-def list_awareness_campaigns():
-    return {"campaigns": awareness_simulator.get_campaigns()}
-
-@app.get("/api/v1/awareness/metrics")
-def get_awareness_metrics():
-    return awareness_simulator.get_org_metrics()
-
-@app.post("/api/v1/awareness/launch")
-def launch_awareness_simulation(payload: AwarenessLaunchRequest):
-    return awareness_simulator.launch_simulation(campaign_id=payload.campaign_id, department=payload.department)
-
 # --- Common Security Graph Unified Pipeline Engine ---
 @app.post("/api/v1/pipeline/execute-slice")
-def execute_unified_pipeline_slice(payload: UnifiedPipelineRequest):
+def execute_unified_pipeline_slice(
+    payload: UnifiedPipelineRequest,
+    _user: Dict[str, Any] = Depends(require_permission("incident:assign")),
+):
     default_email = """From: "Telebirr Support" <support@telebirr-bonus.xyz>
 To: dawit.mengistu@cbe.com.et
 Reply-To: phisher-collector@gmail.com
@@ -444,7 +380,7 @@ def health_check():
         "status": "healthy",
         "service": "ETHIO-CYBERGUARD-API",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "active_websockets": len(ws_manager.active_connections)
+        "active_websockets": ws_manager.get_active_count()
     }
 
 @app.get("/api/v1/ready")
@@ -459,18 +395,42 @@ def readiness_check():
 # --- Real-Time SOC WebSocket Telemetry Stream ---
 @app.websocket("/ws/live-events")
 async def websocket_live_events(websocket: WebSocket, token: Optional[str] = None):
-    user_meta = {"role": "SECURITY_ANALYST", "organization": "Commercial Bank of Ethiopia"}
+    user_meta = {
+        "role": "SECURITY_ANALYST",
+        "organization": "Commercial Bank of Ethiopia",
+        "org_id": DEFAULT_ORG_ID,
+        "global": False,
+    }
     if token:
+        # A token that is present must be valid; a bad token is never silently downgraded to guest.
         try:
-            from apps.api.dependencies import verify_token
             payload = verify_token(token)
-            user_meta = {
-                "role": payload.get("role", "SECURITY_ANALYST"),
-                "organization": payload.get("organization", "Commercial Bank of Ethiopia"),
-                "email": payload.get("sub")
-            }
         except Exception:
-            pass
+            await websocket.close(code=1008)
+            return
+        known_user = DEMO_USERS.get(payload.get("sub"))
+        if known_user is not None:
+            # Same rule as the REST API: a password reset retires every earlier session.
+            if int(payload.get("tv", 0) or 0) != int(known_user.get("token_version", 0) or 0):
+                await websocket.close(code=1008)
+                return
+            identity = known_user          # the live account decides role and organization
+        elif DEMO_MODE:
+            identity = payload             # demo sandbox: accept an unknown but validly signed token
+        else:
+            await websocket.close(code=1008)
+            return
+        user_meta = {
+            "role": identity.get("role", "SECURITY_ANALYST"),
+            "organization": identity.get("organization", "Commercial Bank of Ethiopia"),
+            "org_id": org_of(identity),
+            "global": is_global(identity),
+            "email": payload.get("sub")
+        }
+    elif not DEMO_MODE:
+        # Production: the live stream carries security telemetry, so a login is mandatory.
+        await websocket.close(code=1008)
+        return
 
     connected = await ws_manager.connect(websocket, user_meta)
     if not connected:
@@ -481,7 +441,7 @@ async def websocket_live_events(websocket: WebSocket, token: Optional[str] = Non
         await websocket.send_json({
             "type": "CONNECTION_ESTABLISHED",
             "message": "Connected to authenticated ETHIO-CYBERGUARD live SOC telemetry stream",
-            "tenant_channel": f"tenant:{user_meta.get('organization')}",
+            "tenant_channel": f"tenant:{user_meta.get('org_id')}",
             "role": user_meta.get("role"),
             "timestamp": datetime.now(timezone.utc).isoformat()
         })
@@ -495,21 +455,24 @@ async def websocket_live_events(websocket: WebSocket, token: Optional[str] = Non
 
 # --- Multi-Channel Alert Notification Dispatch ---
 class AlertNotifyRequest(BaseModel):
-    incident_id: str
-    severity: str = "HIGH"
-    risk_score: int = 85
-    target_asset: str = "SERVER-04"
-    target_user: Optional[str] = "dawit.mengistu"
-    title_en: Optional[str] = "Security Incident Alert"
-    title_am: Optional[str] = "የደህንነት ማስጠንቀቂያ"
-    channel: str = "webhook"
+    incident_id: str = Field(max_length=64)
+    severity: Literal["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"] = "HIGH"
+    risk_score: int = Field(default=85, ge=0, le=100)
+    target_asset: str = Field(default="SERVER-04", max_length=200)
+    target_user: Optional[str] = Field(default="dawit.mengistu", max_length=200)
+    title_en: Optional[str] = Field(default="Security Incident Alert", max_length=200)
+    title_am: Optional[str] = Field(default="የደህንነት ማስጠንቀቂያ", max_length=200)
+    channel: Literal["webhook", "email"] = "webhook"
 
 @app.post("/api/v1/alerts/notify")
-async def dispatch_alert_notification(payload: AlertNotifyRequest):
+async def dispatch_alert_notification(
+    payload: AlertNotifyRequest,
+    _user: Dict[str, Any] = Depends(require_permission("incident:assign")),
+):
     alert_dict = payload.model_dump()
     result = alert_notifier.dispatch(alert_dict, channel=payload.channel)
-    # Broadcast to live SOC console via WebSocket
-    await ws_manager.broadcast({
+    # Broadcast to the live SOC consoles of the sender's organization only
+    await ws_manager.broadcast_to_tenant(org_of(_user), {
         "type": "NEW_ALERT_DISPATCHED",
         "alert": alert_dict,
         "notification": result
@@ -518,7 +481,10 @@ async def dispatch_alert_notification(payload: AlertNotifyRequest):
 
 # --- Ingestion & Detection EPS Benchmark Runner ---
 @app.get("/api/v1/benchmark/run")
-def trigger_benchmark(events: int = 5000):
+def trigger_benchmark(
+    events: int = Query(5000, ge=100, le=50000),
+    _user: Dict[str, Any] = Depends(require_permission("user:admin")),
+):
     report = run_benchmark(total_events=events, num_workers=4)
     return report
 

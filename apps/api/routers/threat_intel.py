@@ -4,12 +4,18 @@ Provides indicator lookups (IOC query), threat feed status, STIX 2.1 bundle expo
 Supports /api/threat-intelligence and /api/v1/threat-intelligence.
 """
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 
 from services.threat_intelligence.ioc_database import ThreatIntelDatabase
 from services.threat_intelligence.feed_manager import feed_manager
+from ..dependencies import get_current_user, require_permission
+
+# Reads need any valid login (guest allowed only in DEMO_MODE).
+# Importing indicators changes detection content, so it needs rules:edit.
+_READ = Depends(get_current_user)
+_EDIT = Depends(require_permission("rules:edit"))
 
 router = APIRouter(tags=["Threat Intelligence & IOCs"])
 db = ThreatIntelDatabase()
@@ -26,7 +32,8 @@ class ImportIndicatorRequest(BaseModel):
 @router.get("/api/v1/threat-intelligence")
 def list_threat_indicators(
     ioc_type: Optional[str] = Query(None, alias="type"),
-    reputation: Optional[str] = None
+    reputation: Optional[str] = None,
+    _user: Dict[str, Any] = _READ,
 ):
     results = list(db.DEFAULT_IOCS.values())
     if ioc_type:
@@ -37,7 +44,7 @@ def list_threat_indicators(
 
 @router.get("/api/threat-intelligence/ioc/{ioc}")
 @router.get("/api/v1/threat-intelligence/ioc/{ioc}")
-def lookup_ioc(ioc: str):
+def lookup_ioc(ioc: str, _user: Dict[str, Any] = _READ):
     record = db.lookup(ioc)
     if not record:
         return {
@@ -55,13 +62,13 @@ def lookup_ioc(ioc: str):
 
 @router.get("/api/threat-intelligence/stix")
 @router.get("/api/v1/threat-intelligence/stix")
-def export_stix_bundle():
+def export_stix_bundle(_user: Dict[str, Any] = _READ):
     """Exports active threat indicators as standard STIX 2.1 JSON bundle for SIEM/TAXII integration."""
     return feed_manager.export_stix_bundle()
 
 @router.post("/api/threat-intelligence/import", status_code=status.HTTP_201_CREATED)
 @router.post("/api/v1/threat-intelligence/import", status_code=status.HTTP_201_CREATED)
-def import_indicator(payload: ImportIndicatorRequest):
+def import_indicator(payload: ImportIndicatorRequest, _user: Dict[str, Any] = _EDIT):
     """Ingests indicator with deduplication, confidence scores, and expiration timestamps."""
     record = feed_manager.import_indicator(
         indicator=payload.indicator,
@@ -79,7 +86,7 @@ def import_indicator(payload: ImportIndicatorRequest):
 
 @router.get("/api/threat-intelligence/feeds")
 @router.get("/api/v1/threat-intelligence/feeds")
-def list_threat_feeds():
+def list_threat_feeds(_user: Dict[str, Any] = _READ):
     """Documents exact sources, update frequencies, confidence, and licenses for national & global feeds."""
     return {
         "feeds": [

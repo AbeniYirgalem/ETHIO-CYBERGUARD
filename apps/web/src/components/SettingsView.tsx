@@ -7,6 +7,8 @@ import {
   CheckCircle2, 
   Globe
 } from 'lucide-react';
+import { getSession } from '../api/client';
+import { UserAdminPanel } from './UserAdminPanel';
 
 interface SettingsViewProps {
   currentRole: string;
@@ -15,6 +17,8 @@ interface SettingsViewProps {
   setCurrentOrg: (org: string) => void;
   language: 'en' | 'am';
   setLanguage: (lang: 'en' | 'am') => void;
+  /** True when signed in to the real API: the role comes from the server and cannot be changed here. */
+  roleLocked?: boolean;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -23,9 +27,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   currentOrg,
   setCurrentOrg,
   language,
-  setLanguage
+  setLanguage,
+  roleLocked = false
 }) => {
   const [saveNotice, setSaveNotice] = useState(false);
+  // Shown only for a signed-in administrator; the server enforces this independently.
+  const isAdminSession = roleLocked && getSession()?.user.role === 'SUPER_ADMIN';
 
   const handleSave = () => {
     setSaveNotice(true);
@@ -139,10 +146,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <div className="bg-[#111923] border border-[#1E2A38] rounded-xl p-5 space-y-4">
         <h2 className="text-sm font-bold text-white flex items-center space-x-2">
           <Key className="w-4 h-4 text-[#00D9FF]" />
-          <span>Simulated RBAC Role</span>
+          <span>{roleLocked ? 'Server-Assigned Role' : 'Simulated RBAC Role'}</span>
         </h2>
         <p className="text-xs text-[#7D8A99]">
-          Switch your active role to verify permission enforcement on containment actions, user management, and rule editing:
+          {roleLocked
+            ? 'You are signed in to the live API. Your role is assigned by the server and cannot be changed here. Sign out to try the simulated role switcher.'
+            : 'Switch your active role to verify permission enforcement on containment actions, user management, and rule editing:'}
         </p>
 
         <div className="space-y-2">
@@ -150,7 +159,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               key={r.id}
               onClick={() => setCurrentRole(r.id)}
-              className={`w-full p-2.5 rounded-lg border text-left flex justify-between items-center text-xs transition ${
+              disabled={roleLocked}
+              className={`w-full p-2.5 rounded-lg border text-left flex justify-between items-center text-xs transition ${roleLocked ? 'cursor-not-allowed opacity-70' : ''} ${
                 currentRole === r.id
                   ? 'bg-[#00D9FF]/10 border-[#00D9FF] text-white'
                   : 'bg-[#0D131C] border-[#1E2A38] text-[#7D8A99] hover:border-[#7D8A99] hover:text-[#E6EDF3]'
@@ -170,7 +180,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* 4. Localization Preferences */}
+      {/* 4. User management (administrators, live API only) */}
+      {isAdminSession && <UserAdminPanel />}
+
+      {/* 5. Localization Preferences */}
       <div className="bg-[#111923] border border-[#1E2A38] rounded-xl p-5 space-y-4">
         <h2 className="text-sm font-bold text-white flex items-center space-x-2">
           <Globe className="w-4 h-4 text-[#00D9FF]" />

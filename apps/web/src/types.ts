@@ -1,6 +1,18 @@
 export type Severity = 'INFO' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-export type IncidentStatus = 'OPEN' | 'INVESTIGATING' | 'CONTAINED' | 'RESOLVED' | 'CLOSED';
-export type ActionStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'EXECUTED';
+export type IncidentStatus =
+  | 'OPEN' | 'NEW' | 'TRIAGED' | 'ASSIGNED' | 'INVESTIGATING' | 'CONTAINMENT_PENDING'
+  | 'CONTAINED' | 'ERADICATION' | 'RECOVERY' | 'RESOLVED' | 'CLOSED' | 'REOPENED';
+export type ActionStatus =
+  | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'EXECUTED'
+  | 'EXPIRED' | 'ROLLED_BACK' | 'DRY_RUN_SIMULATED';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  department?: string;
+}
 
 export interface SecurityEvent {
   event_id: string;
@@ -67,6 +79,61 @@ export interface ThreatIndicator {
   related_incidents: string[];
 }
 
+export interface TimelineBucket {
+  hour: string; // ISO, start of the UTC hour
+  events: number;
+  critical: number;
+  alerts: number;
+}
+
+export interface SectorProfile {
+  active_alerts: number;
+  critical: number;
+  high: number;
+  max_severity: string;
+}
+
+export interface DashboardStats {
+  metrics: {
+    events_per_second: number;
+    events_processed_today: number;
+    active_incidents: number;
+    critical_alerts: number;
+    high_risk_alerts: number;
+    medium_risk_alerts: number;
+    pending_approvals: number;
+    audit_entries: number;
+    assets_monitored: number;
+    mean_time_to_detect_minutes: number | null;
+    mean_time_to_respond_minutes: number | null;
+  };
+  /** How many incidents the MTTD / MTTR averages were measured from. */
+  response_metrics?: { mttd_samples: number; mttr_samples: number };
+  top_threats: Array<{ name: string; count: number; severity: string; tactic?: string | null; source: string }>;
+  /** Hourly event history, last 24 UTC hours, oldest first. */
+  timeline?: TimelineBucket[];
+  /** Active incidents per sector (Banking, Telecom, ...). */
+  sector_profiles?: Record<string, SectorProfile>;
+  system_health: { ingestion_pipeline: string; live_stream_clients: number };
+}
+
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  operator: string;
+  action: string;
+  target: string;
+  result: string;
+  details: string;
+  prev_hash: string;
+  integrity_hash: string;
+}
+
+export interface AssistantReply {
+  reply: string;
+  citations: Array<{ source: string; entity: string }>;
+}
+
 export interface ResponseAction {
   id: string;
   incident_number: string;
@@ -78,6 +145,10 @@ export interface ResponseAction {
   status: ActionStatus;
   created_at: string;
   rejection_reason?: string;
+  reviewed_by?: string;
+  requested_by_id?: string;
+  dry_run?: boolean;
+  expires_at?: string;
 }
 
 export interface ChatMessage {

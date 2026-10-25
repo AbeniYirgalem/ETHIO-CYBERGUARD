@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Shield, Radio, RefreshCw } from 'lucide-react';
 import { soundManager } from '../utils/sound';
+import type { Incident, SectorProfile } from '../types';
+import { ipInCidr } from '../utils/network';
 
 export interface RegionalNode {
   id: string;
@@ -14,6 +16,15 @@ export interface RegionalNode {
   latencyMs: number;
   activeAttacksCount: number;
   coords: { x: number; y: number }; // Percentage relative to SVG container
+  /** Incident sectors that feed this node (live mode). Regional hubs have no sector feed. */
+  sectors: string[];
+}
+
+interface EthiopiaCyberRadarProps {
+  /** True when signed in and the numbers come from the backend. */
+  live?: boolean;
+  incidents?: Incident[];
+  sectorProfiles?: Record<string, SectorProfile> | null;
 }
 
 const ETHIOPIAN_NODES: RegionalNode[] = [
@@ -28,7 +39,8 @@ const ETHIOPIAN_NODES: RegionalNode[] = [
     throughput: '14.2 Gbps',
     latencyMs: 1.2,
     activeAttacksCount: 2,
-    coords: { x: 50, y: 46 }
+    coords: { x: 50, y: 46 },
+    sectors: ['Banking', 'Fintech']
   },
   {
     id: 'node-insa-hq',
@@ -41,7 +53,8 @@ const ETHIOPIAN_NODES: RegionalNode[] = [
     throughput: '38.4 Gbps',
     latencyMs: 0.8,
     activeAttacksCount: 0,
-    coords: { x: 52, y: 44 }
+    coords: { x: 52, y: 44 },
+    sectors: ['Government']
   },
   {
     id: 'node-ethio-tel',
@@ -54,7 +67,8 @@ const ETHIOPIAN_NODES: RegionalNode[] = [
     throughput: '82.6 Gbps',
     latencyMs: 1.9,
     activeAttacksCount: 5,
-    coords: { x: 48, y: 45 }
+    coords: { x: 48, y: 45 },
+    sectors: ['Telecom']
   },
   {
     id: 'node-hawassa',
@@ -67,7 +81,8 @@ const ETHIOPIAN_NODES: RegionalNode[] = [
     throughput: '6.4 Gbps',
     latencyMs: 8.4,
     activeAttacksCount: 0,
-    coords: { x: 49, y: 68 }
+    coords: { x: 49, y: 68 },
+    sectors: []
   },
   {
     id: 'node-diredawa',
@@ -80,7 +95,8 @@ const ETHIOPIAN_NODES: RegionalNode[] = [
     throughput: '8.1 Gbps',
     latencyMs: 12.1,
     activeAttacksCount: 1,
-    coords: { x: 74, y: 42 }
+    coords: { x: 74, y: 42 },
+    sectors: []
   },
   {
     id: 'node-bahirdar',
@@ -93,7 +109,8 @@ const ETHIOPIAN_NODES: RegionalNode[] = [
     throughput: '5.2 Gbps',
     latencyMs: 10.6,
     activeAttacksCount: 0,
-    coords: { x: 38, y: 28 }
+    coords: { x: 38, y: 28 },
+    sectors: []
   },
   {
     id: 'node-adama',
@@ -106,16 +123,43 @@ const ETHIOPIAN_NODES: RegionalNode[] = [
     throughput: '9.8 Gbps',
     latencyMs: 4.1,
     activeAttacksCount: 0,
-    coords: { x: 58, y: 50 }
+    coords: { x: 58, y: 50 },
+    sectors: ['Banking', 'Fintech']
   }
 ];
 
-export const EthiopiaCyberRadar: React.FC = () => {
-  const [selectedNode, setSelectedNode] = useState<RegionalNode>(ETHIOPIAN_NODES[0]);
+export const EthiopiaCyberRadar: React.FC<EthiopiaCyberRadarProps> = ({
+  live = false,
+  incidents = [],
+  sectorProfiles = null
+}) => {
+  const [selectedId, setSelectedId] = useState<string>(ETHIOPIAN_NODES[0].id);
   const [isScanning, setIsScanning] = useState(false);
 
+  // Live mode: a node's status and probe count come from open incidents whose
+  // asset IP lies inside the node's address range. Nothing else is invented.
+  const activeIncidents = incidents.filter(i => String(i.status).toUpperCase() !== 'CLOSED');
+  const nodes: RegionalNode[] = live
+    ? ETHIOPIAN_NODES.map(node => {
+        const onNode = activeIncidents.filter(i => ipInCidr(i.asset_ip, node.ipRange));
+        const serious = onNode.some(i => i.severity === 'CRITICAL' || i.severity === 'HIGH');
+        return { ...node, status: serious ? 'ELEVATED_THREAT' : 'OPTIMAL', activeAttacksCount: onNode.length };
+      })
+    : ETHIOPIAN_NODES;
+  const selectedNode = nodes.find(n => n.id === selectedId) ?? nodes[0];
+
+  const sectorSummary = (node: RegionalNode) => {
+    if (!sectorProfiles || node.sectors.length === 0) return null;
+    const rows = node.sectors.map(name => sectorProfiles[name]).filter(Boolean) as SectorProfile[];
+    return {
+      active: rows.reduce((sum, r) => sum + r.active_alerts, 0),
+      critical: rows.reduce((sum, r) => sum + r.critical, 0),
+    };
+  };
+  const selectedSector = sectorSummary(selectedNode);
+
   const handleNodeClick = (node: RegionalNode) => {
-    setSelectedNode(node);
+    setSelectedId(node.id);
     soundManager.playClick();
   };
 
@@ -139,23 +183,25 @@ export const EthiopiaCyberRadar: React.FC = () => {
               Ethiopian Critical Infrastructure Defense Radar
             </h2>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#00D9FF]/10 text-[#00D9FF] border border-[#00D9FF]/20">
-              LIVE GRID
+              {live ? 'LIVE INCIDENTS' : 'SIMULATED'}
             </span>
           </div>
           <p className="text-xs text-[#7D8A99] mt-0.5">
-            Real-time telemetry feeds from banking networks, telecom backbones, and government data centers
+            {live
+              ? 'Open incidents placed on infrastructure nodes by asset IP address range'
+              : 'Simulated telemetry feeds from banking networks, telecom backbones, and government data centers'}
           </p>
         </div>
 
         <div className="flex items-center space-x-3">
-          <button
+          {!live && <button
             onClick={triggerDiagnosticSweep}
             disabled={isScanning}
             className="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-[#00D9FF]/10 text-[#00D9FF] border border-[#00D9FF]/30 hover:bg-[#00D9FF]/20 text-xs font-mono transition"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin' : ''}`} />
             <span>{isScanning ? 'SWEEPING RADAR...' : 'DIAGNOSTIC SWEEP'}</span>
-          </button>
+          </button>}
         </div>
       </div>
 
@@ -187,7 +233,7 @@ export const EthiopiaCyberRadar: React.FC = () => {
 
           {/* SVG Connector Lines from Addis Ababa to Regional Nodes */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none">
-            {ETHIOPIAN_NODES.filter(n => n.id !== 'node-cbe-hq').map(node => (
+            {nodes.filter(n => n.id !== 'node-cbe-hq').map(node => (
               <line
                 key={`line-${node.id}`}
                 x1="50%"
@@ -203,7 +249,7 @@ export const EthiopiaCyberRadar: React.FC = () => {
           </svg>
 
           {/* Infrastructure Nodes on Grid */}
-          {ETHIOPIAN_NODES.map((node) => {
+          {nodes.map((node) => {
             const isSelected = selectedNode.id === node.id;
             return (
               <div
@@ -242,7 +288,7 @@ export const EthiopiaCyberRadar: React.FC = () => {
             GEO: 9.0300° N, 38.7400° E • ADDIS ABABA ROOT
           </div>
           <div className="absolute top-2 right-3 text-[10px] font-mono text-[#00D9FF]">
-            DEFCON 2 • ACTIVE SURVEILLANCE
+            {live ? `${activeIncidents.length} ACTIVE INCIDENTS` : 'DEFCON 2 • ACTIVE SURVEILLANCE'}
           </div>
         </div>
 
@@ -279,30 +325,54 @@ export const EthiopiaCyberRadar: React.FC = () => {
 
               <div className="p-2.5 bg-[#111923] rounded-lg border border-[#1E2A38]">
                 <span className="text-[10px] text-[#7D8A99] block font-mono">BACKBONE THROUGHPUT</span>
-                <span className="text-white font-mono font-semibold">{selectedNode.throughput}</span>
-                <span className="text-[10px] text-[#22C55E] block font-mono mt-0.5">{selectedNode.latencyMs} ms latency</span>
+                {live ? (
+                  <>
+                    <span className="text-white font-mono font-semibold">Not monitored</span>
+                    <span className="text-[10px] text-[#7D8A99] block font-mono mt-0.5">no network probe connected</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-white font-mono font-semibold">{selectedNode.throughput}</span>
+                    <span className="text-[10px] text-[#22C55E] block font-mono mt-0.5">{selectedNode.latencyMs} ms latency</span>
+                  </>
+                )}
               </div>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-[#7D8A99]">Active Threat Ingress:</span>
+                <span className="text-[#7D8A99]">{live ? 'Open incidents on this node:' : 'Active Threat Ingress:'}</span>
                 <span className={`font-mono font-bold ${selectedNode.activeAttacksCount > 0 ? 'text-[#FF1744]' : 'text-[#22C55E]'}`}>
-                  {selectedNode.activeAttacksCount} Active Probes
+                  {live ? selectedNode.activeAttacksCount : `${selectedNode.activeAttacksCount} Active Probes`}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-[#7D8A99]">BGP Peering Link:</span>
-                <span className="text-white font-mono">Carrier Interconnect 100G</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-[#7D8A99]">Firewall Mitigation State:</span>
-                <span className="text-[#00D9FF] font-mono">Fortinet Cluster Synced</span>
-              </div>
+              {live ? (
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-[#7D8A99]">
+                    {selectedNode.sectors.length > 0 ? `Sector (${selectedNode.sectors.join(' / ')}):` : 'Sector feed:'}
+                  </span>
+                  <span className="text-white font-mono">
+                    {selectedSector
+                      ? `${selectedSector.active} active, ${selectedSector.critical} critical`
+                      : selectedNode.sectors.length > 0 ? '0 active' : 'none for regional hubs'}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-[#7D8A99]">BGP Peering Link:</span>
+                    <span className="text-white font-mono">Carrier Interconnect 100G</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-[#7D8A99]">Firewall Mitigation State:</span>
+                    <span className="text-[#00D9FF] font-mono">Fortinet Cluster Synced</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
-          <div className="pt-3 border-t border-[#1E2A38] mt-3 flex items-center justify-between text-xs">
+          {!live && <div className="pt-3 border-t border-[#1E2A38] mt-3 flex items-center justify-between text-xs">
             <span className="text-[#7D8A99] text-[11px]">INSA Compliance: Certified</span>
             <button 
               onClick={() => {
@@ -313,7 +383,7 @@ export const EthiopiaCyberRadar: React.FC = () => {
             >
               <span>Download Node Audit →</span>
             </button>
-          </div>
+          </div>}
         </div>
       </div>
     </div>

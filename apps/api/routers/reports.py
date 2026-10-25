@@ -5,20 +5,28 @@ and supports JSON, CSV, and markdown export formats.
 Supports /api/reports and /api/v1/reports.
 """
 
-from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
 import json
 
+from services.security.tenancy import can_access
+from ..dependencies import get_current_user
 from .incidents import INCIDENTS_STORE
 
+# Reports contain incident details, so every route needs a login (guest allowed only in DEMO_MODE)
+# and only ever covers the signed-in user's own organization.
 router = APIRouter(tags=["Security Reports & Governance"])
+_READ = Depends(get_current_user)
 
 @router.get("/api/reports/incident/{incident_number}")
 @router.get("/api/v1/reports/incident/{incident_number}")
-def generate_incident_report(incident_number: str, format: str = "json"):
+def generate_incident_report(incident_number: str, format: str = "json", _user: Dict[str, Any] = _READ):
     inc = next(
-        (i for i in INCIDENTS_STORE if i["incident_number"].upper() == incident_number.upper()), 
+        (
+            i for i in INCIDENTS_STORE
+            if i["incident_number"].upper() == incident_number.upper() and can_access(_user, i)
+        ),
         None
     )
     if not inc:
@@ -69,7 +77,7 @@ def generate_incident_report(incident_number: str, format: str = "json"):
 
 @router.get("/api/reports/executive")
 @router.get("/api/v1/reports/executive")
-def generate_executive_overview_report():
+def generate_executive_overview_report(_user: Dict[str, Any] = _READ):
     return {
         "report_title": "ETHIO-CYBERGUARD Executive Cybersecurity Posture Report",
         "reporting_period": "Q3 2026",
@@ -94,7 +102,7 @@ def generate_executive_overview_report():
     }
 
 @router.get("/api/reports/compliance")
-def get_compliance_status():
+def get_compliance_status(_user: Dict[str, Any] = _READ):
     return {
         "frameworks": [
             {"framework": "INSA National Cyber Directive 2026", "score": "98%", "status": "COMPLIANT"},

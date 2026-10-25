@@ -11,9 +11,9 @@ from services.websocket.manager import ChannelSubscriptionManager
 
 client = TestClient(app)
 
-def test_response_extended_endpoints():
+def test_response_extended_endpoints(admin_headers, commander_headers):
     # 1. List actions
-    actions_res = client.get("/api/v1/response/actions")
+    actions_res = client.get("/api/v1/response/actions", headers=admin_headers)
     assert actions_res.status_code == 200
     assert "actions" in actions_res.json()
 
@@ -23,7 +23,7 @@ def test_response_extended_endpoints():
         "reason": "Suspected scanner",
         "incident_number": "INC-00042",
         "dry_run": True
-    })
+    }, headers=admin_headers)
     assert block_dry.status_code == 200
     assert block_dry.json()["status"] == "SIMULATED"
 
@@ -34,7 +34,7 @@ def test_response_extended_endpoints():
         "incident_number": "INC-00042",
         "require_approval": True,
         "dry_run": False
-    })
+    }, headers=admin_headers)
     assert block_live.status_code == 200
     live_act_id = block_live.json()["action_id"]
 
@@ -42,7 +42,7 @@ def test_response_extended_endpoints():
     reject_res = client.post(f"/api/v1/response/actions/{live_act_id}/reject", json={
         "reason": "Whitelisted partner IP",
         "operator": "Senior Analyst"
-    })
+    }, headers=admin_headers)
     assert reject_res.status_code == 200
     assert reject_res.json()["action"]["status"] == "REJECTED"
 
@@ -51,29 +51,34 @@ def test_response_extended_endpoints():
         "username": "compromised.user",
         "domain": "cbe.internal",
         "reason": "Credential stuffing detected",
-        "incident_number": "INC-00042",
-        "require_approval": False
-    })
+        "incident_number": "INC-00042"
+    }, headers=admin_headers)
     assert disable_res.status_code == 200
     disable_act_id = disable_res.json()["action_id"]
-    assert disable_res.json()["action"]["status"] == "APPROVED"
+    assert disable_res.json()["action"]["status"] == "PENDING_APPROVAL"
+
+    approve_res = client.post(f"/api/v1/response/actions/{disable_act_id}/approve", json={
+        "reason": "Credential stuffing confirmed by SOC"
+    }, headers=commander_headers)
+    assert approve_res.status_code == 200
+    assert approve_res.json()["action"]["status"] == "APPROVED"
 
     # 6. Rollback approved action
     rollback_res = client.post(f"/api/v1/response/actions/{disable_act_id}/rollback", json={
         "reason": "Identity verified, user unlocked",
         "operator": "Incident Commander"
-    })
+    }, headers=admin_headers)
     assert rollback_res.status_code == 200
     assert rollback_res.json()["action"]["status"] == "ROLLED_BACK"
 
     # 7. Non-existent action rejection 404
     err_404 = client.post("/api/v1/response/actions/ACT-INVALID-999/reject", json={
         "reason": "test"
-    })
+    }, headers=admin_headers)
     assert err_404.status_code == 404
 
     # 8. Audit logs retrieval
-    audit_res = client.get("/api/v1/response/audit-log")
+    audit_res = client.get("/api/v1/response/audit-log", headers=admin_headers)
     assert audit_res.status_code == 200
     assert "audit_logs" in audit_res.json()
 
@@ -114,7 +119,7 @@ def test_phishing_upload_and_url_extraction():
     )
     assert bad_upload.status_code == 400
 
-def test_threat_intel_extended_endpoints():
+def test_threat_intel_extended_endpoints(admin_headers):
     # 1. Filter indicators by type and reputation
     filtered_res = client.get("/api/v1/threat-intelligence?type=ipv4-addr&reputation=MALICIOUS")
     assert filtered_res.status_code == 200
@@ -139,7 +144,7 @@ def test_threat_intel_extended_endpoints():
         "source": "Ethio-CERT Flash Alert",
         "confidence": 95,
         "expires_in_days": 30
-    })
+    }, headers=admin_headers)
     assert import_res.status_code == 201
     assert import_res.json()["status"] == "IMPORTED"
 
