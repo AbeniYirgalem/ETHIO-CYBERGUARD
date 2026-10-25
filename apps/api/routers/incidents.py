@@ -150,6 +150,7 @@ class CreateIncidentPayload(BaseModel):
     asset_ip: str = "10.10.1.10"
     department: str = "Core Banking"
     sector: str = "Banking"
+    organization: Optional[str] = "Commercial Bank of Ethiopia"
     assigned_analyst: str = "Dawit Mengistu"
     summary: str
     mitre_techniques: Optional[List[str]] = None
@@ -187,6 +188,17 @@ def list_all_incidents(
     _user: Dict[str, Any] = _READ,
 ):
     results = scope(_user, INCIDENTS_STORE)
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    results = INCIDENTS_STORE
+    user_role = current_user.get("role", "SECURITY_ANALYST")
+    user_org = current_user.get("organization")
+    # Tenant Isolation: Filter by user organization unless user is SUPER_ADMIN
+    if user_role != "SUPER_ADMIN" and user_org:
+        results = [
+            i for i in results 
+            if i.get("organization") == user_org or (not i.get("organization") and user_org == "Commercial Bank of Ethiopia")
+        ]
     if status_filter:
         results = [i for i in results if i["status"].upper() == status_filter.upper()]
     if severity:
@@ -202,6 +214,11 @@ def list_all_incidents(
 @router.get("/api/v1/incidents/{incident_id}")
 def get_incident_by_id(incident_id: str, _user: Dict[str, Any] = _READ):
     inc = _get_incident(incident_id, _user)
+def get_incident_by_id(incident_id: str):
+    inc = next(
+        (i for i in INCIDENTS_STORE if i["id"] == incident_id or i["incident_number"].upper() == incident_id.upper()), 
+        None
+    )
     if not inc:
         raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found")
         
@@ -238,6 +255,7 @@ def create_incident(payload: CreateIncidentPayload, _user: Dict[str, Any] = _WRI
         "asset_ip": payload.asset_ip,
         "department": payload.department,
         "sector": payload.sector,
+        "organization": payload.organization or "Commercial Bank of Ethiopia",
         "first_seen": now_str,
         "last_activity": now_str,
         "assigned_analyst": payload.assigned_analyst,

@@ -17,8 +17,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend codebase, services, and detection rules
 COPY apps/api /app/apps/api
 COPY services /app/services
+COPY database /app/database
+COPY scripts /app/scripts
 COPY detection-rules /app/detection-rules
 COPY collectors /app/collectors
+COPY alembic.ini /app/alembic.ini
 
 EXPOSE 8000
 

@@ -21,12 +21,25 @@ class EventNormalizer:
             hash_input = f"{timestamp}-{raw_event.get('user', '')}-{raw_event.get('event_type', '')}"
             event_uid = f"ecg_{hashlib.sha256(hash_input.encode()).hexdigest()[:16]}"
 
-        source_info = raw_event.get("source", {})
+        source_info = raw_event.get("source") or {}
         if not isinstance(source_info, dict):
-            source_info = {"hostname": "unknown", "ip": "0.0.0.0"}
+            source_info = {}
+        if "hostname" not in source_info and raw_event.get("host_name"):
+            source_info["hostname"] = raw_event.get("host_name")
+        if "ip" not in source_info and raw_event.get("source_ip"):
+            source_info["ip"] = raw_event.get("source_ip")
 
-        process_info = raw_event.get("process", {})
-        network_info = raw_event.get("network", {})
+        process_info = raw_event.get("process") or {}
+        if not isinstance(process_info, dict):
+            process_info = {}
+
+        network_info = raw_event.get("network") or {}
+        if not isinstance(network_info, dict):
+            network_info = {}
+        if "source_ip" not in network_info and raw_event.get("source_ip"):
+            network_info["source_ip"] = raw_event.get("source_ip")
+        if "destination_ip" not in network_info and raw_event.get("destination_ip"):
+            network_info["destination_ip"] = raw_event.get("destination_ip")
 
         # Compute normalized severity
         severity = raw_event.get("severity", "INFO").upper()
@@ -63,6 +76,9 @@ class EventNormalizer:
                 "is_internal_network": self._is_internal(source_info.get("ip", "")),
                 "ingested_at": datetime.now(timezone.utc).isoformat()
             },
+            "source_ip": source_info.get("ip") or network_info.get("source_ip") or raw_event.get("source_ip"),
+            "destination_ip": network_info.get("destination_ip") or raw_event.get("destination_ip"),
+            "host_name": source_info.get("hostname") or raw_event.get("host_name"),
             "raw_data": raw_event.get("raw_data", {})
         }
         return normalized

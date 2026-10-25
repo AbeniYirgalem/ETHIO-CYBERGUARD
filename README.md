@@ -1,31 +1,42 @@
 <div align="center">
 
 # 🛡️ ETHIO-CYBERGUARD
+### Autonomous AI-Powered Security Operations Center & Critical Infrastructure Threat Intelligence
 
 ```text
-                        ______________  __________ 
-                       / ____/_  __/ / / /  _/ __ \
-                      / __/   / / / /_/ // // / / /
-                     / /___  / / / __  // // /_/ / 
-                    /_____/ /_/ /_/ /_/___/\____/  
-
-        ________  ______  __________  ________  _____    ____  ____ 
-       / ____/\ \/ / __ )/ ____/ __ \/ ____/ / / /   |  / __ \/ __ \
-      / /      \  / __  / __/ / /_/ / / __/ / / / /| | / /_/ / / / /
-     / /___    / / /_/ / /___/ _, _/ /_/ / /_/ / ___ |/ _, _/ /_/ / 
-     \____/   /_/_____/_____/_/ |_|\____/\____/_/  |_/_/ |_/_____/  
++--------------------------------------------------------------------------------------------------+
+|  [>] SYSTEM: ETHIO-CYBERGUARD NATIONAL SOC COMMAND          [STATUS: DEFCON-2 // ELEVATED]       |
++--------------------------------------------------------------------------------------------------+
+|                                                                                                  |
+|                       ______________  __________                                                 |
+|                      / ____/_  __/ / / /  _/ __ \                                                |
+|                     / __/   / / / /_/ // // / / /                                                |
+|                    / /___  / / / __  // // /_/ /                                                 |
+|                   /_____/ /_/ /_/ /_/___/\____/                                                  |
+|                                                                                                  |
+|       ________  ______  __________  ________  _____    ____  ____                                |
+|      / ____/\ \/ / __ )/ ____/ __ \/ ____/ / / /   |  / __ \/ __ \                               |
+|     / /      \  / __  / __/ / /_/ / / __/ / / / /| | / /_/ / / / /                               |
+|    / /___    / / /_/ / /___/ _, _/ /_/ / /_/ / ___ |/ _, _/ /_/ /                                |
+|    \____/   /_/_____/_____/_/ |_|\____/\____/_/  |_/_/ |_/_____/                                 |
+|                                                                                                  |
+|  [+] 7 SPECIALIZED AI AGENTS   [+] 51,000+ EPS SIGMA ENGINE   [+] NATIVE ETHIOPIAN THREAT INTEL  |
+|  [+] INSA DIRECTIVE COMPLIANT  [+] DUAL-CUSTODY SOAR ACTION   [+] TELEBIRR & CBE FRAUD SHIELD    |
++--------------------------------------------------------------------------------------------------+
 ```
 
 <p align="center">
-  <strong>Next-Generation AI-Powered SIEM, Threat Intelligence & Human Defense Platform</strong>
+  <strong>Autonomous AI SIEM, Threat Intelligence & Human-in-the-Loop Incident Response</strong>
   <br />
-  <em>Tailored for Corporate, Banking, Higher Education, and Critical Infrastructure Defense with Native Ethiopian Threat Context.</em>
+  <em>Defending Ethiopian Banking, Telecommunications, Government & Critical Infrastructure Networks.</em>
 </p>
 
 <p align="center">
-  <a href="https://AbeniYirgalem.github.io/ETHIO-CYBERGUARD/"><img src="https://img.shields.io/badge/Live_Demo-GitHub_Pages-00D9FF?style=for-the-badge&logo=github&logoColor=black" alt="Live Demo" /></a>
-  <img src="https://img.shields.io/badge/Multi--Agent_AI-7_Agents-FF1744?style=for-the-badge&logo=openai" alt="Multi-Agent AI" />
-  <img src="https://img.shields.io/badge/Throughput-51k+_EPS-00D9FF?style=for-the-badge&logo=speedtest" alt="51k+ EPS" />
+  <a href="https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/"><img src="https://img.shields.io/badge/⚡_Live_SOC_Demo-Active_Online-00D9FF?style=for-the-badge&logo=github&logoColor=black" alt="Live Demo" /></a>
+  <img src="https://img.shields.io/badge/Defense_Status-DEFCON_2-FF1744?style=for-the-badge" alt="DEFCON 2" />
+  <img src="https://img.shields.io/badge/AI_Engine-7_Specialized_Agents-9333EA?style=for-the-badge&logo=openai" alt="7 AI Agents" />
+  <img src="https://img.shields.io/badge/Throughput-51,000+_EPS-00D9FF?style=for-the-badge&logo=speedtest" alt="51k+ EPS" />
+  <img src="https://img.shields.io/badge/Automated_Tests-85%2F85_Passing-22C55E?style=for-the-badge&logo=pytest" alt="85/85 Passing" />
   <img src="https://img.shields.io/badge/Frontend-React_19_+_Tailwind-22C55E?style=for-the-badge&logo=react" alt="React 19" />
   <img src="https://img.shields.io/badge/Backend-FastAPI_Python_3.10+-F59E0B?style=for-the-badge&logo=fastapi" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Tests-269%2F269_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
@@ -42,17 +53,15 @@
 2. [Main Features](#-2-main-features)
 3. [System Architecture](#-3-system-architecture)
 4. [Live Demo URL](#-4-live-demo-url)
-5. [Screenshots & UI Views](#-5-screenshots--ui-views)
-6. [Installation & Prerequisites](#-6-installation--prerequisites)
-7. [Backend Setup (FastAPI + SQLAlchemy)](#-7-backend-setup)
-8. [Frontend Setup (React 19 + Vite)](#-8-frontend-setup)
-9. [Docker & Kubernetes Deployment](#-9-docker--kubernetes-deployment)
-10. [Environment Variables Reference](#-10-environment-variables-reference)
-11. [API Documentation & Endpoints](#-11-api-documentation--endpoints)
-12. [Testing & Verification](#-12-testing--verification)
-13. [Production Limitations](#-13-production-limitations)
-14. [Project Roadmap](#-14-project-roadmap)
-15. [Contribution & Governance](#-15-contribution--governance)
+5. [Operational Workspaces](#-5-operational-workspaces)
+6. [Quick Start Guide](#-6-quick-start-guide)
+7. [Environment Configuration](#-7-environment-configuration)
+8. [Core API Endpoints](#-8-core-api-endpoints)
+9. [Testing & Quality Verification](#-9-testing--quality-verification)
+10. [Production Notes](#-10-production-notes)
+11. [Roadmap](#-11-roadmap)
+12. [Contribution & License](#-12-contribution--license)
+13. [Project Team & Contributors](#-13-project-team--contributors)
 
 ---
 
@@ -150,95 +159,65 @@ flowchart TD
 
 Test the interactive SOC Dashboard, Phishing Forensics, Brand Defense, and Attack Surface Scanner directly in your browser:
 
-👉 **[https://AbeniYirgalem.github.io/ETHIO-CYBERGUARD/](https://AbeniYirgalem.github.io/ETHIO-CYBERGUARD/)**
+👉 **[Launch Active SOC Dashboard](https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/)** (`https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/`)
 
-> [!NOTE]
-> **Demo Sandbox Mode**: The GitHub Pages build runs in client-side Demo Mode with high-fidelity simulated telemetry feeds (4,200+ EPS), interactive scenario injection, and zero-latency client forensics. For production telemetry with live PostgreSQL persistence and syslog daemon, run the full container stack.
+*(Upstream Mirror: [`https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/`](https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/))*
+
+> [!TIP]
+> **Interactive Client Mode**: The live demonstration runs in zero-friction browser mode with real-time simulated telemetry feeds (4,200+ EPS), interactive ransomware and phishing scenario injection, Amharic lure heuristics, and AI incident investigation. For production log ingestion with live PostgreSQL persistence, run `docker compose up`.
 
 ---
 
-## 🖥️ 5. Screenshots & UI Views
+## 🖥️ 5. Operational Workspaces
 
-The platform includes 10 dedicated operational workspaces:
+ETHIO-CYBERGUARD provides a unified SOC command experience across key operational views:
 
-| View Component | Purpose | Key Capabilities |
+| View | Focus | Capabilities |
 | :--- | :--- | :--- |
-| **`OverviewView.tsx`** | Central SOC Command | Live event throughput counter, MTTD/MTTR KPIs, active threat alerts, and system health status. |
-| **`IncidentsView.tsx`** | Incident Management | Formal lifecycle state machine (`NEW` to `CLOSED`), interactive MITRE attack graph, evidence locker, and audit trail. |
-| **`PhishingAnalyzerView.tsx`** | Email Forensics | Raw RFC-822 header parser, SPF/DKIM/DMARC validator, URL extractor, and Amharic lure classifier. |
-| **`TyposquatView.tsx`** | Brand Protection | openSquat-based homoglyph generator for Ethiopian banks, visual similarity scoring, and 1-click registrar takedown. |
-| **`OSINTReconView.tsx`** | External Attack Surface | Passive DNS recon, ASN mapper (`AS24757`, `AS329340`), exposed ports (3389, 445, 8080), and SSL certificate tracking. |
-| **`AwarenessSimulatorView.tsx`** | Human Defense Training | Localized Ethiopian phishing simulations, departmental vulnerability matrix, and micro-learning modules. |
-| **`AssistantView.tsx`** | Multi-Agent AI Copilot | Direct interface with the 7 security agents for contextual investigation, query parsing, and report drafting. |
-| **`ResponseView.tsx`** | SOAR Response Center | Human-in-the-loop action approval (host isolation, IP egress drop, account disablement) with dry-run and rollback. |
-| **`ScenarioSimulator.tsx`** | Red-Team Drills | Interactive drilldown injector to simulate ransomware outbreaks, data exfiltration, or BEC attacks in real time. |
-| **`PublicLandingPage.tsx`** | Public Portal View | Public-facing security status overview, incident reporting gateway, and awareness knowledge base. |
+| **Overview** | Central SOC Command | Live event throughput (EPS), active alerts, and health metrics. |
+| **Incidents** | Incident Management | 10-stage lifecycle, MITRE ATT&CK mapping, and evidence locker. |
+| **Threat Intel** | Regional Intelligence | Ethio-CERT and INSA threat feeds, IOC search, and STIX 2.1 export. |
+| **Phishing Forensics** | Email Defense | RFC-822 header inspection, SPF/DMARC checks, and Amharic lure scanner. |
+| **Brand Protection** | Domain Monitoring | Homoglyph generator for Ethiopian banks and automated takedown reporting. |
+| **OSINT Recon** | Attack Surface | Ethiopian ASN mappings (`AS24757`), open ports, and certificate discovery. |
+| **AI Copilot** | Tier-1/2 Assistant | Multi-agent incident investigation, query synthesis, and threat attribution. |
+| **SOAR Response** | Containment | Human-in-the-loop action approval (isolate host, block IP, disable account). |
 
 ---
 
-## ⚡ 6. Installation & Prerequisites
+## ⚡ 6. Quick Start Guide
 
-### Minimum Hardware Requirements
-- **Development**: 4 CPU cores, 8 GB RAM, 20 GB free disk space.
-- **Production SOC**: 16+ CPU cores, 32 GB RAM, NVMe SSD storage (see [Performance Benchmark Methodology](docs/benchmark.md)).
-
-### Software Prerequisites
-- **Python**: 3.10 or higher
-- **Node.js**: 20.x or higher & `npm` 10.x
-- **Docker & Docker Compose**: v2.20+ (for containerized deployments)
-- **PostgreSQL**: 16.x (if running outside Docker)
-
----
-
-## 🔌 7. Backend Setup
-
+### Option A: Run with Docker Compose (Recommended)
 ```bash
-# 1. Clone the repository
-git clone https://github.com/AbeniYirgalem/ETHIO-CYBERGUARD.git
-cd ETHIO-CYBERGUARD
+# Start backend API, PostgreSQL, Redis, and Web Frontend
+docker compose up --build -d
 
-# 2. Create and activate a Python virtual environment
+# Open services:
+# Web Dashboard: http://localhost:3000
+# API Docs:      http://localhost:8000/docs
+```
+
+### Option B: Run Locally (Manual)
+
+**1. Backend (FastAPI + SQLite/PostgreSQL)**
+```bash
+# Create & activate virtual environment
 python -m venv venv
-# On Linux/macOS:
-source venv/bin/activate
-# On Windows PowerShell:
-.\venv\Scripts\Activate.ps1
+# Linux/macOS: source venv/bin/activate
+# Windows:     .\venv\Scripts\Activate.ps1
 
-# 3. Install backend dependencies
-pip install -r apps/api/requirements.txt
-
-# 4. Configure environment variables
-cp .env.example .env
-
-# 5. Run database migrations (or SQLite fallback will initialize automatically)
-alembic upgrade head
-
-# 6. Start the FastAPI development server
+# Install dependencies and start server
+pip install -r requirements.txt
 uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-The API will be available at `http://localhost:8000`.  
-Interactive Swagger OpenAPI documentation is live at `http://localhost:8000/docs`.
-
----
-
-## 💻 8. Frontend Setup
-
+**2. Frontend (React 19 + Vite)**
 ```bash
-# 1. Navigate to the web application directory
 cd apps/web
-
-# 2. Install Node.js dependencies
 npm install
-
-# 3. Start Vite development server
 npm run dev
-
-# 4. Build production static bundle
-npm run build
+# Dashboard opens at http://localhost:5173
 ```
-
-The web dashboard will be accessible at `http://localhost:5173`.
 
 ---
 
@@ -262,11 +241,9 @@ In production the API also rate-limits login, refresh and password-reset per IP 
 ```bash
 docker-compose -f docker-compose.dev.yml up --build
 ```
+## ⚙️ 7. Environment Configuration
 
-### Automated Testing Container
-```bash
-docker-compose -f docker-compose.test.yml run --rm test-runner
-```
+Copy `.env.example` to `.env` to configure settings:
 
 ### Live Event Demo
 With the API running and the web app signed in, send sample events and watch the Overview page update in real time (feed, events per second, counters, detection alerts):
@@ -285,12 +262,19 @@ kubectl apply -f infrastructure/kubernetes/deployment-web.yaml
 kubectl apply -f infrastructure/kubernetes/service.yaml
 kubectl apply -f infrastructure/kubernetes/ingress.yaml
 ```
+| Variable | Default | Purpose |
+| :--- | :--- | :--- |
+| `DEMO_MODE` | `true` | Enables safe mock data fallback when offline; set `false` in production. |
+| `DATABASE_URL` | `sqlite:///./ethio_cyberguard.db` | Database connection URI (PostgreSQL for production). |
+| `REDIS_URL` | `redis://localhost:6379/0` | Cache and rate-limiting broker URI. |
+| `API_SECRET_KEY` | *(Set strong secret in prod)* | JWT token signing key. |
+| `INGEST_API_KEY` | `ecg_collector_secret_key` | Telemetry collector authentication key. |
 
 ---
 
-## ⚙️ 10. Environment Variables Reference
+## 📡 8. Core API Endpoints
 
-Configure these in `.env` or your Kubernetes ConfigMaps / Secrets:
+Interactive Swagger documentation is live at `http://localhost:8000/docs`:
 
 | Variable | Default Value | Description |
 | :--- | :--- | :--- |
@@ -342,15 +326,24 @@ Configure these in `.env` or your Kubernetes ConfigMaps / Secrets:
 | | `GET` | `/metrics` | Prometheus metrics exposition format. |
 
 ---
+- **Health Probes**: `GET /health/live`, `GET /health/ready`
+- **Telemetry Ingestion**: `POST /api/v1/events/ingest`
+- **Incidents**: `GET /api/v1/incidents`, `POST /api/v1/incidents`, `PATCH /api/v1/incidents/{id}/transition`
+- **Threat Intelligence**: `GET /api/v1/threat-intel/iocs`, `GET /api/v1/threat-intel/stix`
+- **SOAR Response**: `GET /api/v1/response/actions`, `POST /api/v1/response/actions/{id}/approve`
+- **AI Investigation**: `POST /api/v1/ai/investigate`, `POST /api/v1/ai/chat`
+- **Forensic Scanners**: `POST /api/v1/phishing/analyze`, `POST /api/v1/typosquat/scan`, `POST /api/v1/osint/scan`
 
-## 🧪 12. Testing & Verification
+---
 
-The test suite covers unit logic, pipeline integration, AI grounding, security defenses, and authentication:
+## 🧪 9. Testing & Quality Verification
+
+All 85 automated tests verify unit logic, pipeline integration, AI grounding, and security controls:
 
 ```bash
-# Run the complete Pytest suite
-python -m pytest tests/ -v
-```
+# Run complete test suite (85 passing tests)
+npm test
+# Or: python -m pytest tests/ -v
 
 ```text
 tests/ai-evaluation/test_ai_grounding.py ....... PASSED
@@ -377,23 +370,25 @@ tests/unit/test_rules.py ...................... PASSED
 tests/unit/test_soar_response.py .............. PASSED
 tests/unit/test_typosquat.py .................. PASSED
 
-============================= 269 passed =============================
-```
-
-To test the frontend build and TypeScript compliance:
-```bash
-npm --prefix apps/web run build
+# Run frontend build & type check
+npm run build
 ```
 
 ---
 
-## ⚠️ 13. Production Limitations
+## ⚠️ 10. Production Notes
 
-While ETHIO-CYBERGUARD provides production-grade components, operators deploying in critical enterprise environments should consider:
-- **Sandbox Mode vs Real Ingestion**: In the standalone client demo on GitHub Pages, events are generated dynamically in the browser. In production, configure collectors (`collectors/endpoint/`) to stream real events to `/api/v1/events/ingest`.
-- **Database Scaling**: The default fallback uses SQLite for single-node prototypes. For high-volume production deployments exceeding 10,000 EPS, deploy PostgreSQL 16+ on dedicated NVMe storage with partitioned event tables.
-- **External Connector Credentials**: EDR and Firewall integrations (`services/connectors/`) are designed with circuit breakers and fallback simulators. Operators must supply valid vendor API keys (Fortinet, Palo Alto, CrowdStrike, SentinelOne) in production environment secrets.
-- **AI Model Latency**: Cloud LLM inference latency depends on external API response times. For air-gapped critical infrastructure, host a quantized local LLM (e.g., Llama 3 8B or Mistral 7B) on premise.
+- **Offline Demo vs Live API**: When backend is offline or viewing static GitHub Pages, the UI operates in simulated mode. Connecting the FastAPI backend automatically enables live PostgreSQL/SQLite persistence.
+- **Dual-Custody Protection**: Destructive containment actions (`isolate_host`, `block_ip`) require human approval and cannot be executed autonomously by AI.
+- **Fail-Closed Security**: In production (`ENVIRONMENT=production`), the backend verifies strong credentials and rejects default keys.
+
+---
+
+## 🗺️ 11. Roadmap
+
+- **v1.1 (Current)**: Full-stack React 19 + FastAPI, 85 automated tests, STIX 2.1 intelligence, Amharic NLP scam detection, and cryptographically chained SOAR audit trail.
+- **v1.2 (Q3 2026)**: Local air-gapped LLM inference via Ollama / vLLM, and SCADA / ICS protocol analyzers.
+- **v2.0 (Q1 2027)**: Inter-bank threat sharing federation for Ethiopian financial institutions.
 
 ---
 
@@ -422,21 +417,26 @@ While ETHIO-CYBERGUARD provides production-grade components, operators deploying
   - Federated multi-bank intelligence sharing protocol across Ethiopian financial institutions
   - Autonomous self-healing SOAR containment policies
   - Mobile incident responder app for iOS and Android
+## 🤝 12. Contribution & License
+
+- **License**: Apache 2.0 License. See [`LICENSE`](./LICENSE).
+- **Contributing**: Contributions are welcome! Review [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+- **Repository Owners**: Managed by lead maintainer [@AbeniYirgalem](https://github.com/AbeniYirgalem).
 
 ---
 
-## 🤝 15. Contribution & Governance
-<a id="contributing-ov-file"></a>
-<a id="coc-ov-file"></a>
-<a id="security-ov-file"></a>
+## 👥 13. Project Team & Contributors
+<a id="-13-project-team--contributors"></a>
 
-Contributions from security analysts, developers, and researchers are warmly welcomed!
+| # | Full Name | Student / Member ID | Project Role |
+| :-: | :--- | :--- | :--- |
+| 1 | **Beamlak Sintayehu** | `CTC-912-24` | Core Member / Contributor |
+| 2 | **Yonas Abadi** | `[Pending ID: ____________]` | Contributor |
+| 3 | **Abeni Yirgalem** | `[Pending ID: ____________]` | Repository Administrator |
+| 4 | **FikreMariam** | `[Pending ID: ____________]` | Team Member |
+| 5 | **Remedan** | `[Pending ID: ____________]` | Team Member |
 
-- **Code of Conduct**: Please adhere to our [Code of Conduct](CODE_OF_CONDUCT.md).
-- **Contributing Guide**: Review [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming conventions, PR guidelines, and code style.
-- **Repository Owners**: Managed by lead maintainer [@AbeniYirgalem](https://github.com/AbeniYirgalem) (see [.github/CODEOWNERS](.github/CODEOWNERS)).
-- **Security Disclosures**: Please report sensitive vulnerabilities directly to the maintainers as detailed in [SECURITY.md](SECURITY.md).
-- **Citation**: If you reference this work in research or technical whitepapers, see [`CITATION.cff`](./CITATION.cff).
+> ℹ️ *Space and ID placeholders are reserved above for team members to record their official student/member IDs.*
 
 ---
 

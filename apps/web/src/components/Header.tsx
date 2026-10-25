@@ -13,6 +13,7 @@ interface HeaderProps {
   onOpenCommandPalette?: () => void;
   soundEnabled?: boolean;
   onToggleSound?: () => void;
+  backendConnected?: boolean | null;
 }
 
 const INTEL_TICKER_ITEMS = [
@@ -33,7 +34,8 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleMobileMenu,
   onOpenCommandPalette,
   soundEnabled = true,
-  onToggleSound
+  onToggleSound,
+  backendConnected = null
 }) => {
   const [tickerIndex, setTickerIndex] = useState(0);
 
@@ -123,6 +125,19 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Controls & Profile */}
         <div className="flex items-center space-x-2 sm:space-x-3">
+          {/* Backend API Connection Status Badge */}
+          <div 
+            className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 bg-[#0D131C] border border-[#1E2A38] rounded-full text-xs"
+            title={backendConnected ? "Connected to live FastAPI backend (PostgreSQL/SQLite persistence)" : "Operating in offline simulated/demo mode"}
+          >
+            <span className={`w-2 h-2 rounded-full ${backendConnected === true ? 'bg-[#22C55E] animate-pulse' : (backendConnected === false ? 'bg-[#F59E0B]' : 'bg-[#7D8A99]')}`}></span>
+            <span className="text-[#7D8A99] font-mono text-[11px]">
+              API: <strong className={backendConnected === true ? 'text-[#22C55E]' : (backendConnected === false ? 'text-[#F59E0B]' : 'text-[#7D8A99]')}>
+                {backendConnected === true ? 'LIVE REST' : (backendConnected === false ? 'SIMULATED DEMO' : 'CHECKING')}
+              </strong>
+            </span>
+          </div>
+
           {/* Live Telemetry Rate */}
           <div className="hidden sm:flex items-center space-x-2 px-2.5 py-1 bg-[#0D131C] border border-[#1E2A38] rounded-full text-xs">
             <span className="relative flex h-2 w-2">
