@@ -165,12 +165,12 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
     },
     {
       num: 3,
-      nameAm: 'አበኔዘር ይርጋለም',
-      nameEn: 'Abeni Yirgalem',
-      studentId: '[የተማሪ መለያ: ____________]',
+      nameAm: 'አቤኔዘር ይርጋለም',
+      nameEn: 'Abenezer Yirgalem',
+      studentId: 'CTC-041-26',
       roleAm: 'የፕሮጀክት አስተዳዳሪ እና መሪ',
       roleEn: 'Project Lead / Maintainer',
-      badge: isAm ? 'የፕሮጀክት መሪ' : 'Lead Maintainer',
+      badge: 'CTC-041-26',
       badgeColor: 'border-[#22C55E] text-[#22C55E] bg-[#22C55E]/10',
       desc: isAm 
         ? 'የኢትዮ-ሳይበርጋርድ ዋና መስራች፣ የFastAPI የጀርባ አሰራር እና የGitHub ሪፖዚተሪ አስተዳዳሪ።' 
@@ -736,9 +736,9 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                           <div className="text-[10px] text-[#7D8A99] font-normal">{member.nameEn}</div>
                         </td>
                         <td className="py-3 px-4 font-mono font-bold">
-                          {member.studentId === 'CTC-912-24' ? (
+                          {member.studentId.startsWith('CTC-') ? (
                             <span className="px-2 py-0.5 rounded bg-[#00D9FF]/10 text-[#00D9FF] border border-[#00D9FF]/30">
-                              CTC-912-24
+                              {member.studentId}
                             </span>
                           ) : (
                             <span className="text-[#526171] italic">{member.studentId}</span>
