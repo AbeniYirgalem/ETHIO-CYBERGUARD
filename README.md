@@ -53,6 +53,7 @@
 13. [Production Limitations](#-13-production-limitations)
 14. [Project Roadmap](#-14-project-roadmap)
 15. [Contribution & Governance](#-15-contribution--governance)
+16. [Project Team & Contributors](#-16-project-team--contributors)
 
 ---
 
@@ -423,6 +424,23 @@ Contributions from security analysts, developers, and researchers are warmly wel
 - **Repository Owners**: Managed by lead maintainer [@AbeniYirgalem](https://github.com/AbeniYirgalem) (see [.github/CODEOWNERS](.github/CODEOWNERS)).
 - **Security Disclosures**: Please report sensitive vulnerabilities directly to the maintainers as detailed in [SECURITY.md](SECURITY.md).
 - **Citation**: If you reference this work in research or technical whitepapers, see [`CITATION.cff`](./CITATION.cff).
+
+---
+
+## 👥 16. Project Team & Contributors
+<a id="-16-project-team--contributors"></a>
+
+| # | Full Name / Member Handle | Student / Member ID | Project Role | Status / Notes |
+| :-: | :--- | :--- | :--- | :--- |
+| 1 | **Beamlak Sintayehu** | `CTC-912-24` | Core Member / Contributor | Active |
+| 2 | **Yonas Abadi** | `[Pending ID: ____________]` | Project Owner | Group Owner |
+| 3 | **Abeni Yirgalem** (*Abeni Dorm In*) | `[Pending ID: ____________]` | Repository Administrator | Lead Maintainer |
+| 4 | **FikreMariam** (*FikreMariam.*) | `[Pending ID: ____________]` | Team Member | Contributor |
+| 5 | **Remedan** (*Remedan Dorm In*) | `[Pending ID: ____________]` | Team Member | Contributor |
+| 6 | **Jerry** | `[Pending ID: ____________]` | Team Member | Contributor |
+| * | *MR Nobody* | `[Pending ID: ____________]` | Team Member | *Telegram Alias / Contributor* |
+
+> ℹ️ *Space and ID placeholders are reserved above for all 5 remaining team members to record their official student/member IDs.*
 
 ---
 
