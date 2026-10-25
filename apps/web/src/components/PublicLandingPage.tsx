@@ -589,73 +589,196 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
         {/* VIEW 2: ABOUT & MISSION */}
         {/* ========================================================================= */}
         {currentView === 'about' && (
-          <div className="space-y-12 max-w-4xl mx-auto">
-            {/* Mission Statement */}
-            <div className="space-y-4">
-              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#00D9FF]/10 border border-[#00D9FF]/30 text-[#00D9FF] text-xs font-mono">
-                <Shield className="w-3.5 h-3.5" />
-                <span>{isAm ? 'ብሄራዊ ተልዕኮ እና ራዕይ' : 'National Defense Mission & Vision'}</span>
-              </div>
-              <h2 className="text-3xl font-extrabold text-white">
-                {isAm ? 'የኢትዮ-ሳይበርጋርድ ብሄራዊ ተልዕኮ' : 'Defending Ethiopian Critical Digital Sovereignty'}
-              </h2>
-              <p className="text-xs sm:text-sm text-[#7D8A99] leading-relaxed">
-                {isAm
-                  ? 'ኢትዮ-ሳይበርጋርድ (ETHIO-CYBERGUARD) የተመሰረተው የኢትዮጵያን ዲጂታል ምህዳር፣ የፋይናንስ ተቋማትን፣ ቴሌኮሙኒኬሽንን፣ የኤሌክትሪክ ሃይልን እና ወሳኝ የመንግስት መረቦችን ከተራቀቁ የሳይበር ጥቃቶች ለመከላከል ነው። የሀገር ውስጥ የስጋት አውዶችን (የቴሌብር ማጭበርበር፣ የአማርኛ ፊሺንግ፣ የኢትዮ-ቴሌኮም ኤኤስኤን መረቦች) ከዓለም አቀፍ የላቁ አርቴፊሻል ኢንተለጀንስ ሞዴሎች ጋር በማቀናጀት ተወዳዳሪ የሌለው ብሄራዊ ጋሻ ያቀርባል።'
-                  : 'ETHIO-CYBERGUARD is an autonomous enterprise cybersecurity platform designed to defend corporate, financial, governmental, and critical infrastructure networks across Ethiopia. It unifies high-throughput SIEM log telemetry ingestion, real-time SIGMA detection, automated MITRE ATT&CK correlation, multi-agent AI incident investigation, and human-in-the-loop SOAR response workflows.'}
-              </p>
-            </div>
-
-            {/* Target Stakeholders */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-[#111923] border border-[#1E2A38] p-5 rounded-xl space-y-2">
-                <div className="text-sm font-bold text-[#00D9FF] flex items-center space-x-2">
-                  <Building2 className="w-4 h-4" />
-                  <span>{isAm ? 'የፋይናንስ እና የባንክ ተቋማት' : 'Banking & Financial Sector'}</span>
-                </div>
-                <p className="text-xs text-[#7D8A99]">
-                  {isAm 
-                    ? 'የኢትዮጵያ ንግድ ባንክ (CBE)፣ አዋሽ ባንክ፣ ዳሽን ባንክ እና ቴሌብር ዲጂታል ክፍያዎችን ከተራቀቁ የገንዘብ ማጭበርበሮች እና የሰርቨር ጥቃቶች መጠበቅ።' 
-                    : 'Targeted defenses for Commercial Bank of Ethiopia (CBE), Awash Bank, Dashen Bank, Chapa, and Telebirr mobile wallet transactions.'}
-                </p>
-              </div>
-
-              <div className="bg-[#111923] border border-[#1E2A38] p-5 rounded-xl space-y-2">
-                <div className="text-sm font-bold text-[#22C55E] flex items-center space-x-2">
-                  <Server className="w-4 h-4" />
-                  <span>{isAm ? 'ቴሌኮም እና ወሳኝ መሰረተ-ልማቶች' : 'Telecommunications & Critical Utilities'}</span>
-                </div>
-                <p className="text-xs text-[#7D8A99]">
-                  {isAm 
-                    ? 'ኢትዮ ቴሌኮም (AS24757)፣ ሳፋሪኮም ኢትዮጵያ እና የኢትዮጵያ ኤሌክትሪክ ሃይል ዋና ማስተላለፊያዎችን ከተቀናጁ የዲዶስ (DDoS) ጥቃቶች መከላከል' 
-                    : 'Real-time telemetry scrubbing for Ethio Telecom (AS24757), Safaricom Ethiopia (AS329340), and Ethiopian Electric Power grid SCADA systems.'}
-                </p>
-              </div>
-            </div>
-
-            {/* 7 AI Agents Breakdown */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Cpu className="w-5 h-5 text-[#00D9FF]" />
-                <h3 className="text-lg font-bold text-white">
-                  {isAm ? 'የ7ቱ ልዩ የኤአይ ወኪሎች የስራ ድርሻ' : 'The 7 Specialized AI Security Agents'}
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {aiAgents.map((agent) => (
-                  <div key={agent.code} className="bg-[#111923] border border-[#1E2A38] p-4 rounded-xl space-y-1.5 hover:border-[#00D9FF]/40 transition">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs text-white">
-                        {agent.num}. {agent.name}
-                      </span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#00D9FF]/10 text-[#00D9FF] border border-[#00D9FF]/20">
-                        {agent.code}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-[#00D9FF] font-medium">{agent.role}</div>
-                    <p className="text-[11px] text-[#7D8A99] leading-relaxed">{agent.desc}</p>
+          <div className="space-y-12 max-w-6xl mx-auto">
+            {/* Top Layout Grid: Left (Mission & AI Agents) + Right (Live Site & Abeni's Repo Sidebar) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+              {/* Left Column (2 Cols) */}
+              <div className="lg:col-span-2 space-y-8">
+                {/* Mission Statement */}
+                <div className="space-y-4">
+                  <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#00D9FF]/10 border border-[#00D9FF]/30 text-[#00D9FF] text-xs font-mono">
+                    <Shield className="w-3.5 h-3.5" />
+                    <span>{isAm ? 'ብሄራዊ ተልዕኮ እና ራዕይ' : 'National Defense Mission & Vision'}</span>
                   </div>
-                ))}
+                  <h2 className="text-3xl font-extrabold text-white">
+                    {isAm ? 'የኢትዮ-ሳይበርጋርድ ብሄራዊ ተልዕኮ' : 'Defending Ethiopian Critical Digital Sovereignty'}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-[#7D8A99] leading-relaxed">
+                    {isAm
+                      ? 'ኢትዮ-ሳይበርጋርድ (ETHIO-CYBERGUARD) የተመሰረተው የኢትዮጵያን ዲጂታል ምህዳር፣ የፋይናንስ ተቋማትን፣ ቴሌኮሙኒኬሽንን፣ የኤሌክትሪክ ሃይልን እና ወሳኝ የመንግስት መረቦችን ከተራቀቁ የሳይበር ጥቃቶች ለመከላከል ነው። የሀገር ውስጥ የስጋት አውዶችን (የቴሌብር ማጭበርበር፣ የአማርኛ ፊሺንግ፣ የኢትዮ-ቴሌኮም ኤኤስኤን መረቦች) ከዓለም አቀፍ የላቁ አርቴፊሻል ኢንተለጀንስ ሞዴሎች ጋር በማቀናጀት ተወዳዳሪ የሌለው ብሄራዊ ጋሻ ያቀርባል።'
+                      : 'ETHIO-CYBERGUARD is an autonomous enterprise cybersecurity platform designed to defend corporate, financial, governmental, and critical infrastructure networks across Ethiopia. It unifies high-throughput SIEM log telemetry ingestion, real-time SIGMA detection, automated MITRE ATT&CK correlation, multi-agent AI incident investigation, and human-in-the-loop SOAR response workflows.'}
+                  </p>
+                </div>
+
+                {/* Target Stakeholders */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-[#111923] border border-[#1E2A38] p-5 rounded-xl space-y-2">
+                    <div className="text-sm font-bold text-[#00D9FF] flex items-center space-x-2">
+                      <Building2 className="w-4 h-4" />
+                      <span>{isAm ? 'የፋይናንስ እና የባንክ ተቋማት' : 'Banking & Financial Sector'}</span>
+                    </div>
+                    <p className="text-xs text-[#7D8A99]">
+                      {isAm 
+                        ? 'የኢትዮጵያ ንግድ ባንክ (CBE)፣ አዋሽ ባንክ፣ ዳሽን ባንክ እና ቴሌብር ዲጂታል ክፍያዎችን ከተራቀቁ የገንዘብ ማጭበርበሮች እና የሰርቨር ጥቃቶች መጠበቅ።' 
+                        : 'Targeted defenses for Commercial Bank of Ethiopia (CBE), Awash Bank, Dashen Bank, Chapa, and Telebirr mobile wallet transactions.'}
+                    </p>
+                  </div>
+
+                  <div className="bg-[#111923] border border-[#1E2A38] p-5 rounded-xl space-y-2">
+                    <div className="text-sm font-bold text-[#22C55E] flex items-center space-x-2">
+                      <Server className="w-4 h-4" />
+                      <span>{isAm ? 'ቴሌኮም እና ወሳኝ መሰረተ-ልማቶች' : 'Telecommunications & Critical Utilities'}</span>
+                    </div>
+                    <p className="text-xs text-[#7D8A99]">
+                      {isAm 
+                        ? 'ኢትዮ ቴሌኮም (AS24757)፣ ሳፋሪኮም ኢትዮጵያ እና የኢትዮጵያ ኤሌክትሪክ ሃይል ዋና ማስተላለፊያዎችን ከተቀናጁ የዲዶስ (DDoS) ጥቃቶች መከላከል' 
+                        : 'Real-time telemetry scrubbing for Ethio Telecom (AS24757), Safaricom Ethiopia (AS329340), and Ethiopian Electric Power grid SCADA systems.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 7 AI Agents Breakdown */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Cpu className="w-5 h-5 text-[#00D9FF]" />
+                    <h3 className="text-lg font-bold text-white">
+                      {isAm ? 'የ7ቱ ልዩ የኤአይ ወኪሎች የስራ ድርሻ' : 'The 7 Specialized AI Security Agents'}
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {aiAgents.map((agent) => (
+                      <div key={agent.code} className="bg-[#111923] border border-[#1E2A38] p-4 rounded-xl space-y-1.5 hover:border-[#00D9FF]/40 transition">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs text-white">
+                            {agent.num}. {agent.name}
+                          </span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#00D9FF]/10 text-[#00D9FF] border border-[#00D9FF]/20">
+                            {agent.code}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-[#00D9FF] font-medium">{agent.role}</div>
+                        <p className="text-[11px] text-[#7D8A99] leading-relaxed">{agent.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column (1 Col): Live Links & Source Repository Sidebar */}
+              <div className="lg:col-span-1 space-y-5 lg:sticky lg:top-24">
+                {/* Right Panel Header */}
+                <div className="flex items-center space-x-2 text-xs font-mono text-[#00D9FF]">
+                  <Globe className="w-4 h-4 text-[#00D9FF]" />
+                  <span className="font-bold tracking-wider uppercase">
+                    {isAm ? 'ይፋዊ መዳረሻዎች እና የምንጭ ኮድ' : 'Live Platform & Repositories'}
+                  </span>
+                </div>
+
+                {/* Card 1: Live Interactive Website */}
+                <div className="bg-[#111923] border-2 border-[#00D9FF]/40 hover:border-[#00D9FF] rounded-2xl p-5 space-y-3.5 shadow-xl shadow-[#00D9FF]/10 transition group">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center space-x-1.5 text-[10px] font-mono font-bold text-[#22C55E] bg-[#22C55E]/10 border border-[#22C55E]/30 px-2 py-0.5 rounded-full">
+                      <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></span>
+                      <span>{isAm ? 'የቀጥታ ስራ ላይ ያለ ድረ-ገጽ' : 'ONLINE // LIVE DEPLOYMENT'}</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-[#7D8A99]">GitHub Pages</span>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-extrabold text-white group-hover:text-[#00D9FF] transition flex items-center space-x-1.5">
+                      <span>ETHIO-CYBERGUARD Live Site</span>
+                    </h4>
+                    <p className="text-xs text-[#7D8A99] mt-1 leading-relaxed">
+                      {isAm 
+                        ? 'ሙሉውን የቀጥታ የሶክ ዳሽቦርድ፣ የጥቃት ማስመሰያ (Scenario Simulator) እና የአማርኛ ፊሺንግ መርማሪ በቀጥታ በብራውዘርዎ ይክፈቱ እና ይመልከቱ።' 
+                        : 'Experience the active zero-friction browser demo with real-time simulated telemetry feeds, Amharic lure heuristics, and scenario injection.'}
+                    </p>
+                  </div>
+
+                  <a 
+                    href="https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/" 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="w-full py-2.5 px-4 bg-[#00D9FF] hover:bg-[#00D9FF]/85 text-black font-extrabold text-xs rounded-xl transition flex items-center justify-center space-x-2 shadow-lg shadow-[#00D9FF]/20"
+                  >
+                    <span>{isAm ? 'የቀጥታ ድረ-ገጹን ይክፈቱ' : 'Open Live Deployed Site'}</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+
+                  <div className="text-[10px] text-[#526171] font-mono truncate text-center">
+                    https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/
+                  </div>
+                </div>
+
+                {/* Card 2: Abeni's Source Repository */}
+                <div className="bg-[#111923] border border-[#1E2A38] hover:border-[#22C55E]/50 rounded-2xl p-5 space-y-3.5 shadow-xl transition group">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center space-x-1 text-[10px] font-mono font-bold text-[#A855F7] bg-[#A855F7]/10 border border-[#A855F7]/30 px-2 py-0.5 rounded-full">
+                      <span>{isAm ? 'ዋና የምንጭ ኮድ ማህደር' : 'UPSTREAM REPOSITORY'}</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-[#7D8A99]">AbeniYirgalem</span>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-extrabold text-white group-hover:text-[#22C55E] transition">
+                      Abeni Yirgalem / ETHIO-CYBERGUARD
+                    </h4>
+                    <p className="text-xs text-[#7D8A99] mt-1 leading-relaxed">
+                      {isAm 
+                        ? 'የፕሮጀክት መሪው አበኔዘር ይርጋለም ይፋዊ የGitHub ማህደር — ሙሉውን የFastAPI የጀርባ አሰራር፣ 279 አውቶማቲክ ፈተናዎች እና የDocker ኮንፊገሬሽኖችን ያካትታል።' 
+                        : 'The core upstream GitHub repository maintained by project lead Abenezer Yirgalem. Contains full backend, 279 automated tests, SIGMA rules, and Docker files.'}
+                    </p>
+                  </div>
+
+                  <a 
+                    href="https://github.com/AbeniYirgalem/ETHIO-CYBERGUARD" 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="w-full py-2.5 px-4 bg-[#1E2A38] hover:bg-[#2A3B4F] text-white border border-[#2A3B4F] hover:border-[#22C55E]/40 font-bold text-xs rounded-xl transition flex items-center justify-center space-x-2"
+                  >
+                    <span>{isAm ? 'የአበኔዘርን ሪፖዚተሪ ይጎብኙ' : 'View Abeni\'s GitHub Repo'}</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-[#22C55E]" />
+                  </a>
+
+                  <div className="text-[10px] text-[#526171] font-mono truncate text-center">
+                    https://github.com/AbeniYirgalem/ETHIO-CYBERGUARD
+                  </div>
+                </div>
+
+                {/* Card 3: Quick SOC Navigation & Specs */}
+                <div className="bg-[#070B12] border border-[#1E2A38] rounded-2xl p-5 space-y-3">
+                  <div className="text-xs font-bold text-white flex items-center space-x-2">
+                    <Activity className="w-4 h-4 text-[#00D9FF]" />
+                    <span>{isAm ? 'የሲስተሙ ዋና መለኪያዎች' : 'Platform Specifications'}</span>
+                  </div>
+
+                  <div className="space-y-2 text-[11px] font-mono">
+                    <div className="flex justify-between items-center text-[#7D8A99]">
+                      <span>{isAm ? 'የክስተቶች ፍጥነት:' : 'Throughput:'}</span>
+                      <span className="text-[#00D9FF] font-bold">51,240+ EPS</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[#7D8A99]">
+                      <span>{isAm ? 'አውቶማቲክ ፈተናዎች:' : 'Pytest Verification:'}</span>
+                      <span className="text-[#22C55E] font-bold">279 / 279 (100%)</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[#7D8A99]">
+                      <span>{isAm ? 'የኢንሳ መመሪያ:' : 'INSA Directive:'}</span>
+                      <span className="text-[#F59E0B] font-bold">No. 2026-04</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[#7D8A99]">
+                      <span>{isAm ? 'ባለሁለት-ደረጃ ማጽደቂያ:' : 'Dual-Custody SOAR:'}</span>
+                      <span className="text-white font-bold">{isAm ? 'ተፈጻሚ' : 'Enforced'}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={onEnterSOC}
+                    className="w-full mt-2 py-2 px-3 bg-[#00D9FF]/10 hover:bg-[#00D9FF]/20 text-[#00D9FF] border border-[#00D9FF]/30 font-bold text-xs rounded-xl transition flex items-center justify-center space-x-1.5"
+                  >
+                    <span>{isAm ? 'ወደ ሲስተሙ ዳሽቦርድ ይግቡ' : 'Enter SOC Dashboard'}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
 
