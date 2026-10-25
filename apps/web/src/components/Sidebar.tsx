@@ -17,11 +17,13 @@ import {
   FileText,
   Sliders
 } from 'lucide-react';
+import { getTranslations } from '../utils/translations';
+import type { Language } from '../utils/translations';
 
 export type TabId = 
   | 'overview' 
-  | 'monitoring' 
   | 'pipeline'
+  | 'monitoring' 
   | 'incidents' 
   | 'threat_intel' 
   | 'investigation' 
@@ -43,6 +45,7 @@ interface SidebarProps {
   criticalIncidentsCount: number;
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
+  language?: Language;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -51,37 +54,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
   pendingApprovalsCount,
   criticalIncidentsCount,
   mobileOpen = false,
-  onCloseMobile
+  onCloseMobile,
+  language = 'en'
 }) => {
+  const t = getTranslations(language);
+  const isAm = language === 'am';
+
   const navItems = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'pipeline', label: 'Unified Pipeline', icon: GitMerge, badge: 'Common Graph' },
-    { id: 'monitoring', label: 'Monitoring', icon: Activity, badge: 'Live' },
+    { id: 'overview', label: t.nav.overview, icon: LayoutDashboard },
+    { id: 'pipeline', label: t.nav.pipeline, icon: GitMerge, badge: t.badges.commonGraph },
+    { id: 'monitoring', label: t.nav.monitoring, icon: Activity, badge: t.badges.live },
     { 
       id: 'incidents', 
-      label: 'Incidents', 
+      label: t.nav.incidents, 
       icon: Flame, 
       count: criticalIncidentsCount, 
       countColor: 'bg-[#FF1744] text-white' 
     },
-    { id: 'threat_intel', label: 'Threat Intel', icon: Binary },
-    { id: 'investigation', label: 'Investigation', icon: AlertTriangle },
-    { id: 'phishing', label: 'Phishing Analyzer', icon: Mail, badge: 'NLP / Forensics' },
-    { id: 'typosquat', label: 'Brand & Typosquat', icon: Globe, badge: 'openSquat' },
-    { id: 'osint', label: 'Attack Surface OSINT', icon: Radar, badge: 'SpiderFoot' },
-    { id: 'awareness', label: 'Security Awareness', icon: GraduationCap, badge: 'Simulations' },
-    { id: 'assistant', label: 'AI Security Assistant', icon: Bot, badge: '7 Agents' },
-    { id: 'risk', label: 'Risk & Analytics', icon: BarChart3 },
+    { id: 'threat_intel', label: t.nav.threat_intel, icon: Binary },
+    { id: 'investigation', label: t.nav.investigation, icon: AlertTriangle },
+    { id: 'phishing', label: t.nav.phishing, icon: Mail, badge: t.badges.nlpForensics },
+    { id: 'typosquat', label: t.nav.typosquat, icon: Globe, badge: t.badges.openSquat },
+    { id: 'osint', label: t.nav.osint, icon: Radar, badge: t.badges.spiderFoot },
+    { id: 'awareness', label: t.nav.awareness, icon: GraduationCap, badge: t.badges.simulations },
+    { id: 'assistant', label: t.nav.assistant, icon: Bot, badge: t.badges.sevenAgents },
+    { id: 'risk', label: t.nav.risk, icon: BarChart3 },
     { 
       id: 'response', 
-      label: 'Response Center', 
+      label: t.nav.response, 
       icon: CheckSquare, 
       count: pendingApprovalsCount, 
       countColor: 'bg-[#F59E0B] text-black font-bold' 
     },
-    { id: 'reports', label: 'Reports & Compliance', icon: FileText, badge: 'Export' },
-    { id: 'settings', label: 'Identity & RBAC', icon: Sliders },
-    { id: 'admin', label: 'Administration', icon: Settings },
+    { id: 'reports', label: t.nav.reports, icon: FileText, badge: t.badges.export },
+    { id: 'settings', label: t.nav.settings, icon: Sliders },
+    { id: 'admin', label: t.nav.admin, icon: Settings },
   ];
 
   return (
@@ -102,7 +109,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       `}>
         <div className="space-y-1 overflow-y-auto">
           <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#7D8A99]">
-            SOC Operations
+            {isAm ? 'የኦፕሬሽን ክፍሎች' : 'SOC Operations'}
           </div>
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -145,14 +152,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Bottom Status Box */}
         <div className="p-3 bg-[#0D131C] border border-[#1E2A38] rounded-lg mt-2">
           <div className="flex items-center justify-between text-[11px] text-[#7D8A99] mb-1">
-            <span>SOC Health</span>
+            <span>{isAm ? 'የሲስተም ጤንነት' : 'SOC Health'}</span>
             <span className="text-[#22C55E] flex items-center space-x-1">
               <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] inline-block"></span>
-              <span>OPTIMAL</span>
+              <span>{isAm ? 'ጥሩ ዝግጁነት' : 'OPTIMAL'}</span>
             </span>
           </div>
           <p className="text-[10px] text-[#7D8A99] leading-tight">
-            7 AI Agents Synchronized • Ethio-CERT Threat Feed Active
+            {isAm 
+              ? '7 የኤአይ ወኪሎች ተመሳስለዋል • የኢትዮ-ሰርት የስጋት መረጃ ክፍት ነው' 
+              : '7 AI Agents Synchronized • Ethio-CERT Threat Feed Active'}
           </p>
         </div>
       </aside>

@@ -41,6 +41,7 @@ import {
   fetchIncidents as fetchIncidentsApi, 
   fetchResponseActions 
 } from './utils/api';
+import { getTranslations } from './utils/translations';
 
 export const App: React.FC = () => {
   const [inPublicPortal, setInPublicPortal] = useState(false);
@@ -418,9 +419,17 @@ export const App: React.FC = () => {
 
   const pendingCount = actions.filter(a => a.status === 'PENDING_APPROVAL').length;
   const criticalCount = incidents.filter(i => i.severity === 'CRITICAL').length;
+  const t = getTranslations(language);
+  const isAm = language === 'am';
 
   if (inPublicPortal) {
-    return <PublicLandingPage onEnterSOC={() => setInPublicPortal(false)} />;
+    return (
+      <PublicLandingPage 
+        onEnterSOC={() => setInPublicPortal(false)} 
+        language={language}
+        onToggleLanguage={() => setLanguage(l => l === 'en' ? 'am' : 'en')}
+      />
+    );
   }
 
   return (
@@ -450,6 +459,7 @@ export const App: React.FC = () => {
           criticalIncidentsCount={criticalCount}
           mobileOpen={mobileMenuOpen}
           onCloseMobile={() => setMobileMenuOpen(false)}
+          language={language}
         />
 
         {/* Dynamic Main Workspace Content */}
@@ -462,18 +472,16 @@ export const App: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <span className="font-bold flex items-center">
                   <span className={`w-2 h-2 rounded-full mr-2 ${backendConnected ? 'bg-[#22C55E]' : 'bg-[#FF9100] animate-pulse'}`}></span>
-                  {backendConnected ? 'Live System Connected:' : 'Simulated Demo Mode:'}
+                  {backendConnected ? t.banner.systemConnected : t.banner.demoMode}
                 </span>
                 <span>
-                  {backendConnected 
-                    ? 'Connected to FastAPI backend & database. Real-time telemetry, incidents, and SOAR response actions are persisted.'
-                    : 'Backend API offline or viewing static demo. Incident metrics and containment actions are simulated locally in memory.'}
+                  {backendConnected ? t.banner.systemConnectedDesc : t.banner.demoModeDesc}
                 </span>
               </div>
               <button 
                 onClick={() => setShowDemoBanner(false)}
                 className={`font-mono text-sm px-1.5 ${backendConnected ? 'text-[#22C55E]/70 hover:text-[#22C55E]' : 'text-[#FF9100]/70 hover:text-[#FF9100]'}`}
-                title="Dismiss banner"
+                title={t.banner.dismiss}
               >
                 ✕
               </button>
@@ -483,24 +491,24 @@ export const App: React.FC = () => {
           {/* Top Switcher Banner: Public Portal Link & Active Session */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#0D131C] border border-[#1E2A38] px-4 py-2 rounded-lg text-xs gap-2">
             <span className="text-[#7D8A99]">
-              Active Tenant: <strong className="text-white">{currentOrg}</strong> • Role: <span className="font-mono text-[#00D9FF]">{currentRole}</span>
-              {' '}• Data:{' '}
+              {t.banner.activeTenant} <strong className="text-white">{currentOrg}</strong> • {t.banner.role} <span className="font-mono text-[#00D9FF]">{currentRole}</span>
+              {' '}• {t.banner.dataMode}{' '}
               <span className={liveMode ? 'text-[#22C55E] font-bold' : 'text-[#FF9100] font-bold'}>
-                {liveMode ? 'LIVE API' : 'SIMULATED'}
+                {liveMode ? t.banner.dataLive : t.banner.dataSimulated}
               </span>
               {session && <span className="text-[#7D8A99]"> • {session.user.name}</span>}
             </span>
             <div className="flex items-center space-x-4">
               {session ? (
-                <button onClick={handleLogout} className="text-[#FF9100] hover:underline">Sign out</button>
+                <button onClick={handleLogout} className="text-[#FF9100] hover:underline">{t.banner.signOut}</button>
               ) : (
-                <button onClick={() => setLoginOpen(true)} className="text-[#22C55E] hover:underline font-bold">Sign in</button>
+                <button onClick={() => setLoginOpen(true)} className="text-[#22C55E] hover:underline font-bold">{t.banner.signIn}</button>
               )}
               <button
                 onClick={() => setInPublicPortal(true)}
                 className="text-[#00D9FF] hover:underline flex items-center space-x-1"
               >
-                <span>Switch to Public Portal View →</span>
+                <span>{t.banner.switchPublic}</span>
               </button>
             </div>
           </div>
@@ -529,12 +537,12 @@ export const App: React.FC = () => {
           {activeTab === 'monitoring' && (
             <div className="space-y-6">
               <div className="pb-2 border-b border-[#1E2A38]">
-                <h1 className="text-xl font-bold text-white">Security Event Monitoring & Pipeline Normalization</h1>
-                <p className="text-xs text-[#7D8A99]">Real-time ECS-normalized log feed from Windows endpoints, Linux servers, and network perimeter</p>
+                <h1 className="text-xl font-bold text-white">{isAm ? 'የደህንነት ክስተቶች ክትትል እና የተቀናጀ ፍተሻ' : 'Security Event Monitoring & Pipeline Normalization'}</h1>
+                <p className="text-xs text-[#7D8A99]">{isAm ? 'ከዊንዶውስ፣ ሊኑክስ እና የኔትወርክ መከላከያዎች በቅጽበት የተሰበሰቡ የደህንነት ክስተቶች' : 'Real-time ECS-normalized log feed from Windows endpoints, Linux servers, and network perimeter'}</p>
               </div>
 
               <div className="bg-[#111923] border border-[#1E2A38] rounded-xl p-5">
-                <h2 className="text-sm font-bold text-white mb-2">Live Normalized Stream ({events.length} Telemetry Records)</h2>
+                <h2 className="text-sm font-bold text-white mb-2">{isAm ? 'የቀጥታ የተጣራ የቴሌሜትሪ መረጃ ፍሰት' : 'Live Normalized Stream'} ({events.length} Telemetry Records)</h2>
                 <div className="divide-y divide-[#1E2A38] font-mono text-xs">
                   {events.map(ev => (
                     <div key={ev.event_id} className="py-2.5 flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs">

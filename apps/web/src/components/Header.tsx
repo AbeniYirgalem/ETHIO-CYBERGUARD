@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Bell, Search, Globe, Menu, Volume2, VolumeX, Radio } from 'lucide-react';
 import { soundManager } from '../utils/sound';
+import { getTranslations } from '../utils/translations';
+import type { Language } from '../utils/translations';
 
 interface HeaderProps {
   liveCount: number;
   onOpenNotifications?: () => void;
-  language?: 'en' | 'am';
+  language?: Language;
   onToggleLanguage?: () => void;
   currentOrg?: string;
   currentRole?: string;
@@ -15,14 +17,6 @@ interface HeaderProps {
   onToggleSound?: () => void;
   backendConnected?: boolean | null;
 }
-
-const INTEL_TICKER_ITEMS = [
-  { tag: 'CRITICAL', text: 'CBE Financial Core: Port 445 SMB anomaly intercepted on SERVER-04', color: 'text-[#FF1744]' },
-  { tag: 'INTEL', text: 'Ethio-CERT Feed: Cobalt Strike C2 IP 185.220.101.5 added to perimeter blocklist', color: 'text-[#00D9FF]' },
-  { tag: 'DEFENSE', text: 'openSquat: Rogue domain registered telebirr-verify.top (94% homoglyph score)', color: 'text-[#F59E0B]' },
-  { tag: 'TELCO', text: 'Ethio Telecom AS24757: Ingress scrubbed 14.8 Gbps SYN flood sweep', color: 'text-[#22C55E]' },
-  { tag: 'COMPLIANCE', text: 'INSA Directive 2026-04: Mandatory dual-custody enforced for all banking endpoints', color: 'text-[#00D9FF]' }
-];
 
 export const Header: React.FC<HeaderProps> = ({ 
   liveCount,
@@ -37,16 +31,27 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSound,
   backendConnected = null
 }) => {
+  const t = getTranslations(language);
+  const isAm = language === 'am';
+
+  const tickerItems = [
+    { tag: 'CRITICAL', text: t.ticker.cbe, color: 'text-[#FF1744]' },
+    { tag: 'INTEL', text: t.ticker.ethioCert, color: 'text-[#00D9FF]' },
+    { tag: 'DEFENSE', text: t.ticker.openSquat, color: 'text-[#F59E0B]' },
+    { tag: 'TELCO', text: t.ticker.telecom, color: 'text-[#22C55E]' },
+    { tag: 'COMPLIANCE', text: t.ticker.insa, color: 'text-[#00D9FF]' }
+  ];
+
   const [tickerIndex, setTickerIndex] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTickerIndex(prev => (prev + 1) % INTEL_TICKER_ITEMS.length);
+      setTickerIndex(prev => (prev + 1) % tickerItems.length);
     }, 5500);
     return () => clearInterval(timer);
-  }, []);
+  }, [tickerItems.length]);
 
-  const currentTicker = INTEL_TICKER_ITEMS[tickerIndex];
+  const currentTicker = tickerItems[tickerIndex] || tickerItems[0];
 
   return (
     <header className="border-b border-[#1E2A38] bg-[#070B12]/95 backdrop-blur-md sticky top-0 z-40">
@@ -55,7 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center space-x-2 min-w-0">
           <span className="flex items-center space-x-1 text-[#00D9FF] font-mono font-bold shrink-0">
             <Radio className="w-3 h-3 animate-pulse text-[#00D9FF]" />
-            <span>ETHIO-CERT LIVE WIRE:</span>
+            <span>{t.header.tickerPrefix}</span>
           </span>
           <div className="flex items-center space-x-2 truncate">
             <span className={`px-1.5 py-0.2 rounded font-mono font-bold text-[9px] bg-[#111923] border border-[#1E2A38] ${currentTicker.color}`}>
@@ -70,10 +75,10 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="hidden md:flex items-center space-x-3 shrink-0 pl-3 font-mono text-[10px] text-[#7D8A99]">
           <span className="flex items-center space-x-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]"></span>
-            <span>INSA LINK: SYNCHRONIZED</span>
+            <span>{t.header.insaLink}</span>
           </span>
           <span>•</span>
-          <span className="text-[#00D9FF]">ADDIS ABABA ROOT SOC</span>
+          <span className="text-[#00D9FF]">{t.header.rootSoc}</span>
         </div>
       </div>
 
@@ -94,13 +99,13 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="font-extrabold tracking-wider text-sm sm:text-base text-white">ETHIO-CYBERGUARD</span>
+              <span className="font-extrabold tracking-wider text-sm sm:text-base text-white">{t.header.title}</span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#00D9FF]/15 text-[#00D9FF] border border-[#00D9FF]/30 font-bold">
-                DEFCON 2
+                {t.header.defcon}
               </span>
             </div>
             <p className="text-[10px] sm:text-[11px] text-[#7D8A99] tracking-tight hidden sm:block">
-              National AI SIEM & Incident Command • Critical Infrastructure
+              {t.header.subtitle}
             </p>
           </div>
         </div>
@@ -112,14 +117,14 @@ export const Header: React.FC<HeaderProps> = ({
             type="text" 
             readOnly
             onClick={onOpenCommandPalette}
-            placeholder="Press ⌘K or click to search indicators, assets, actions..."
+            placeholder={t.header.searchPlaceholder}
             className="w-full bg-[#0D131C] border border-[#1E2A38] hover:border-[#00D9FF]/50 cursor-pointer rounded-md py-1.5 pl-9 pr-16 text-xs text-[#E6EDF3] placeholder-[#7D8A99] focus:outline-none transition-all font-mono"
           />
           <button
             onClick={onOpenCommandPalette}
             className="absolute right-2 text-[10px] font-mono text-[#00D9FF] bg-[#111923] border border-[#1E2A38] px-1.5 py-0.5 rounded hover:bg-[#00D9FF]/20 transition"
           >
-            ⌘K HUD
+            {t.header.hudShortcut}
           </button>
         </div>
 
@@ -128,12 +133,12 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Backend API Connection Status Badge */}
           <div 
             className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 bg-[#0D131C] border border-[#1E2A38] rounded-full text-xs"
-            title={backendConnected ? "Connected to live FastAPI backend (PostgreSQL/SQLite persistence)" : "Operating in offline simulated/demo mode"}
+            title={backendConnected ? "Connected to live FastAPI backend" : "Operating in offline simulated/demo mode"}
           >
             <span className={`w-2 h-2 rounded-full ${backendConnected === true ? 'bg-[#22C55E] animate-pulse' : (backendConnected === false ? 'bg-[#F59E0B]' : 'bg-[#7D8A99]')}`}></span>
             <span className="text-[#7D8A99] font-mono text-[11px]">
               API: <strong className={backendConnected === true ? 'text-[#22C55E]' : (backendConnected === false ? 'text-[#F59E0B]' : 'text-[#7D8A99]')}>
-                {backendConnected === true ? 'LIVE REST' : (backendConnected === false ? 'SIMULATED DEMO' : 'CHECKING')}
+                {backendConnected === true ? t.header.apiLive : (backendConnected === false ? t.header.apiSimulated : t.header.apiChecking)}
               </strong>
             </span>
           </div>
@@ -145,7 +150,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00D9FF]"></span>
             </span>
             <span className="text-[#7D8A99] font-mono text-[11px]">
-              INGEST: <strong className="text-white">{liveCount.toLocaleString()} EPS</strong>
+              {t.header.ingestRate} <strong className="text-white">{liveCount.toLocaleString()} EPS</strong>
             </span>
           </div>
 
@@ -156,7 +161,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onToggleSound();
                 soundManager.playClick();
               }}
-              title={soundEnabled ? "Mute Tactical Audio Synthesizer" : "Enable Tactical Audio Synthesizer"}
+              title={soundEnabled ? t.header.muteSound : t.header.enableSound}
               className={`p-2 rounded-md border text-xs transition ${
                 soundEnabled 
                   ? 'bg-[#00D9FF]/10 text-[#00D9FF] border-[#00D9FF]/30 hover:bg-[#00D9FF]/20' 
@@ -174,7 +179,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onToggleLanguage();
                 soundManager.playClick();
               }}
-              title="Toggle English / Amharic"
+              title={t.header.languageToggle}
               className="flex items-center space-x-1 px-2.5 py-1.5 rounded-md bg-[#0D131C] hover:bg-[#111923] border border-[#1E2A38] text-xs font-mono text-[#00D9FF] transition"
             >
               <Globe className="w-3.5 h-3.5" />
@@ -188,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({
               if (onOpenNotifications) onOpenNotifications();
               soundManager.playClick();
             }}
-            title="Open Notifications"
+            title={t.header.notifications}
             className="relative p-2 rounded-md hover:bg-[#111923] border border-[#1E2A38] text-[#7D8A99] hover:text-white transition"
           >
             <Bell className="w-4 h-4" />
@@ -201,7 +206,7 @@ export const Header: React.FC<HeaderProps> = ({
               DM
             </div>
             <div className="hidden sm:block text-left leading-none" title={`Organization: ${currentOrg}`}>
-              <p className="text-xs font-semibold text-white">Dawit Mengistu</p>
+              <p className="text-xs font-semibold text-white">{isAm ? 'ዳዊት መንግስቱ' : 'Dawit Mengistu'}</p>
               <p className="text-[10px] text-[#00D9FF] font-mono mt-0.5">{currentRole}</p>
             </div>
           </div>

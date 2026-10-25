@@ -8,10 +8,13 @@ import {
   Radar, 
   GraduationCap, 
   Bot, 
-  ShieldCheck, 
   Sliders, 
   ArrowRight,
   Flame,
+  Binary,
+  CheckSquare,
+  BarChart3,
+  FileText,
   Volume2,
   VolumeX,
   Languages,
@@ -57,6 +60,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isAm = language === 'am';
 
   useEffect(() => {
     if (isOpen) {
@@ -76,8 +80,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'nav-overview',
       category: 'Navigation',
-      title: 'Command Overview & Executive KPI',
-      subtitle: 'Live SOC posture, MTTD/MTTR metrics, active threats',
+      title: isAm ? 'አጠቃላይ እይታ እና ዋና መረጃዎች' : 'Command Overview & Executive KPI',
+      subtitle: isAm ? 'የቀጥታ የደህንነት ሁኔታ፣ MTTD/MTTR እና ንቁ ስጋቶች' : 'Live SOC posture, MTTD/MTTR metrics, active threats',
       icon: <LayoutDashboard className="w-4 h-4 text-[#00D9FF]" />,
       shortcut: 'G O',
       perform: () => { onNavigate('overview'); onClose(); }
@@ -85,8 +89,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'nav-incidents',
       category: 'Navigation',
-      title: 'Incidents Queue & Attack Graph',
-      subtitle: 'Investigate multi-stage attack chains and containment status',
+      title: isAm ? 'የሳይበር አደጋዎች ዝርዝር እና የጥቃት ግራፍ' : 'Incidents Queue & Attack Graph',
+      subtitle: isAm ? 'የተጠለፉ ሲስተሞች እና የመከላከል ሂደት' : 'Investigate multi-stage attack chains and containment status',
       icon: <Flame className="w-4 h-4 text-[#FF1744]" />,
       shortcut: 'G I',
       perform: () => { onNavigate('incidents'); onClose(); }
@@ -94,26 +98,71 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'nav-phishing',
       category: 'Navigation',
-      title: 'Phishing Email & Amharic Forensics',
-      subtitle: 'Analyze RFC-822 headers, SPF/DKIM, and Telebirr lures',
+      title: isAm ? 'የፊሺንግ ኢሜይል እና የአማርኛ ፎረንሲክስ' : 'Phishing Email & Amharic Forensics',
+      subtitle: isAm ? 'የRFC-822 ሄደር፣ SPF/DKIM እና የቴሌብር ማጭበርበሪያዎች' : 'Analyze RFC-822 headers, SPF/DKIM, and Telebirr lures',
       icon: <Mail className="w-4 h-4 text-[#00D9FF]" />,
       shortcut: 'G P',
       perform: () => { onNavigate('phishing'); onClose(); }
     },
     {
+      id: 'nav-threat-intel',
+      category: 'Navigation',
+      title: isAm ? 'የስጋት መረጃ እና አይኦሲ ዳታቤዝ' : 'Threat Intelligence & IOC Feeds',
+      subtitle: isAm ? 'የኢትዮ-ሰርት እና የባንኮች የጋራ ጥቃት መረጃዎች' : 'MISP, OpenCTI, and Ethio-CERT malicious indicators',
+      icon: <Binary className="w-4 h-4 text-[#00D9FF]" />,
+      shortcut: 'G T',
+      perform: () => { onNavigate('threat_intel'); onClose(); }
+    },
+    {
+      id: 'nav-response',
+      category: 'Navigation',
+      title: isAm ? 'የፈጣን ምላሽ ማዕከል እና የሰው ማጽደቂያ' : 'Response Center & Containment Actions',
+      subtitle: isAm ? 'ባለሁለት-ደረጃ የሰው ማረጋገጫ እና አውቶማቲክ መከላከያ' : 'Dual-custody authorization queue for host/IP isolation',
+      icon: <CheckSquare className="w-4 h-4 text-[#22C55E]" />,
+      shortcut: 'G S',
+      perform: () => { onNavigate('response'); onClose(); }
+    },
+    {
+      id: 'nav-risk',
+      category: 'Navigation',
+      title: isAm ? 'የስጋት ስሌት እና ተጋላጭነት ትንተና' : 'Explainable Risk & Asset Scoring',
+      subtitle: isAm ? 'የባንክ እና ቴሌኮም ንብረቶች የተጋላጭነት ነጥብ' : 'Formula breakdown: Threat × Asset × Vulnerability',
+      icon: <BarChart3 className="w-4 h-4 text-[#F59E0B]" />,
+      shortcut: 'G K',
+      perform: () => { onNavigate('risk'); onClose(); }
+    },
+    {
+      id: 'nav-radar',
+      category: 'Navigation',
+      title: isAm ? 'የኢትዮጵያ ወሳኝ መሰረተ-ልማቶች ራዳር' : 'National Infrastructure Threat Radar',
+      subtitle: isAm ? 'በባንክ፣ ቴሌኮም፣ ሃይል እና መንግስት ላይ ያለ የጥቃት ቅኝት' : 'Real-time telemetry across banking, telco, energy, and government',
+      icon: <Radar className="w-4 h-4 text-[#00D9FF]" />,
+      shortcut: 'G D',
+      perform: () => { onNavigate('overview'); onClose(); }
+    },
+    {
+      id: 'nav-reports',
+      category: 'Navigation',
+      title: isAm ? 'የሳይበር ደህንነት እና የኢንሳ ተገዢነት ሪፖርት' : 'Executive Threat & Compliance Reports',
+      subtitle: isAm ? 'የቦርድ አጭር መግለጫ እና የኢንሳ መመሪያ ተገዢነት' : 'Board-level briefings and INSA compliance audit dossiers',
+      icon: <FileText className="w-4 h-4 text-[#22C55E]" />,
+      shortcut: 'G E',
+      perform: () => { onNavigate('reports'); onClose(); }
+    },
+    {
       id: 'nav-typosquat',
       category: 'Navigation',
-      title: 'Brand Defense & Domain Typosquatting',
-      subtitle: 'openSquat homoglyphs, Ethiopian bank lookalikes, takedowns',
+      title: isAm ? 'የስም ቅጅ እና የማጭበርበሪያ ድረ-ገጾች' : 'Brand Defense & Domain Typosquatting',
+      subtitle: isAm ? 'openSquat የባንኮች የማስመሰል ድረ-ገጾች እና ማወረጃ' : 'openSquat homoglyphs, Ethiopian bank lookalikes, takedowns',
       icon: <Globe className="w-4 h-4 text-[#F59E0B]" />,
-      shortcut: 'G T',
+      shortcut: 'G B',
       perform: () => { onNavigate('typosquat'); onClose(); }
     },
     {
       id: 'nav-osint',
       category: 'Navigation',
-      title: 'Attack Surface & OSINT Reconnaissance',
-      subtitle: 'SpiderFoot ASN routing, passive subdomains, open port audits',
+      title: isAm ? 'የጥቃት ቀጠና እና የኦሲንት ቅኝት (OSINT)' : 'Attack Surface & OSINT Reconnaissance',
+      subtitle: isAm ? 'SpiderFoot የኢትዮ ቴሌኮም ASN እና ክፍት ፖርቶች ፍተሻ' : 'SpiderFoot ASN routing, passive subdomains, open port audits',
       icon: <Radar className="w-4 h-4 text-[#22C55E]" />,
       shortcut: 'G R',
       perform: () => { onNavigate('osint'); onClose(); }
@@ -121,8 +170,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'nav-awareness',
       category: 'Navigation',
-      title: 'Security Awareness Simulator',
-      subtitle: 'Employee simulation campaigns, Telebirr/CBE fraud lures',
+      title: isAm ? 'የሰራተኞች የሳይበር ግንዛቤ እና ስልጠና' : 'Security Awareness Simulator',
+      subtitle: isAm ? 'የቴሌብር እና የባንክ ማጭበርበሪያዎች የተሞክሮ ዘመቻ' : 'Employee simulation campaigns, Telebirr/CBE fraud lures',
       icon: <GraduationCap className="w-4 h-4 text-[#00D9FF]" />,
       shortcut: 'G A',
       perform: () => { onNavigate('awareness'); onClose(); }
@@ -130,26 +179,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'nav-assistant',
       category: 'Navigation',
-      title: '7 Multi-Agent AI Security Assistant',
-      subtitle: 'Query event, correlation, and MITRE investigation agents',
+      title: isAm ? '7 የተቀናጁ የኤአይ የደህንነት ወኪሎች' : '7 Multi-Agent AI Security Assistant',
+      subtitle: isAm ? 'የጥቃት ትንተና፣ የMITRE ምደባ እና የአማካሪ ወኪሎች' : 'Query event, correlation, and MITRE investigation agents',
       icon: <Bot className="w-4 h-4 text-[#FF1744]" />,
       shortcut: 'G C',
       perform: () => { onNavigate('assistant'); onClose(); }
     },
     {
-      id: 'nav-response',
-      category: 'Navigation',
-      title: 'SOAR Containment Center',
-      subtitle: 'Dual-custody approval, host isolation, firewall IP drops',
-      icon: <ShieldCheck className="w-4 h-4 text-[#22C55E]" />,
-      shortcut: 'G S',
-      perform: () => { onNavigate('response'); onClose(); }
-    },
-    {
       id: 'nav-settings',
       category: 'Navigation',
-      title: 'System Settings & Multi-Tenant Role',
-      subtitle: 'Configure RBAC permissions and organization profile',
+      title: isAm ? 'የማንነት፣ ፈቃዶች እና የተቋም ማስተካከያ' : 'System Settings & Multi-Tenant Role',
+      subtitle: isAm ? 'የRBAC ፈቃዶች እና የተቋም መለያ' : 'Configure RBAC permissions and organization profile',
       icon: <Sliders className="w-4 h-4 text-[#7D8A99]" />,
       shortcut: 'G ,',
       perform: () => { onNavigate('settings'); onClose(); }
@@ -159,8 +199,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'act-toggle-sound',
       category: 'Tactical Actions',
-      title: soundEnabled ? 'Mute Tactical Audio Synthesizer' : 'Enable Tactical Audio Synthesizer',
-      subtitle: 'Audio feedback for clicks, alerts, and SOAR response approvals',
+      title: soundEnabled ? (isAm ? 'የታክቲካል ድምፅ ማጥፊያ' : 'Mute Tactical Audio Synthesizer') : (isAm ? 'የታክቲካል ድምፅ ማብሪያ' : 'Enable Tactical Audio Synthesizer'),
+      subtitle: isAm ? 'የማጽደቂያዎች እና ማስጠንቀቂያዎች ድምፅ ማስተካከያ' : 'Audio feedback for clicks, alerts, and SOAR response approvals',
       icon: soundEnabled ? <VolumeX className="w-4 h-4 text-[#F59E0B]" /> : <Volume2 className="w-4 h-4 text-[#22C55E]" />,
       shortcut: 'M',
       perform: () => { onToggleSound(); onClose(); }
@@ -169,7 +209,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       id: 'act-toggle-lang',
       category: 'Tactical Actions',
       title: language === 'en' ? 'Switch Language to Amharic (አማርኛ)' : 'Switch Language to English (EN)',
-      subtitle: 'Localize threat descriptors, guidance, and alert reports',
+      subtitle: isAm ? 'ወደ እንግሊዝኛ ቋንቋ ቀይር' : 'Localize threat descriptors, guidance, and alert reports',
       icon: <Languages className="w-4 h-4 text-[#00D9FF]" />,
       shortcut: 'L',
       perform: () => { onToggleLanguage(); onClose(); }
@@ -180,7 +220,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       id: `inc-${inc.id}`,
       category: 'Incidents' as const,
       title: `${inc.incident_number}: ${inc.title}`,
-      subtitle: `Asset: ${inc.affected_asset} • Severity: ${inc.severity} • Risk: ${inc.risk_score}/100`,
+      subtitle: `${isAm ? 'የተጠቃ ሲስተም' : 'Asset'}: ${inc.affected_asset} • ${isAm ? 'ክብደት' : 'Severity'}: ${inc.severity} • ${isAm ? 'ስጋት' : 'Risk'}: ${inc.risk_score}/100`,
       icon: <AlertTriangle className={`w-4 h-4 ${inc.severity === 'CRITICAL' ? 'text-[#FF1744]' : 'text-[#F59E0B]'}`} />,
       shortcut: `Risk ${inc.risk_score}`,
       perform: () => {
@@ -247,7 +287,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               setQuery(e.target.value);
               setSelectedIndex(0);
             }}
-            placeholder="Type a command, incident ID (e.g. INC-00042), or tab name..."
+            placeholder={isAm ? "ትዕዛዝ፣ የአደጋ መለያ (ለምሳሌ INC-00042) ወይም የክፍል ስም ይተይቡ..." : "Type a command, incident ID (e.g. INC-00042), or tab name..."}
             className="flex-1 bg-transparent text-sm text-white placeholder-[#7D8A99] focus:outline-none font-mono"
           />
           <button 
@@ -262,8 +302,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         <div className="flex-1 overflow-y-auto p-2 space-y-1 divide-y divide-[#1E2A38]/30">
           {filtered.length === 0 ? (
             <div className="py-12 text-center text-xs text-[#7D8A99]">
-              <p>No matching commands or incidents found for "{query}".</p>
-              <p className="mt-1 text-[11px] text-[#00D9FF]">Try searching "incidents", "phishing", "cbe", or "telebirr"</p>
+              <p>{isAm ? `ምንም የተገኘ ትዕዛዝ ወይም አደጋ የለም፡ "${query}"` : `No matching commands or incidents found for "${query}".`}</p>
+              <p className="mt-1 text-[11px] text-[#00D9FF]">
+                {isAm ? 'እንደ "አደጋዎች"፣ "ፊሺንግ"፣ "ቴሌብር" ወይም "cbe" ብለው ይፈልጉ' : 'Try searching "incidents", "phishing", "cbe", or "telebirr"'}
+              </p>
             </div>
           ) : (
             filtered.map((action, idx) => {
@@ -313,11 +355,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         {/* Footer Shortcut Hints */}
         <div className="px-4 py-2.5 bg-[#070B12] border-t border-[#1E2A38] flex items-center justify-between text-[11px] text-[#7D8A99] font-mono">
           <div className="flex items-center space-x-3">
-            <span>↑↓ to navigate</span>
-            <span>↵ to select</span>
-            <span>ESC to close</span>
+            <span>{isAm ? "↑↓ ለመምረጥ" : "↑↓ to navigate"}</span>
+            <span>{isAm ? "↵ ለማረጋገጥ" : "↵ to select"}</span>
+            <span>{isAm ? "ESC ለመዝጋት" : "ESC to close"}</span>
           </div>
-          <span className="text-[#00D9FF]">ETHIO-CYBERGUARD HUD</span>
+          <span className="text-[#00D9FF]">
+            {isAm ? "የኢትዮ-ሳይበርጋርድ ፈጣን መፈለጊያ" : "ETHIO-CYBERGUARD HUD"}
+          </span>
         </div>
       </div>
     </div>
