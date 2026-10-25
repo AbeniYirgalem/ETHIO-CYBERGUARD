@@ -53,6 +53,7 @@
 13. [Production Limitations](#-13-production-limitations)
 14. [Project Roadmap](#-14-project-roadmap)
 15. [Contribution & Governance](#-15-contribution--governance)
+16. [Project Team & Contributors](#-16-project-team--contributors)
 
 ---
 
@@ -204,8 +205,10 @@ source venv/bin/activate
 # On Windows PowerShell:
 .\venv\Scripts\Activate.ps1
 
-# 3. Install backend dependencies
-pip install -r apps/api/requirements.txt
+# 3. Install backend dependencies (core runtime)
+pip install -r requirements.txt
+# For local testing and developer tools:
+pip install -r requirements-dev.txt
 
 # 4. Configure environment variables
 cp .env.example .env
@@ -359,8 +362,9 @@ tests/unit/test_risk.py ....................... PASSED
 tests/unit/test_rules.py ...................... PASSED
 tests/unit/test_soar_response.py .............. PASSED
 tests/unit/test_typosquat.py .................. PASSED
+tests/unit/test_comprehensive_audit_scenarios.py .......... PASSED
 
-============================= 75 passed in 1.86s =============================
+============================= 85 passed in 2.42s =============================
 ```
 
 To test the frontend build and TypeScript compliance:
@@ -420,6 +424,21 @@ Contributions from security analysts, developers, and researchers are warmly wel
 - **Repository Owners**: Managed by lead maintainer [@AbeniYirgalem](https://github.com/AbeniYirgalem) (see [.github/CODEOWNERS](.github/CODEOWNERS)).
 - **Security Disclosures**: Please report sensitive vulnerabilities directly to the maintainers as detailed in [SECURITY.md](SECURITY.md).
 - **Citation**: If you reference this work in research or technical whitepapers, see [`CITATION.cff`](./CITATION.cff).
+
+---
+
+## 👥 16. Project Team & Contributors
+<a id="-16-project-team--contributors"></a>
+
+| # | Full Name | Student / Member ID | Project Role |
+| :-: | :--- | :--- | :--- |
+| 1 | **Beamlak Sintayehu** | `CTC-912-24` | Core Member / Contributor |
+| 2 | **Yonas Abadi** | `[Pending ID: ____________]` | Project Owner |
+| 3 | **Abeni Yirgalem** | `[Pending ID: ____________]` | Repository Administrator |
+| 4 | **FikreMariam** | `[Pending ID: ____________]` | Team Member |
+| 5 | **Remedan** | `[Pending ID: ____________]` | Team Member |
+
+> ℹ️ *Space and ID placeholders are reserved above for team members to record their official student/member IDs.*
 
 ---
 
