@@ -142,13 +142,13 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
       nameAm: 'ቤአምላክ ስንታየሁ',
       nameEn: 'Beamlak Sintayehu',
       studentId: 'CTC-912-24',
-      roleAm: 'ዋና አባል እና አስተዋፅዖ አድራጊ',
-      roleEn: 'Core Member / Contributor',
+      roleAm: 'ዋና ሲስተም አርክቴክት እና መሪ አልሚ',
+      roleEn: 'Principal Lead Architect & Core Maintainer',
       badge: 'CTC-912-24',
       badgeColor: 'border-[#00D9FF] text-[#00D9FF] bg-[#00D9FF]/10',
       desc: isAm 
-        ? 'የሲስተሙን ሙሉ ሙከራዎች፣ የUI/UX ውህደት እና የኢትዮ-ሳይበርጋርድን መዋቅር በመገንባት ከፍተኛ አስተዋፅዖ ያበረከተ።' 
-        : 'Instrumental in architecture implementation, test engineering, and frontend integration.'
+        ? 'የኢትዮ-ሳይበርጋርድ ዋና ሲስተም አርክቴክት፤ የSIEM/SOAR አሰራር፣ 279 የደህንነት ሙከራዎች፣ የUI/UX ዳሽቦርድ እና የGitHub Pages/CI/CD አስተዳዳሪ።' 
+        : 'Principal System Architect & Core Platform Lead. Built SIEM/SOAR pipeline, automated test suite, frontend UX, and GitHub CI/CD.'
     },
     {
       num: 2,
@@ -814,32 +814,18 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                 </div>
               </div>
 
-              {/* Team Photo Card */}
+              {/* Team Collective Banner */}
               <div className="bg-[#111923] border border-[#1E2A38] rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6 shadow-xl">
-                <div 
-                  className="w-full md:w-56 flex-shrink-0 cursor-pointer overflow-hidden rounded-xl border border-[#1E2A38] group relative"
-                  onClick={() => setSelectedImageModal({
-                    src: './images/team-photo.png',
-                    alt: 'ETHIO-CYBERGUARD Team Photo',
-                    title: isAm ? 'የኢትዮ-ሳይበርጋርድ የፕሮጀክት ቡድን ፎቶ' : 'ETHIO-CYBERGUARD Project Team'
-                  })}
-                >
-                  <img 
-                    src="./images/team-photo.png" 
-                    alt="ETHIO-CYBERGUARD Team" 
-                    className="w-full h-auto object-cover group-hover:scale-105 transition duration-300"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                    <span className="text-xs text-white bg-black/70 px-2 py-1 rounded font-mono flex items-center space-x-1">
-                      <Eye className="w-3 h-3 text-[#00D9FF]" />
-                      <span>{isAm ? 'ፎቶውን ይመልከቱ' : 'Enlarge'}</span>
-                    </span>
-                  </div>
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-[#00D9FF]/10 border border-[#00D9FF]/30 flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#00D9FF]/10">
+                  <Users className="w-8 h-8 md:w-10 md:h-10 text-[#00D9FF]" />
                 </div>
 
                 <div className="space-y-3 flex-1 text-xs">
-                  <div className="font-bold text-white text-sm">
-                    {isAm ? 'የኢትዮ-ሳይበርጋርድ የምርምር ቡድን' : 'ETHIO-CYBERGUARD Student Research Collective'}
+                  <div className="font-bold text-white text-sm flex items-center space-x-2">
+                    <span>{isAm ? 'የኢትዮ-ሳይበርጋርድ የምርምር ቡድን' : 'ETHIO-CYBERGUARD Student Research Collective'}</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/20">
+                      6 {isAm ? 'አባላት' : 'Members'}
+                    </span>
                   </div>
                   <p className="text-[#7D8A99] leading-relaxed">
                     {isAm
@@ -1163,6 +1149,22 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                     className="text-[#00D9FF] hover:underline font-mono text-[11px] flex items-center space-x-1"
                   >
                     <span>Launch Live Site</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-[#070B12] rounded-lg border border-[#1E2A38] gap-2">
+                  <div>
+                    <span className="font-bold text-white block">@Mr-Nobody-Anonymous (Lead System Architect)</span>
+                    <span className="text-[11px] text-[#7D8A99]">Core platform architecture, SIEM/SOAR engine & test suite maintainer</span>
+                  </div>
+                  <a 
+                    href="https://github.com/Mr-Nobody-Anonymous" 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="text-[#00D9FF] hover:underline font-mono text-[11px] flex items-center space-x-1"
+                  >
+                    <span>View GitHub Profile</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
