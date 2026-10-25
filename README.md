@@ -442,10 +442,10 @@ npm run build
 | # | Full Name / ሙሉ ስም | Student ID / የተማሪ መለያ | Project Role / የሥራ ድርሻ |
 | :-: | :--- | :--- | :--- |
 | 1 | **ቤአምላክ ስንታየሁ** (Beamlak Sintayehu) | `CTC-912-24` | ዋና አባል እና አስተዋፅዖ አድራጊ (Core Member / Contributor) |
-| 2 | **ዮናስ አባዲ** (Yonas Abadi) | `[የተማሪ መለያ: ____________]` | አስተዋፅዖ አድራጊ (Contributor) |
+| 2 | **ዮናስ አባዲ** (Yonas Abadi) | `CTC-7422-26` | አስተዋፅዖ አድራጊ (Contributor) |
 | 3 | **አቤኔዘር ይርጋለም** (Abenezer Yirgalem) | `CTC-041-26` | የፕሮጀክት አስተዳዳሪ (Repository Administrator) |
-| 4 | **ፍቅረማርያም** (FikreMariam) | `[የተማሪ መለያ: ____________]` | የቡድን አባል (Team Member) |
-| 5 | **ረመዳን** (Remedan) | `[የተማሪ መለያ: ____________]` | የቡድን አባል (Team Member) |
+| 4 | **ፍቅረማርያም ወርኩ** (FikreMariam Worku) | `` | የቡድን አባል (Team Member) |
+| 5 | **ረመዳን ሀንቴ** (Remedan Hante) | `CTC-7445-26` | የቡድን አባል (Team Member) |
 
 > ℹ️ *Space and ID placeholders are reserved above for team members to record their official student/member IDs. / የቡድን አባላት ይፋዊ የተማሪ መለያ ቁጥራቸውን እንዲያስገቡ ክፍት ቦታ ተዘጋጅቷል።*
 
