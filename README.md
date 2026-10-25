@@ -243,54 +243,18 @@ npm run dev
 
 ---
 
-## 🐳 9. Docker & Kubernetes Deployment
-
-### Demo Docker Compose
-Runs the full stack (PostgreSQL, Redis, FastAPI, Nginx web) in `DEMO_MODE` with guest access and simulated data:
-```bash
-docker compose up --build -d
-```
-
-### Production Docker Compose
-`docker-compose.prod.yml` runs with `DEMO_MODE=false`. Every secret is required, PostgreSQL and Redis are not published to the host, and the API only listens on `127.0.0.1:8000`. Put a TLS reverse proxy (Caddy, nginx, a cloud load balancer) in front, because the compose file does not terminate HTTPS itself.
-```bash
-cp .env.example .env     # set JWT_SECRET, INGEST_API_KEY, POSTGRES_PASSWORD, BOOTSTRAP_ADMIN_*, ALLOWED_ORIGINS, PUBLIC_API_URL
-docker compose -f docker-compose.prod.yml up --build -d
-```
-In production the API also rate-limits login, refresh and password-reset per IP (`AUTH_RATE_LIMIT_PER_MINUTE`, default 10), adds security headers, and turns off `/docs`.
-
-### Local Development Docker Compose (with Hot-Reloading)
-```bash
-docker-compose -f docker-compose.dev.yml up --build
-```
 ## ⚙️ 7. Environment Configuration
 
 Copy `.env.example` to `.env` to configure settings:
 
-### Live Event Demo
-With the API running and the web app signed in, send sample events and watch the Overview page update in real time (feed, events per second, counters, detection alerts):
-```bash
-python scripts/demo/send_events.py --count 30 --interval 1
-```
-In production (`DEMO_MODE=false`) add `--key YOUR_INGEST_API_KEY`.
-
-### Kubernetes (Production Cluster)
-Production manifests are provided in `infrastructure/kubernetes/`:
-```bash
-# Apply ConfigMaps, Secrets, Deployments, Services, and Ingress
-kubectl apply -f infrastructure/kubernetes/configmap.yaml
-kubectl apply -f infrastructure/kubernetes/deployment-api.yaml
-kubectl apply -f infrastructure/kubernetes/deployment-web.yaml
-kubectl apply -f infrastructure/kubernetes/service.yaml
-kubectl apply -f infrastructure/kubernetes/ingress.yaml
-```
-| Variable | Default | Purpose |
+| Variable | Default Value | Description |
 | :--- | :--- | :--- |
-| `DEMO_MODE` | `true` | Enables safe mock data fallback when offline; set `false` in production. |
-| `DATABASE_URL` | `sqlite:///./ethio_cyberguard.db` | Database connection URI (PostgreSQL for production). |
-| `REDIS_URL` | `redis://localhost:6379/0` | Cache and rate-limiting broker URI. |
-| `API_SECRET_KEY` | *(Set strong secret in prod)* | JWT token signing key. |
-| `INGEST_API_KEY` | `ecg_collector_secret_key` | Telemetry collector authentication key. |
+| `DEMO_MODE` | `true` | Enables safe mock data fallback when offline; set `false` for strict production. |
+| `DATABASE_URL` | `sqlite:///./ethio_cyberguard.db` | Database connection URI (`postgresql://user:pass@host:5432/db` in production). |
+| `REDIS_URL` | `redis://localhost:6379/0` | Cache, event queue, and rate limiting broker URI. |
+| `API_SECRET_KEY` | *(Set 32-byte secret)* | HMAC key for signing JWT tokens and session credentials. |
+| `INGEST_API_KEY` | `ecg_collector_secret_key` | Collector authentication key for log telemetry ingestion. |
+| `ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Strict CORS allowed origins. |
 
 ---
 
@@ -298,102 +262,37 @@ kubectl apply -f infrastructure/kubernetes/ingress.yaml
 
 Interactive Swagger documentation is live at `http://localhost:8000/docs`:
 
-| Variable | Default Value | Description |
-| :--- | :--- | :--- |
-| `DEMO_MODE` | `true` | When `true`, displays demo mode banner and permits mock data fallback. Set to `false` for production. |
-| `DATABASE_URL` | `sqlite:///./ethio_cyberguard.db` | PostgreSQL connection URI (`postgresql://user:pass@host:5432/db`). |
-| `REDIS_URL` | `redis://localhost:6379/0` | Redis caching, event queue, and rate limiting broker URI. |
-| `API_SECRET_KEY` | *(Random 32-byte secret)* | HMAC key for signing JWT tokens and session credentials. |
-| `ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Strict CORS allowed origins (comma-separated). |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | JWT access token lifespan. |
-| `REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Refresh token lifespan for session rotation. |
-| `REFRESH_REUSE_GRACE_SECONDS` | `10` | A used refresh token presented again within this time is tolerated; later reuse revokes the whole login session. |
-| `SHARED_STATE_BACKEND` | `auto` | `auto` uses Redis in production when `REDIS_URL` is set (login rate limit, token revocation and refresh-token marks are then shared by every API worker); `memory` forces single-process; `redis` forces Redis. |
-| `MAX_PAYLOAD_BYTES` | `5242880` (5 MB) | Maximum accepted JSON event payload size to prevent DoS. |
-| `INGEST_API_KEY` | `ecg_collector_secret_key` | Shared API key required for endpoint telemetry ingestion. |
-| `RATE_LIMIT_PER_MINUTE` | `120` | Max API requests permitted per client IP per minute. |
-
----
-
-## 📡 11. API Documentation & Endpoints
-
 | Category | Method | Endpoint | Description |
 | :--- | :---: | :--- | :--- |
 | **Authentication** | `POST` | `/api/auth/login` | Authenticate with credentials and receive access + refresh JWTs. |
-| | `POST` | `/api/auth/refresh` | Rotate expired access token using valid refresh token. |
 | | `GET` | `/api/auth/me` | Fetch authenticated user profile and assigned RBAC permissions. |
-| | `POST` | `/api/auth/password-reset` | Initiate self-service password reset (one-time token is delivered out-of-band, never returned in the response). |
-| **Ingestion** | `POST` | `/api/v1/events/ingest` | High-throughput collector ingestion with deduplication & DLQ. |
+| **Ingestion** | `POST` | `/api/v1/events/ingest` | High-throughput collector ingestion with deduplication. |
 | **Incidents** | `GET` | `/api/incidents` | List incidents with filtering by severity, status, and tenant. |
-| | `GET` | `/api/incidents/{id}` | Detailed incident record including timeline and attack graph. |
-| | `POST` | `/api/incidents` | Create a new incident. |
-| | `PATCH` | `/api/incidents/{id}/transition` | Execute formal lifecycle state transition (`NEW` → `CONTAINED`, etc.). |
-| | `POST` | `/api/incidents/{id}/comments` | Append analyst investigation notes. |
-| | `POST` | `/api/incidents/{id}/evidence` | Upload forensic evidence with SHA-256 cryptographic verification. |
-| **Threat Intelligence** | `GET` | `/api/threat-intelligence` | Retrieve active Indicators of Compromise (IOCs). |
+| | `PATCH` | `/api/incidents/{id}/transition` | Execute formal 10-state lifecycle transition. |
+| **Threat Intel** | `GET` | `/api/threat-intelligence` | Retrieve active Indicators of Compromise (IOCs). |
 | | `GET` | `/api/threat-intelligence/stix` | Export threat intelligence as a standard STIX 2.1 JSON bundle. |
-| | `POST` | `/api/threat-intelligence/import` | Ingest external STIX 2.1 threat feed indicators. |
-| **Phishing Forensics** | `POST` | `/api/phishing/analyze` | Parse RFC-822 email, verify SPF/DKIM/DMARC, scan Amharic lures. |
-| **Brand Protection** | `POST` | `/api/typosquat/scan` | Generate homoglyphs and calculate domain similarity metrics. |
-| **OSINT Recon** | `POST` | `/api/osint/scan` | Map ASN routing, passive subdomains, open ports, and SSL health. |
-| **AI Investigation** | `POST` | `/api/ai/investigate` | Run multi-agent AI analysis across MITRE ATT&CK vectors. |
+| **Forensics** | `POST` | `/api/phishing/analyze` | Parse RFC-822 email, verify SPF/DKIM/DMARC, scan regional lures. |
+| | `POST` | `/api/typosquat/scan` | Generate homoglyphs and calculate domain similarity metrics. |
+| | `POST` | `/api/osint/scan` | Map Ethiopian ASN routing (`AS24757`), open ports, and SSL health. |
+| **AI Copilot** | `POST` | `/api/ai/investigate` | Run multi-agent AI analysis across MITRE ATT&CK vectors. |
 | | `POST` | `/api/ai/chat` | Interactive Tier-1/Tier-2 analyst assistant copilot. |
 | **SOAR Response** | `GET` | `/api/response/actions` | Retrieve response action queue with approval statuses. |
-| | `POST` | `/api/response/execute` | Dispatch containment actions (supports `dry_run` & dual custody). |
-| | `POST` | `/api/response/actions/{id}/rollback` | Revert previously executed containment actions. |
-| **Jobs & Workers** | `POST` | `/api/v1/jobs` | Submit heavy asynchronous background tasks. |
-| | `GET` | `/api/v1/jobs/{job_id}` | Poll background job progress and output payload. |
+| | `POST` | `/api/response/execute` | Dispatch containment actions (dual-custody approval enforced). |
 | **System Health** | `GET` | `/health/live` | Kubernetes liveness probe endpoint. |
-| | `GET` | `/health/ready` | Kubernetes readiness probe (checks database, Redis, connectors). |
-| | `GET` | `/metrics` | Prometheus metrics exposition format. |
-
----
-- **Health Probes**: `GET /health/live`, `GET /health/ready`
-- **Telemetry Ingestion**: `POST /api/v1/events/ingest`
-- **Incidents**: `GET /api/v1/incidents`, `POST /api/v1/incidents`, `PATCH /api/v1/incidents/{id}/transition`
-- **Threat Intelligence**: `GET /api/v1/threat-intel/iocs`, `GET /api/v1/threat-intel/stix`
-- **SOAR Response**: `GET /api/v1/response/actions`, `POST /api/v1/response/actions/{id}/approve`
-- **AI Investigation**: `POST /api/v1/ai/investigate`, `POST /api/v1/ai/chat`
-- **Forensic Scanners**: `POST /api/v1/phishing/analyze`, `POST /api/v1/typosquat/scan`, `POST /api/v1/osint/scan`
+| | `GET` | `/health/ready` | Readiness probe (verifies database and connector status). |
 
 ---
 
 ## 🧪 9. Testing & Quality Verification
 
-All 85 automated tests verify unit logic, pipeline integration, AI grounding, and security controls:
+All 279 automated tests verify unit logic, pipeline integration, AI grounding, and security controls:
 
 ```bash
-# Run complete test suite (85 passing tests)
-npm test
-# Or: python -m pytest tests/ -v
+# Run backend test suite (279 passing tests, 100% green pass rate)
+python -m pytest tests/ -v
 
-```text
-tests/ai-evaluation/test_ai_grounding.py ....... PASSED
-tests/integration/test_pipeline.py ............ PASSED
-tests/integration/test_unified_pipeline.py .... PASSED
-tests/security/test_prompt_injection.py ....... PASSED
-tests/security/test_ssrf_and_scope.py ......... PASSED
-tests/security/test_tenant_isolation.py ....... PASSED
-tests/unit/test_alerting.py ................... PASSED
-tests/unit/test_api_endpoints.py .............. PASSED
-tests/unit/test_api_extended.py ............... PASSED
-tests/unit/test_auth.py ....................... PASSED
-tests/unit/test_awareness.py .................. PASSED
-tests/unit/test_benchmark.py .................. PASSED
-tests/unit/test_incident_lifecycle.py ......... PASSED
-tests/unit/test_normalizer.py ................. PASSED
-tests/unit/test_osint.py ...................... PASSED
-tests/unit/test_phase2_improvements.py ........ PASSED
-tests/unit/test_phishing.py ................... PASSED
-tests/unit/test_platform_hardening.py ......... PASSED
-tests/unit/test_rbac.py ....................... PASSED
-tests/unit/test_risk.py ....................... PASSED
-tests/unit/test_rules.py ...................... PASSED
-tests/unit/test_soar_response.py .............. PASSED
-tests/unit/test_typosquat.py .................. PASSED
-
-# Run frontend build & type check
-npm run build
+# Verify frontend build & TypeScript compilation
+npm --prefix apps/web run build
 ```
 
 ---
@@ -401,49 +300,24 @@ npm run build
 ## ⚠️ 10. Production Notes
 
 - **Offline Demo vs Live API**: When backend is offline or viewing static GitHub Pages, the UI operates in simulated mode. Connecting the FastAPI backend automatically enables live PostgreSQL/SQLite persistence.
-- **Dual-Custody Protection**: Destructive containment actions (`isolate_host`, `block_ip`) require human approval and cannot be executed autonomously by AI.
-- **Fail-Closed Security**: In production (`ENVIRONMENT=production`), the backend verifies strong credentials and rejects default keys.
+- **Dual-Custody Protection**: Destructive containment actions (`isolate_host`, `block_ip`, `disable_user`) require human approval and cannot be executed autonomously by AI.
+- **Fail-Closed Security**: In production (`ENVIRONMENT=production`), the backend verifies strong credentials, enforces IP rate-limiting, and rejects default keys.
 
 ---
 
 ## 🗺️ 11. Roadmap
 
-- **v1.1 (Current)**: Full-stack React 19 + FastAPI, 85 automated tests, STIX 2.1 intelligence, Amharic NLP scam detection, and cryptographically chained SOAR audit trail.
-- **v1.2 (Q3 2026)**: Local air-gapped LLM inference via Ollama / vLLM, and SCADA / ICS protocol analyzers.
-- **v2.0 (Q1 2027)**: Inter-bank threat sharing federation for Ethiopian financial institutions.
+- **v1.1 (Current Release)**: Full-stack React 19 + FastAPI, 279 automated tests, STIX 2.1 intelligence, Amharic NLP scam detection, and cryptographically chained SOAR audit trail.
+- **v1.2 (Target: Q3 2026)**: Local air-gapped LLM inference via Ollama / vLLM, and SCADA / ICS protocol analyzers.
+- **v2.0 (Target: Q1 2027)**: Inter-bank threat sharing federation for Ethiopian financial institutions.
 
 ---
 
-## 🗺️ 14. Project Roadmap
-
-- **v1.1 (Current Release)**:
-  - Full-stack React 19 + FastAPI integration with modernized ASGI `@asynccontextmanager` lifespan
-  - Optimized Vite v8 / Rolldown manual chunk splitting (< 270 kB bundles, sub-second build)
-  - Cryptographically chained SHA-256 immutable SOAR audit trail with tamper detection
-  - Native Ge'ez / Amharic NLP psychological urgency scam detector & Telebirr look-alike protection
-  - SQLAlchemy 2.1+, Alembic 1.20+, and persistent repository layer
-  - 7 enterprise RBAC roles with refresh token rotation and lockout protection
-  - Asynchronous background worker system (`/api/v1/jobs`)
-  - Formal 10-state incident lifecycle state machine
-  - Dual-custody SOAR execution with dry-run and rollback
-  - STIX 2.1 Threat Intel export and import
-  - Health probes (`/health/live`, `/health/ready`) and Prometheus `/metrics`
-  - Comprehensive Technical White Paper ([`docs/ETHIO_CYBERGUARD_TECHNICAL_PAPER.md`](./docs/ETHIO_CYBERGUARD_TECHNICAL_PAPER.md))
-  - 279 automated unit, integration, security, and platform audit scenario tests (100% green pass rate)
-- **v1.2 (Target: Q3 2026)**:
-  - Air-gapped on-premise LLM inference with Ollama and vLLM
-  - Pre-built Splunk and Elastic forwarder integrations
-  - Enhanced Amharic OCR for scanned physical banking fraud letters
-  - SCADA / ICS Modbus & DNP3 telemetry protocol dissectors
-- **v2.0 (Target: Q1 2027)**:
-  - Federated multi-bank intelligence sharing protocol across Ethiopian financial institutions
-  - Autonomous self-healing SOAR containment policies
-  - Mobile incident responder app for iOS and Android
 ## 🤝 12. Contribution & License
 
 - **License**: Apache 2.0 License. See [`LICENSE`](./LICENSE).
 - **Contributing**: Contributions are welcome! Review [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
-- **Repository Owners**: Managed by lead maintainer [@AbeniYirgalem](https://github.com/AbeniYirgalem).
+- **Lead Maintainer**: [@AbeniYirgalem](https://github.com/AbeniYirgalem).
 
 ---
 

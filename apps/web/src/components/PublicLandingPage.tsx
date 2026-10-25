@@ -180,10 +180,10 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
       num: 4,
       nameAm: 'ፍቅረማርያም ወርኩ',
       nameEn: 'FikreMariam Worku',
-      studentId: '[የተማሪ መለያ: ____________]',
+      studentId: 'CTC-7267-26',
       roleAm: 'የቡድን አባል',
       roleEn: 'Team Member',
-      badge: isAm ? 'የቡድን አባል' : 'Team Member',
+      badge: 'CTC-7267-26',
       badgeColor: 'border-[#F59E0B] text-[#F59E0B] bg-[#F59E0B]/10',
       desc: isAm 
         ? 'የደህንነት ግንዛቤ ማስጨበጫ እና የፊሺንግ ሙከራ ሞዴሎችን በማዘጋጀት የተሳተፈ የቡድን አባል።' 
@@ -201,6 +201,19 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
       desc: isAm 
         ? 'የኔትወርክ ጥቃቶች ቅኝት (OSINT) እና የብራንድ ጥበቃ ሞጁሎችን በማጠናቀር የተሳተፈ የቡድን አባል።' 
         : 'Network OSINT reconnaissance and typosquatting detection validation.'
+    },
+    {
+      num: 6,
+      nameAm: 'እየሩሳሌም ሰለሞን',
+      nameEn: 'Eyerusalem Solomon',
+      studentId: 'CTC-6739-26',
+      roleAm: 'የቡድን አባል',
+      roleEn: 'Team Member',
+      badge: 'CTC-6739-26',
+      badgeColor: 'border-[#EC4899] text-[#EC4899] bg-[#EC4899]/10',
+      desc: isAm 
+        ? 'የደህንነት ሪፖርት አቀራረብ እና የማስረጃ ማጠቃለያዎችን በመገምገም የተሳተፈች የቡድን አባል።' 
+        : 'Security reporting evaluation, evidence summarization, and quality assurance.'
     }
   ];
 
