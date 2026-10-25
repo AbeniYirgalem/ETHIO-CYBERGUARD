@@ -281,7 +281,7 @@ npm run build
 | # | Full Name | Student / Member ID | Project Role |
 | :-: | :--- | :--- | :--- |
 | 1 | **Beamlak Sintayehu** | `CTC-912-24` | Core Member / Contributor |
-| 2 | **Yonas Abadi** | `[Pending ID: ____________]` | Project Owner |
+| 2 | **Yonas Abadi** | `[Pending ID: ____________]` | Contributor |
 | 3 | **Abeni Yirgalem** | `[Pending ID: ____________]` | Repository Administrator |
 | 4 | **FikreMariam** | `[Pending ID: ____________]` | Team Member |
 | 5 | **Remedan** | `[Pending ID: ____________]` | Team Member |
