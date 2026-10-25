@@ -2,7 +2,7 @@
 
 **Version**: 1.1.0  
 **Stack**: FastAPI (Python 3.10+), React 19, TypeScript, Vite 8, Tailwind CSS v4, PostgreSQL 16, Redis 7  
-**Test Suite**: 75 Tests (100% Pass Rate)  
+**Test Suite**: 85 Tests (100% Pass Rate)  
 
 ---
 
@@ -100,7 +100,7 @@ Services will be accessible at:
 ETHIO-CYBERGUARD includes 75 automated unit, integration, and security tests. Run the complete test suite to verify system integrity:
 
 ```bash
-# Run entire test suite (75 tests)
+# Run entire test suite (85 tests)
 python -m pytest tests/ -v
 
 # Run targeted test suites

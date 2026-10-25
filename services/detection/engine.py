@@ -49,7 +49,7 @@ class DetectionEngine:
             alerts.append({
                 "alert_id": f"ALT-RULE-001-{int(datetime.now(timezone.utc).timestamp())}",
                 "title": "Suspicious Obfuscated PowerShell Command",
-                "description": f"Process {process.get('name')} ran encoded or download cradle command on {event['source']['hostname']}.",
+                "description": f"Process {process.get('name')} ran encoded or download cradle command on {event.get('source', {}).get('hostname') if isinstance(event.get('source'), dict) else event.get('host_name', 'host')}.",
                 "severity": "CRITICAL",
                 "mitre_tactic": "Execution",
                 "mitre_technique": "T1059.001 - PowerShell",

@@ -204,8 +204,10 @@ source venv/bin/activate
 # On Windows PowerShell:
 .\venv\Scripts\Activate.ps1
 
-# 3. Install backend dependencies
-pip install -r apps/api/requirements.txt
+# 3. Install backend dependencies (core runtime)
+pip install -r requirements.txt
+# For local testing and developer tools:
+pip install -r requirements-dev.txt
 
 # 4. Configure environment variables
 cp .env.example .env
@@ -359,8 +361,9 @@ tests/unit/test_risk.py ....................... PASSED
 tests/unit/test_rules.py ...................... PASSED
 tests/unit/test_soar_response.py .............. PASSED
 tests/unit/test_typosquat.py .................. PASSED
+tests/unit/test_comprehensive_audit_scenarios.py .......... PASSED
 
-============================= 75 passed in 1.86s =============================
+============================= 85 passed in 2.42s =============================
 ```
 
 To test the frontend build and TypeScript compliance:

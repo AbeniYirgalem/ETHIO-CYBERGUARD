@@ -1,10 +1,12 @@
 """
 ETHIO-CYBERGUARD Authentication & Identity Router
-Provides login, registration, refresh tokens, password reset, account lockout, and RBAC endpoints.
+Provides login, registration, single-use refresh token rotation, password reset,
+account lockout, session revocation, and RBAC endpoints.
 Supports both /api/auth and /api/v1/auth routes.
 """
 
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, Header
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone, timedelta
@@ -14,8 +16,10 @@ import uuid
 from ..dependencies import (
     DEMO_USERS, LOGIN_ATTEMPTS, create_access_token, 
     create_refresh_token, verify_token, get_current_user,
+    revoke_token, is_token_revoked, security,
     ROLES, ROLE_PERMISSIONS
 )
+from ..config import DEMO_MODE
 
 router = APIRouter(tags=["Authentication & Identity"])
 
@@ -88,7 +92,8 @@ def login_for_access_token(payload: LoginRequest):
         "id": user["id"],
         "name": user["name"],
         "role": user["role"],
-        "department": user["department"]
+        "department": user["department"],
+        "organization": user.get("organization", "Commercial Bank of Ethiopia")
     }
     
     access_token = create_access_token(token_payload)
@@ -103,13 +108,15 @@ def login_for_access_token(payload: LoginRequest):
             "email": user["email"],
             "name": user["name"],
             "role": user["role"],
-            "department": user["department"]
+            "department": user["department"],
+            "organization": user.get("organization", "Commercial Bank of Ethiopia")
         }
     }
 
 @router.post("/api/auth/refresh")
 @router.post("/api/v1/auth/refresh")
 def refresh_token(payload: RefreshRequest):
+    # Verify the incoming refresh token
     token_data = verify_token(payload.refresh_token, expected_type="refresh")
     email = token_data.get("sub")
     
@@ -117,12 +124,16 @@ def refresh_token(payload: RefreshRequest):
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         
+    # Single-use refresh token rotation: invalidate the used refresh token immediately
+    revoke_token(payload.refresh_token)
+    
     token_payload = {
         "sub": user["email"],
         "id": user["id"],
         "name": user["name"],
         "role": user["role"],
-        "department": user["department"]
+        "department": user["department"],
+        "organization": user.get("organization", "Commercial Bank of Ethiopia")
     }
     new_access_token = create_access_token(token_payload)
     new_refresh_token = create_refresh_token(token_payload)
@@ -152,7 +163,7 @@ def register_user(payload: RegisterRequest):
         "name": payload.full_name,
         "role": payload.role or "SECURITY_ANALYST",
         "department": payload.department or "SOC Operations",
-        "organization": payload.organization,
+        "organization": payload.organization or "Commercial Bank of Ethiopia",
         "password_hash": hashed_password
     }
     
@@ -163,7 +174,8 @@ def register_user(payload: RegisterRequest):
         "id": new_user_id,
         "name": payload.full_name,
         "role": new_user["role"],
-        "department": new_user["department"]
+        "department": new_user["department"],
+        "organization": new_user["organization"]
     }
     
     access_token = create_access_token(token_payload)
@@ -218,8 +230,11 @@ def confirm_password_reset(payload: PasswordResetConfirmRequest):
 
 @router.post("/api/auth/logout")
 @router.post("/api/v1/auth/logout")
-def logout_user():
-    return {"status": "SUCCESS", "message": "Session invalidated."}
+def logout_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    """Invalidates active session by revoking the submitted token."""
+    if credentials and credentials.credentials:
+        revoke_token(credentials.credentials)
+    return {"status": "SUCCESS", "message": "Session invalidated and token revoked."}
 
 @router.get("/api/auth/me")
 @router.get("/api/v1/auth/me")
@@ -232,6 +247,7 @@ def read_current_user(current_user: Dict[str, Any] = Depends(get_current_user)):
             "name": current_user.get("name"),
             "role": current_user.get("role"),
             "department": current_user.get("department", "Security Operations"),
+            "organization": current_user.get("organization", "Commercial Bank of Ethiopia"),
             "permissions": ROLE_PERMISSIONS.get(current_user.get("role", "READ_ONLY"), [])
         }
     }
@@ -248,7 +264,12 @@ def list_system_roles():
 @router.get("/api/auth/demo-credentials")
 @router.get("/api/v1/auth/demo-credentials")
 def list_demo_credentials():
-    """Returns available pre-seeded demo accounts for easy evaluator onboarding."""
+    """Returns available pre-seeded demo accounts for easy evaluator onboarding in non-production mode."""
+    if not DEMO_MODE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Demo credentials endpoint is disabled in production mode."
+        )
     return {
         "demo_mode": True,
         "message": "DEMO SANDBOX: The following pre-seeded test accounts are available for testing role-based access:",
