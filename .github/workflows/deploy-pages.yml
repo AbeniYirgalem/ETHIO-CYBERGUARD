@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
   deployments: write
 
 concurrency:
@@ -16,6 +18,9 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url || 'https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -33,28 +38,19 @@ jobs:
         working-directory: apps/web
         run: npm run build
 
-      - name: Deploy to GitHub Pages Branch
+      - name: Deploy to GitHub Pages Branch (gh-pages)
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: apps/web/dist
           publish_branch: gh-pages
 
-      - name: Update GitHub Deployment Status
-        if: always()
-        run: |
-          DEPLOY_ID=$(gh api -X POST repos/${{ github.repository }}/deployments \
-            -f ref="${{ github.sha }}" \
-            -f environment="github-pages" \
-            -f description="Automated GitHub Pages production deployment" \
-            -F auto_merge=false \
-            -F "required_contexts[]" \
-            --jq .id || true)
-          if [ -n "$DEPLOY_ID" ]; then
-            gh api -X POST repos/${{ github.repository }}/deployments/$DEPLOY_ID/statuses \
-              -f state="success" \
-              -f environment_url="https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/" \
-              -f description="ETHIO-CYBERGUARD live and verified on GitHub Pages" || true
-          fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true

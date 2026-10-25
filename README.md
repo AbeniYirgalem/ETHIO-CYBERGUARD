@@ -42,18 +42,15 @@
 2. [Main Features](#-2-main-features)
 3. [System Architecture](#-3-system-architecture)
 4. [Live Demo URL](#-4-live-demo-url)
-5. [Screenshots & UI Views](#-5-screenshots--ui-views)
-6. [Installation & Prerequisites](#-6-installation--prerequisites)
-7. [Backend Setup (FastAPI + SQLAlchemy)](#-7-backend-setup)
-8. [Frontend Setup (React 19 + Vite)](#-8-frontend-setup)
-9. [Docker & Kubernetes Deployment](#-9-docker--kubernetes-deployment)
-10. [Environment Variables Reference](#-10-environment-variables-reference)
-11. [API Documentation & Endpoints](#-11-api-documentation--endpoints)
-12. [Testing & Verification](#-12-testing--verification)
-13. [Production Limitations](#-13-production-limitations)
-14. [Project Roadmap](#-14-project-roadmap)
-15. [Contribution & Governance](#-15-contribution--governance)
-16. [Project Team & Contributors](#-16-project-team--contributors)
+5. [Operational Workspaces](#-5-operational-workspaces)
+6. [Quick Start Guide](#-6-quick-start-guide)
+7. [Environment Configuration](#-7-environment-configuration)
+8. [Core API Endpoints](#-8-core-api-endpoints)
+9. [Testing & Quality Verification](#-9-testing--quality-verification)
+10. [Production Notes](#-10-production-notes)
+11. [Roadmap](#-11-roadmap)
+12. [Contribution & License](#-12-contribution--license)
+13. [Project Team & Contributors](#-13-project-team--contributors)
 
 ---
 
@@ -158,277 +155,128 @@ Test the interactive SOC Dashboard, Phishing Forensics, Brand Defense, and Attac
 
 ---
 
-## 🖥️ 5. Screenshots & UI Views
+## 🖥️ 5. Operational Workspaces
 
-The platform includes 10 dedicated operational workspaces:
+ETHIO-CYBERGUARD provides a unified SOC command experience across key operational views:
 
-| View Component | Purpose | Key Capabilities |
+| View | Focus | Capabilities |
 | :--- | :--- | :--- |
-| **`OverviewView.tsx`** | Central SOC Command | Live event throughput counter, MTTD/MTTR KPIs, active threat alerts, and system health status. |
-| **`IncidentsView.tsx`** | Incident Management | Formal lifecycle state machine (`NEW` to `CLOSED`), interactive MITRE attack graph, evidence locker, and audit trail. |
-| **`PhishingAnalyzerView.tsx`** | Email Forensics | Raw RFC-822 header parser, SPF/DKIM/DMARC validator, URL extractor, and Amharic lure classifier. |
-| **`TyposquatView.tsx`** | Brand Protection | openSquat-based homoglyph generator for Ethiopian banks, visual similarity scoring, and 1-click registrar takedown. |
-| **`OSINTReconView.tsx`** | External Attack Surface | Passive DNS recon, ASN mapper (`AS24757`, `AS329340`), exposed ports (3389, 445, 8080), and SSL certificate tracking. |
-| **`AwarenessSimulatorView.tsx`** | Human Defense Training | Localized Ethiopian phishing simulations, departmental vulnerability matrix, and micro-learning modules. |
-| **`AssistantView.tsx`** | Multi-Agent AI Copilot | Direct interface with the 7 security agents for contextual investigation, query parsing, and report drafting. |
-| **`ResponseView.tsx`** | SOAR Response Center | Human-in-the-loop action approval (host isolation, IP egress drop, account disablement) with dry-run and rollback. |
-| **`ScenarioSimulator.tsx`** | Red-Team Drills | Interactive drilldown injector to simulate ransomware outbreaks, data exfiltration, or BEC attacks in real time. |
-| **`PublicLandingPage.tsx`** | Public Portal View | Public-facing security status overview, incident reporting gateway, and awareness knowledge base. |
+| **Overview** | Central SOC Command | Live event throughput (EPS), active alerts, and health metrics. |
+| **Incidents** | Incident Management | 10-stage lifecycle, MITRE ATT&CK mapping, and evidence locker. |
+| **Threat Intel** | Regional Intelligence | Ethio-CERT and INSA threat feeds, IOC search, and STIX 2.1 export. |
+| **Phishing Forensics** | Email Defense | RFC-822 header inspection, SPF/DMARC checks, and Amharic lure scanner. |
+| **Brand Protection** | Domain Monitoring | Homoglyph generator for Ethiopian banks and automated takedown reporting. |
+| **OSINT Recon** | Attack Surface | Ethiopian ASN mappings (`AS24757`), open ports, and certificate discovery. |
+| **AI Copilot** | Tier-1/2 Assistant | Multi-agent incident investigation, query synthesis, and threat attribution. |
+| **SOAR Response** | Containment | Human-in-the-loop action approval (isolate host, block IP, disable account). |
 
 ---
 
-## ⚡ 6. Installation & Prerequisites
+## ⚡ 6. Quick Start Guide
 
-### Minimum Hardware Requirements
-- **Development**: 4 CPU cores, 8 GB RAM, 20 GB free disk space.
-- **Production SOC**: 16+ CPU cores, 32 GB RAM, NVMe SSD storage (see [Performance Benchmark Methodology](docs/benchmark.md)).
-
-### Software Prerequisites
-- **Python**: 3.10 or higher
-- **Node.js**: 20.x or higher & `npm` 10.x
-- **Docker & Docker Compose**: v2.20+ (for containerized deployments)
-- **PostgreSQL**: 16.x (if running outside Docker)
-
----
-
-## 🔌 7. Backend Setup
-
+### Option A: Run with Docker Compose (Recommended)
 ```bash
-# 1. Clone the repository
-git clone https://github.com/AbeniYirgalem/ETHIO-CYBERGUARD.git
-cd ETHIO-CYBERGUARD
+# Start backend API, PostgreSQL, Redis, and Web Frontend
+docker compose up --build -d
 
-# 2. Create and activate a Python virtual environment
+# Open services:
+# Web Dashboard: http://localhost:3000
+# API Docs:      http://localhost:8000/docs
+```
+
+### Option B: Run Locally (Manual)
+
+**1. Backend (FastAPI + SQLite/PostgreSQL)**
+```bash
+# Create & activate virtual environment
 python -m venv venv
-# On Linux/macOS:
-source venv/bin/activate
-# On Windows PowerShell:
-.\venv\Scripts\Activate.ps1
+# Linux/macOS: source venv/bin/activate
+# Windows:     .\venv\Scripts\Activate.ps1
 
-# 3. Install backend dependencies (core runtime)
+# Install dependencies and start server
 pip install -r requirements.txt
-# For local testing and developer tools:
-pip install -r requirements-dev.txt
-
-# 4. Configure environment variables
-cp .env.example .env
-
-# 5. Run database migrations (or SQLite fallback will initialize automatically)
-alembic upgrade head
-
-# 6. Start the FastAPI development server
 uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-The API will be available at `http://localhost:8000`.  
-Interactive Swagger OpenAPI documentation is live at `http://localhost:8000/docs`.
+**2. Frontend (React 19 + Vite)**
+```bash
+cd apps/web
+npm install
+npm run dev
+# Dashboard opens at http://localhost:5173
+```
 
 ---
 
-## 💻 8. Frontend Setup
+## ⚙️ 7. Environment Configuration
+
+Copy `.env.example` to `.env` to configure settings:
+
+| Variable | Default | Purpose |
+| :--- | :--- | :--- |
+| `DEMO_MODE` | `true` | Enables safe mock data fallback when offline; set `false` in production. |
+| `DATABASE_URL` | `sqlite:///./ethio_cyberguard.db` | Database connection URI (PostgreSQL for production). |
+| `REDIS_URL` | `redis://localhost:6379/0` | Cache and rate-limiting broker URI. |
+| `API_SECRET_KEY` | *(Set strong secret in prod)* | JWT token signing key. |
+| `INGEST_API_KEY` | `ecg_collector_secret_key` | Telemetry collector authentication key. |
+
+---
+
+## 📡 8. Core API Endpoints
+
+Interactive Swagger documentation is live at `http://localhost:8000/docs`:
+
+- **Health Probes**: `GET /health/live`, `GET /health/ready`
+- **Telemetry Ingestion**: `POST /api/v1/events/ingest`
+- **Incidents**: `GET /api/v1/incidents`, `POST /api/v1/incidents`, `PATCH /api/v1/incidents/{id}/transition`
+- **Threat Intelligence**: `GET /api/v1/threat-intel/iocs`, `GET /api/v1/threat-intel/stix`
+- **SOAR Response**: `GET /api/v1/response/actions`, `POST /api/v1/response/actions/{id}/approve`
+- **AI Investigation**: `POST /api/v1/ai/investigate`, `POST /api/v1/ai/chat`
+- **Forensic Scanners**: `POST /api/v1/phishing/analyze`, `POST /api/v1/typosquat/scan`, `POST /api/v1/osint/scan`
+
+---
+
+## 🧪 9. Testing & Quality Verification
+
+All 85 automated tests verify unit logic, pipeline integration, AI grounding, and security controls:
 
 ```bash
-# 1. Navigate to the web application directory
-cd apps/web
+# Run complete test suite (85 passing tests)
+npm test
+# Or: python -m pytest tests/ -v
 
-# 2. Install Node.js dependencies
-npm install
-
-# 3. Start Vite development server
-npm run dev
-
-# 4. Build production static bundle
+# Run frontend build & type check
 npm run build
 ```
 
-The web dashboard will be accessible at `http://localhost:5173`.
+---
+
+## ⚠️ 10. Production Notes
+
+- **Offline Demo vs Live API**: When backend is offline or viewing static GitHub Pages, the UI operates in simulated mode. Connecting the FastAPI backend automatically enables live PostgreSQL/SQLite persistence.
+- **Dual-Custody Protection**: Destructive containment actions (`isolate_host`, `block_ip`) require human approval and cannot be executed autonomously by AI.
+- **Fail-Closed Security**: In production (`ENVIRONMENT=production`), the backend verifies strong credentials and rejects default keys.
 
 ---
 
-## 🐳 9. Docker & Kubernetes Deployment
+## 🗺️ 11. Roadmap
 
-### Production Docker Compose
-Run the complete production multi-container stack (PostgreSQL, Redis, FastAPI, Nginx Web Frontend):
-```bash
-docker-compose up --build -d
-```
-
-### Local Development Docker Compose (with Hot-Reloading)
-```bash
-docker-compose -f docker-compose.dev.yml up --build
-```
-
-### Automated Testing Container
-```bash
-docker-compose -f docker-compose.test.yml run --rm test-runner
-```
-
-### Kubernetes (Production Cluster)
-Production manifests are provided in `infrastructure/kubernetes/`:
-```bash
-# Apply ConfigMaps, Secrets, Deployments, Services, and Ingress
-kubectl apply -f infrastructure/kubernetes/configmap.yaml
-kubectl apply -f infrastructure/kubernetes/deployment-api.yaml
-kubectl apply -f infrastructure/kubernetes/deployment-web.yaml
-kubectl apply -f infrastructure/kubernetes/service.yaml
-kubectl apply -f infrastructure/kubernetes/ingress.yaml
-```
+- **v1.1 (Current)**: Full-stack React 19 + FastAPI, 85 automated tests, STIX 2.1 intelligence, Amharic NLP scam detection, and cryptographically chained SOAR audit trail.
+- **v1.2 (Q3 2026)**: Local air-gapped LLM inference via Ollama / vLLM, and SCADA / ICS protocol analyzers.
+- **v2.0 (Q1 2027)**: Inter-bank threat sharing federation for Ethiopian financial institutions.
 
 ---
 
-## ⚙️ 10. Environment Variables Reference
+## 🤝 12. Contribution & License
 
-Configure these in `.env` or your Kubernetes ConfigMaps / Secrets:
-
-| Variable | Default Value | Description |
-| :--- | :--- | :--- |
-| `DEMO_MODE` | `true` | When `true`, displays demo mode banner and permits mock data fallback. Set to `false` for production. |
-| `DATABASE_URL` | `sqlite:///./ethio_cyberguard.db` | PostgreSQL connection URI (`postgresql://user:pass@host:5432/db`). |
-| `REDIS_URL` | `redis://localhost:6379/0` | Redis caching, event queue, and rate limiting broker URI. |
-| `API_SECRET_KEY` | *(Random 32-byte secret)* | HMAC key for signing JWT tokens and session credentials. |
-| `ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Strict CORS allowed origins (comma-separated). |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | JWT access token lifespan. |
-| `REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Refresh token lifespan for session rotation. |
-| `MAX_PAYLOAD_BYTES` | `5242880` (5 MB) | Maximum accepted JSON event payload size to prevent DoS. |
-| `INGEST_API_KEY` | `ecg_collector_secret_key` | Shared API key required for endpoint telemetry ingestion. |
-| `RATE_LIMIT_PER_MINUTE` | `120` | Max API requests permitted per client IP per minute. |
+- **License**: Apache 2.0 License. See [`LICENSE`](./LICENSE).
+- **Contributing**: Contributions are welcome! Review [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+- **Repository Owners**: Managed by lead maintainer [@AbeniYirgalem](https://github.com/AbeniYirgalem).
 
 ---
 
-## 📡 11. API Documentation & Endpoints
-
-| Category | Method | Endpoint | Description |
-| :--- | :---: | :--- | :--- |
-| **Authentication** | `POST` | `/api/auth/login` | Authenticate with credentials and receive access + refresh JWTs. |
-| | `POST` | `/api/auth/refresh` | Rotate expired access token using valid refresh token. |
-| | `GET` | `/api/auth/me` | Fetch authenticated user profile and assigned RBAC permissions. |
-| | `POST` | `/api/auth/password-reset` | Initiate secure self-service password reset. |
-| **Ingestion** | `POST` | `/api/v1/events/ingest` | High-throughput collector ingestion with deduplication & DLQ. |
-| **Incidents** | `GET` | `/api/incidents` | List incidents with filtering by severity, status, and tenant. |
-| | `GET` | `/api/incidents/{id}` | Detailed incident record including timeline and attack graph. |
-| | `POST` | `/api/incidents` | Create a new incident. |
-| | `PATCH` | `/api/incidents/{id}/transition` | Execute formal lifecycle state transition (`NEW` → `CONTAINED`, etc.). |
-| | `POST` | `/api/incidents/{id}/comments` | Append analyst investigation notes. |
-| | `POST` | `/api/incidents/{id}/evidence` | Upload forensic evidence with SHA-256 cryptographic verification. |
-| **Threat Intelligence** | `GET` | `/api/threat-intelligence` | Retrieve active Indicators of Compromise (IOCs). |
-| | `GET` | `/api/threat-intelligence/stix` | Export threat intelligence as a standard STIX 2.1 JSON bundle. |
-| | `POST` | `/api/threat-intelligence/import` | Ingest external STIX 2.1 threat feed indicators. |
-| **Phishing Forensics** | `POST` | `/api/phishing/analyze` | Parse RFC-822 email, verify SPF/DKIM/DMARC, scan Amharic lures. |
-| **Brand Protection** | `POST` | `/api/typosquat/scan` | Generate homoglyphs and calculate domain similarity metrics. |
-| **OSINT Recon** | `POST` | `/api/osint/scan` | Map ASN routing, passive subdomains, open ports, and SSL health. |
-| **AI Investigation** | `POST` | `/api/ai/investigate` | Run multi-agent AI analysis across MITRE ATT&CK vectors. |
-| | `POST` | `/api/ai/chat` | Interactive Tier-1/Tier-2 analyst assistant copilot. |
-| **SOAR Response** | `GET` | `/api/response/actions` | Retrieve response action queue with approval statuses. |
-| | `POST` | `/api/response/execute` | Dispatch containment actions (supports `dry_run` & dual custody). |
-| | `POST` | `/api/response/actions/{id}/rollback` | Revert previously executed containment actions. |
-| **Jobs & Workers** | `POST` | `/api/v1/jobs` | Submit heavy asynchronous background tasks. |
-| | `GET` | `/api/v1/jobs/{job_id}` | Poll background job progress and output payload. |
-| **System Health** | `GET` | `/health/live` | Kubernetes liveness probe endpoint. |
-| | `GET` | `/health/ready` | Kubernetes readiness probe (checks database, Redis, connectors). |
-| | `GET` | `/metrics` | Prometheus metrics exposition format. |
-
----
-
-## 🧪 12. Testing & Verification
-
-The test suite covers unit logic, pipeline integration, AI grounding, security defenses, and authentication:
-
-```bash
-# Run the complete Pytest suite
-python -m pytest tests/ -v
-```
-
-```text
-tests/ai-evaluation/test_ai_grounding.py ....... PASSED
-tests/integration/test_pipeline.py ............ PASSED
-tests/integration/test_unified_pipeline.py .... PASSED
-tests/security/test_prompt_injection.py ....... PASSED
-tests/security/test_ssrf_and_scope.py ......... PASSED
-tests/security/test_tenant_isolation.py ....... PASSED
-tests/unit/test_alerting.py ................... PASSED
-tests/unit/test_api_endpoints.py .............. PASSED
-tests/unit/test_api_extended.py ............... PASSED
-tests/unit/test_auth.py ....................... PASSED
-tests/unit/test_awareness.py .................. PASSED
-tests/unit/test_benchmark.py .................. PASSED
-tests/unit/test_incident_lifecycle.py ......... PASSED
-tests/unit/test_normalizer.py ................. PASSED
-tests/unit/test_osint.py ...................... PASSED
-tests/unit/test_phase2_improvements.py ........ PASSED
-tests/unit/test_phishing.py ................... PASSED
-tests/unit/test_platform_hardening.py ......... PASSED
-tests/unit/test_rbac.py ....................... PASSED
-tests/unit/test_risk.py ....................... PASSED
-tests/unit/test_rules.py ...................... PASSED
-tests/unit/test_soar_response.py .............. PASSED
-tests/unit/test_typosquat.py .................. PASSED
-tests/unit/test_comprehensive_audit_scenarios.py .......... PASSED
-
-============================= 85 passed in 2.42s =============================
-```
-
-To test the frontend build and TypeScript compliance:
-```bash
-npm --prefix apps/web run build
-```
-
----
-
-## ⚠️ 13. Production Limitations
-
-While ETHIO-CYBERGUARD provides production-grade components, operators deploying in critical enterprise environments should consider:
-- **Sandbox Mode vs Real Ingestion**: In the standalone client demo on GitHub Pages, events are generated dynamically in the browser. In production, configure collectors (`collectors/endpoint/`) to stream real events to `/api/v1/events/ingest`.
-- **Database Scaling**: The default fallback uses SQLite for single-node prototypes. For high-volume production deployments exceeding 10,000 EPS, deploy PostgreSQL 16+ on dedicated NVMe storage with partitioned event tables.
-- **External Connector Credentials**: EDR and Firewall integrations (`services/connectors/`) are designed with circuit breakers and fallback simulators. Operators must supply valid vendor API keys (Fortinet, Palo Alto, CrowdStrike, SentinelOne) in production environment secrets.
-- **AI Model Latency**: Cloud LLM inference latency depends on external API response times. For air-gapped critical infrastructure, host a quantized local LLM (e.g., Llama 3 8B or Mistral 7B) on premise.
-
----
-
-## 🗺️ 14. Project Roadmap
-
-- **v1.1 (Current Release)**:
-  - Full-stack React 19 + FastAPI integration with modernized ASGI `@asynccontextmanager` lifespan
-  - Optimized Vite v8 / Rolldown manual chunk splitting (< 270 kB bundles, sub-second build)
-  - Cryptographically chained SHA-256 immutable SOAR audit trail with tamper detection
-  - Native Ge'ez / Amharic NLP psychological urgency scam detector & Telebirr look-alike protection
-  - SQLAlchemy 2.1+, Alembic 1.20+, and persistent repository layer
-  - 7 enterprise RBAC roles with refresh token rotation and lockout protection
-  - Asynchronous background worker system (`/api/v1/jobs`)
-  - Formal 10-state incident lifecycle state machine
-  - Dual-custody SOAR execution with dry-run and rollback
-  - STIX 2.1 Threat Intel export and import
-  - Health probes (`/health/live`, `/health/ready`) and Prometheus `/metrics`
-  - Comprehensive Technical White Paper ([`docs/ETHIO_CYBERGUARD_TECHNICAL_PAPER.md`](./docs/ETHIO_CYBERGUARD_TECHNICAL_PAPER.md))
-  - 75 automated unit, integration, and security tests (100% green pass rate)
-- **v1.2 (Target: Q3 2026)**:
-  - Air-gapped on-premise LLM inference with Ollama and vLLM
-  - Pre-built Splunk and Elastic forwarder integrations
-  - Enhanced Amharic OCR for scanned physical banking fraud letters
-  - SCADA / ICS Modbus & DNP3 telemetry protocol dissectors
-- **v2.0 (Target: Q1 2027)**:
-  - Federated multi-bank intelligence sharing protocol across Ethiopian financial institutions
-  - Autonomous self-healing SOAR containment policies
-  - Mobile incident responder app for iOS and Android
-
----
-
-## 🤝 15. Contribution & Governance
-<a id="contributing-ov-file"></a>
-<a id="coc-ov-file"></a>
-<a id="security-ov-file"></a>
-
-Contributions from security analysts, developers, and researchers are warmly welcomed!
-
-- **Code of Conduct**: Please adhere to our [Code of Conduct](CODE_OF_CONDUCT.md).
-- **Contributing Guide**: Review [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming conventions, PR guidelines, and code style.
-- **Repository Owners**: Managed by lead maintainer [@AbeniYirgalem](https://github.com/AbeniYirgalem) (see [.github/CODEOWNERS](.github/CODEOWNERS)).
-- **Security Disclosures**: Please report sensitive vulnerabilities directly to the maintainers as detailed in [SECURITY.md](SECURITY.md).
-- **Citation**: If you reference this work in research or technical whitepapers, see [`CITATION.cff`](./CITATION.cff).
-
----
-
-## 👥 16. Project Team & Contributors
-<a id="-16-project-team--contributors"></a>
+## 👥 13. Project Team & Contributors
+<a id="-13-project-team--contributors"></a>
 
 | # | Full Name | Student / Member ID | Project Role |
 | :-: | :--- | :--- | :--- |

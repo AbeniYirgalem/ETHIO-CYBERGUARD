@@ -30,6 +30,13 @@ import {
   INITIAL_TIMELINE 
 } from './mockData';
 import type { Incident, SecurityEvent, ResponseAction } from './types';
+import { 
+  checkBackendHealth, 
+  fetchIncidents, 
+  fetchResponseActions, 
+  approveResponseAction, 
+  rejectResponseAction 
+} from './utils/api';
 
 export const App: React.FC = () => {
   const [inPublicPortal, setInPublicPortal] = useState(false);
@@ -51,6 +58,9 @@ export const App: React.FC = () => {
   const [currentOrg, setCurrentOrg] = useState("Commercial Bank of Ethiopia (CBE)");
   const [currentRole, setCurrentRole] = useState("SECURITY_ANALYST");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [backendConnected, setBackendConnected] = useState<boolean | null>(null);
+
+
 
   // Toast dispatch and cleanup helper
   const addToast = (toast: Omit<ToastMessage, 'id' | 'timestamp'>) => {
@@ -70,6 +80,34 @@ export const App: React.FC = () => {
   const dismissToast = (id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
+
+  // Initial Backend Health & Real Data Synchronization
+  useEffect(() => {
+    let isMounted = true;
+    checkBackendHealth().then(status => {
+      if (!isMounted) return;
+      setBackendConnected(status.connected);
+      if (status.connected) {
+        fetchIncidents().then(res => {
+          if (res.success && res.data && res.data.length > 0) {
+            setIncidents(res.data);
+            setSelectedIncident(res.data[0]);
+          }
+        });
+        fetchResponseActions().then(res => {
+          if (res.success && res.data && res.data.length > 0) {
+            setActions(res.data);
+          }
+        });
+        addToast({
+          type: 'success',
+          title: 'Live API Connected',
+          message: 'Connected to ETHIO-CYBERGUARD backend. Database persistence active.'
+        });
+      }
+    });
+    return () => { isMounted = false; };
+  }, []);
 
   const toggleSound = () => {
     const next = !soundEnabled;
@@ -153,24 +191,26 @@ export const App: React.FC = () => {
 
   const [showDemoBanner, setShowDemoBanner] = useState(true);
 
-  // Action Approval Handlers
-  const handleApproveAction = (id: string) => {
-    setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'APPROVED' } : a));
+  // Action Approval Handlers (Dispatches to Live SOAR REST API with fallback)
+  const handleApproveAction = async (id: string) => {
     soundManager.playLockAction();
+    const result = await approveResponseAction(id);
+    setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'APPROVED' } : a));
     addToast({
       type: 'success',
-      title: 'SOAR Action Executed',
-      message: `Action ${id} approved & dispatched to target defense cluster.`
+      title: result.isLive ? 'SOAR Action Executed on Live Backend' : 'SOAR Action Approved (Simulated)',
+      message: result.message
     });
   };
 
-  const handleRejectAction = (id: string, reason?: string) => {
-    setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'REJECTED', rejection_reason: reason } : a));
+  const handleRejectAction = async (id: string, reason?: string) => {
     soundManager.playAlert();
+    const result = await rejectResponseAction(id, reason);
+    setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'REJECTED', rejection_reason: reason } : a));
     addToast({
       type: 'warning',
-      title: 'Action Dismissed by Analyst',
-      message: `Action ${id} rejected${reason ? `: ${reason}` : '.'}`
+      title: result.isLive ? 'Action Rejected on Live Backend' : 'Action Dismissed (Simulated)',
+      message: result.message
     });
   };
 
@@ -224,6 +264,7 @@ export const App: React.FC = () => {
         onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         soundEnabled={soundEnabled}
         onToggleSound={toggleSound}
+        backendConnected={backendConnected}
       />
 
       {/* Main App Body */}
@@ -240,19 +281,25 @@ export const App: React.FC = () => {
 
         {/* Dynamic Main Workspace Content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#070B12] space-y-6">
-          {/* Demo Mode Alert Banner */}
+          {/* Environment Status Alert Banner */}
           {showDemoBanner && (
-            <div className="bg-[#FF9100]/10 border border-[#FF9100]/30 rounded-lg p-3 px-4 flex items-center justify-between text-xs text-[#FF9100]">
+            <div className={`border rounded-lg p-3 px-4 flex items-center justify-between text-xs ${
+              backendConnected ? 'bg-[#22C55E]/10 border-[#22C55E]/30 text-[#22C55E]' : 'bg-[#FF9100]/10 border-[#FF9100]/30 text-[#FF9100]'
+            }`}>
               <div className="flex items-center space-x-2">
                 <span className="font-bold flex items-center">
-                  <span className="w-2 h-2 rounded-full bg-[#FF9100] animate-pulse mr-2"></span>
-                  Demo Mode:
+                  <span className={`w-2 h-2 rounded-full mr-2 ${backendConnected ? 'bg-[#22C55E]' : 'bg-[#FF9100] animate-pulse'}`}></span>
+                  {backendConnected ? 'Live System Connected:' : 'Simulated Demo Mode:'}
                 </span>
-                <span>All incidents, assets, and telemetry metrics are currently simulated.</span>
+                <span>
+                  {backendConnected 
+                    ? 'Connected to FastAPI backend & database. Real-time telemetry, incidents, and SOAR response actions are persisted.'
+                    : 'Backend API offline or viewing static demo. Incident metrics and containment actions are simulated locally in memory.'}
+                </span>
               </div>
               <button 
                 onClick={() => setShowDemoBanner(false)}
-                className="text-[#FF9100]/70 hover:text-[#FF9100] font-mono text-sm px-1.5"
+                className={`font-mono text-sm px-1.5 ${backendConnected ? 'text-[#22C55E]/70 hover:text-[#22C55E]' : 'text-[#FF9100]/70 hover:text-[#FF9100]'}`}
                 title="Dismiss banner"
               >
                 ✕
