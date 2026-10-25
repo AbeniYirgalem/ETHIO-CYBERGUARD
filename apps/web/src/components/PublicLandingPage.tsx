@@ -475,7 +475,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                 </div>
                 <button
                   onClick={() => setSelectedImageModal({
-                    src: './images/comparative-matrix.png',
+                    src: './images/comparative-benchmark.png',
                     alt: 'Comparative Matrix Diagram',
                     title: isAm ? 'የቴክኒክ ንጽጽር ቻርት' : 'Comparative Matrix Infographic'
                   })}

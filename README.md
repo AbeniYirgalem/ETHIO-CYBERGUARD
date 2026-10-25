@@ -47,6 +47,12 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="License" /></a>
 </p>
 
+<p align="center">
+  <a href="https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/">
+    <img src="./docs/images/platform-overview.png" alt="ETHIO-CYBERGUARD Centralized Threat Detection & AI Investigation Platform" width="100%" />
+  </a>
+</p>
+
 </div>
 
 ---
@@ -97,6 +103,10 @@ Unlike conventional Western-centric SIEM/SOAR platforms, ETHIO-CYBERGUARD incorp
 - **🎓 Security Awareness Training**: Localized simulation campaigns with departmental vulnerability reporting.
 - **🛡️ Human-in-the-Loop SOAR**: Dual-custody approval, 30-minute expiration timers, dry-run simulation mode, automated rollback, and SHA-256 tamper-evident audit logs.
 - **🔐 Enterprise RBAC & Security**: 7 distinct security roles, refresh-token rotation, brute-force account lockouts, and strict environment-driven CORS.
+
+<p align="center">
+  <img src="./docs/images/feature-pillars.png" alt="ETHIO-CYBERGUARD Core Feature Pillars: 7 AI Agents, Dual-Custody SOAR, Native Amharic Defense" width="100%" />
+</p>
 
 ---
 
@@ -169,6 +179,12 @@ Test the interactive SOC Dashboard, Phishing Forensics, Brand Defense, and Attac
 
 > [!TIP]
 > **Interactive Client Mode**: The live demonstration runs in zero-friction browser mode with real-time simulated telemetry feeds (4,200+ EPS), interactive ransomware and phishing scenario injection, Amharic lure heuristics, and AI incident investigation. For production log ingestion with live PostgreSQL persistence, run `docker compose up`.
+
+### 📊 Feature Benchmark & Comparative Matrix / የቴክኒክ ንጽጽር ሠንጠረዥ
+
+<p align="center">
+  <img src="./docs/images/comparative-benchmark.png" alt="ETHIO-CYBERGUARD Feature Benchmark & Comparative Matrix" width="100%" />
+</p>
 
 ---
 
@@ -438,6 +454,10 @@ npm run build
 
 ## 👥 13. Project Team & Contributors / የፕሮጀክቱ ቡድን አባላት እና አስተዋፅዖ አድራጊዎች
 <a id="-13-project-team--contributors"></a>
+
+<p align="center">
+  <img src="./docs/images/team-photo.png" alt="ETHIO-CYBERGUARD Project Research Team" width="450px" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" />
+</p>
 
 | # | Full Name / ሙሉ ስም | Student ID / የተማሪ መለያ | Project Role / የሥራ ድርሻ |
 | :-: | :--- | :--- | :--- |
