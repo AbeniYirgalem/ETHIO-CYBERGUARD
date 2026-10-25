@@ -430,13 +430,13 @@ Contributions from security analysts, developers, and researchers are warmly wel
 ## 👥 16. Project Team & Contributors
 <a id="-16-project-team--contributors"></a>
 
-| # | Full Name | Student / Member ID | Project Role | Status / Notes |
-| :-: | :--- | :--- | :--- | :--- |
-| 1 | **Beamlak Sintayehu** | `CTC-912-24` | Core Member / Contributor | Active |
-| 2 | **Yonas Abadi** | `[Pending ID: ____________]` | Project Owner | Project Lead |
-| 3 | **Abeni Yirgalem** | `[Pending ID: ____________]` | Repository Administrator | Lead Maintainer |
-| 4 | **FikreMariam** | `[Pending ID: ____________]` | Team Member | Contributor |
-| 5 | **Remedan** | `[Pending ID: ____________]` | Team Member | Contributor |
+| # | Full Name | Student / Member ID | Project Role |
+| :-: | :--- | :--- | :--- |
+| 1 | **Beamlak Sintayehu** | `CTC-912-24` | Core Member / Contributor |
+| 2 | **Yonas Abadi** | `[Pending ID: ____________]` | Project Owner |
+| 3 | **Abeni Yirgalem** | `[Pending ID: ____________]` | Repository Administrator |
+| 4 | **FikreMariam** | `[Pending ID: ____________]` | Team Member |
+| 5 | **Remedan** | `[Pending ID: ____________]` | Team Member |
 
 > ℹ️ *Space and ID placeholders are reserved above for team members to record their official student/member IDs.*
 
