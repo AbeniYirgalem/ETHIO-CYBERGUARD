@@ -1,34 +1,44 @@
 <div align="center">
 
 # 🛡️ ETHIO-CYBERGUARD
+### Autonomous AI-Powered Security Operations Center & Critical Infrastructure Threat Intelligence
 
 ```text
-                        ______________  __________ 
-                       / ____/_  __/ / / /  _/ __ \
-                      / __/   / / / /_/ // // / / /
-                     / /___  / / / __  // // /_/ / 
-                    /_____/ /_/ /_/ /_/___/\____/  
-
-        ________  ______  __________  ________  _____    ____  ____ 
-       / ____/\ \/ / __ )/ ____/ __ \/ ____/ / / /   |  / __ \/ __ \
-      / /      \  / __  / __/ / /_/ / / __/ / / / /| | / /_/ / / / /
-     / /___    / / /_/ / /___/ _, _/ /_/ / /_/ / ___ |/ _, _/ /_/ / 
-     \____/   /_/_____/_____/_/ |_|\____/\____/_/  |_/_/ |_/_____/  
++--------------------------------------------------------------------------------------------------+
+|  [>] SYSTEM: ETHIO-CYBERGUARD NATIONAL SOC COMMAND          [STATUS: DEFCON-2 // ELEVATED]       |
++--------------------------------------------------------------------------------------------------+
+|                                                                                                  |
+|                       ______________  __________                                                 |
+|                      / ____/_  __/ / / /  _/ __ \                                                |
+|                     / __/   / / / /_/ // // / / /                                                |
+|                    / /___  / / / __  // // /_/ /                                                 |
+|                   /_____/ /_/ /_/ /_/___/\____/                                                  |
+|                                                                                                  |
+|       ________  ______  __________  ________  _____    ____  ____                                |
+|      / ____/\ \/ / __ )/ ____/ __ \/ ____/ / / /   |  / __ \/ __ \                               |
+|     / /      \  / __  / __/ / /_/ / / __/ / / / /| | / /_/ / / / /                               |
+|    / /___    / / /_/ / /___/ _, _/ /_/ / /_/ / ___ |/ _, _/ /_/ /                                |
+|    \____/   /_/_____/_____/_/ |_|\____/\____/_/  |_/_/ |_/_____/                                 |
+|                                                                                                  |
+|  [+] 7 SPECIALIZED AI AGENTS   [+] 51,000+ EPS SIGMA ENGINE   [+] NATIVE ETHIOPIAN THREAT INTEL  |
+|  [+] INSA DIRECTIVE COMPLIANT  [+] DUAL-CUSTODY SOAR ACTION   [+] TELEBIRR & CBE FRAUD SHIELD    |
++--------------------------------------------------------------------------------------------------+
 ```
 
 <p align="center">
-  <strong>Next-Generation AI-Powered SIEM, Threat Intelligence & Human Defense Platform</strong>
+  <strong>Autonomous AI SIEM, Threat Intelligence & Human-in-the-Loop Incident Response</strong>
   <br />
-  <em>Tailored for Corporate, Banking, Higher Education, and Critical Infrastructure Defense with Native Ethiopian Threat Context.</em>
+  <em>Defending Ethiopian Banking, Telecommunications, Government & Critical Infrastructure Networks.</em>
 </p>
 
 <p align="center">
-  <a href="https://AbeniYirgalem.github.io/ETHIO-CYBERGUARD/"><img src="https://img.shields.io/badge/Live_Demo-GitHub_Pages-00D9FF?style=for-the-badge&logo=github&logoColor=black" alt="Live Demo" /></a>
-  <img src="https://img.shields.io/badge/Multi--Agent_AI-7_Agents-FF1744?style=for-the-badge&logo=openai" alt="Multi-Agent AI" />
-  <img src="https://img.shields.io/badge/Throughput-51k+_EPS-00D9FF?style=for-the-badge&logo=speedtest" alt="51k+ EPS" />
+  <a href="https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/"><img src="https://img.shields.io/badge/⚡_Live_SOC_Demo-Active_Online-00D9FF?style=for-the-badge&logo=github&logoColor=black" alt="Live Demo" /></a>
+  <img src="https://img.shields.io/badge/Defense_Status-DEFCON_2-FF1744?style=for-the-badge" alt="DEFCON 2" />
+  <img src="https://img.shields.io/badge/AI_Engine-7_Specialized_Agents-9333EA?style=for-the-badge&logo=openai" alt="7 AI Agents" />
+  <img src="https://img.shields.io/badge/Throughput-51,000+_EPS-00D9FF?style=for-the-badge&logo=speedtest" alt="51k+ EPS" />
+  <img src="https://img.shields.io/badge/Automated_Tests-85%2F85_Passing-22C55E?style=for-the-badge&logo=pytest" alt="85/85 Passing" />
   <img src="https://img.shields.io/badge/Frontend-React_19_+_Tailwind-22C55E?style=for-the-badge&logo=react" alt="React 19" />
   <img src="https://img.shields.io/badge/Backend-FastAPI_Python_3.10+-F59E0B?style=for-the-badge&logo=fastapi" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/Tests-75%2F75_Passing-22C55E?style=for-the-badge&logo=pytest" alt="Pytest" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="License" /></a>
 </p>
 
@@ -148,10 +158,12 @@ flowchart TD
 
 Test the interactive SOC Dashboard, Phishing Forensics, Brand Defense, and Attack Surface Scanner directly in your browser:
 
-👉 **[https://AbeniYirgalem.github.io/ETHIO-CYBERGUARD/](https://AbeniYirgalem.github.io/ETHIO-CYBERGUARD/)**
+👉 **[Launch Active SOC Dashboard](https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/)** (`https://mr-nobody-anonymous.github.io/ETHIO-CYBERGUARD/`)
 
-> [!NOTE]
-> **Demo Sandbox Mode**: The GitHub Pages build runs in client-side Demo Mode with high-fidelity simulated telemetry feeds (4,200+ EPS), interactive scenario injection, and zero-latency client forensics. For production telemetry with live PostgreSQL persistence and syslog daemon, run the full container stack.
+*(Upstream Mirror: [`https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/`](https://abeniyirgalem.github.io/ETHIO-CYBERGUARD/))*
+
+> [!TIP]
+> **Interactive Client Mode**: The live demonstration runs in zero-friction browser mode with real-time simulated telemetry feeds (4,200+ EPS), interactive ransomware and phishing scenario injection, Amharic lure heuristics, and AI incident investigation. For production log ingestion with live PostgreSQL persistence, run `docker compose up`.
 
 ---
 
